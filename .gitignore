@@ -1,3 +1,9 @@
+#############################
+# Setting for Vim(-Plugins) #
+#############################
+# Runtime files created by rope plugin
+.ropeproject
+
 #######################################
 # Standard Python .gitignore settings #
 #######################################
