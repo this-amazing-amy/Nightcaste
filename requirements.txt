@@ -1,0 +1,4 @@
+cffi==1.5.0
+libtcod-cffi==0.2.7
+pycparser==2.14
+wheel==0.26.0
