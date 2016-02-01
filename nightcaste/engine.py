@@ -6,3 +6,4 @@ __version__ = '0.1.0'
 
 def main():
     print 'Nightcaste v' + __version__
+    return 0
