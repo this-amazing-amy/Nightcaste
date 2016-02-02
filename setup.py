@@ -18,5 +18,5 @@ setup(name='Nightcaste',
                 'wheel==0.26.0',
             ],
             packages=['nightcaste'],
-            platforms='any',
+            platforms='any'
            )
