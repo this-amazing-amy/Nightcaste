@@ -1,5 +1,5 @@
 from nightcaste import engine
 
 
-def test_something():
-    assert engine.main() == 0
+# def test_something():
+#   assert engine.main() == 0

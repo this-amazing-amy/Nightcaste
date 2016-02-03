@@ -7,6 +7,33 @@
             - events with two target entitys (src and target)
 
 """
+import Queue
+
+
+class EventManager:
+    """The central event manager which stores all events to be executed."""
+
+    def __init__(self):
+        # Event queue, which is continuuously processed by process_events
+        self.queue = Queue()
+        # Dictionary of systems listening for events of different types
+        # {'event_type': System}
+        self.listeners = {}
+
+    def register_listener(self, system, event_type):
+        pass
+
+    def remove_listener(self, system, event_type):
+        pass
+
+    def purge_listener(self, system):
+        pass
+
+    def enqueue_event(self, event):
+        pass
+
+    def process_events(self, round):
+        pass
 
 
 class Event:

@@ -1,5 +1,5 @@
-from nightcaste.model import EntityManager
-from nightcaste.model import EntityConfiguration
+from nightcaste.entities import EntityManager
+from nightcaste.entities import EntityConfiguration
 
 
 class TestEntityManager:

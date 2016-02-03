@@ -1,4 +1,5 @@
 """The model represents backing storage for entities."""
+from components import ComponentManager
 
 
 class EntityManager:
@@ -8,7 +9,7 @@ class EntityManager:
     def __init__(self):
         self.last_id = -1l
         self.component_manager = ComponentManager()
-        self.blue_print_manager = BluePrintManager()
+        self.blueprint_manager = BlueprintManager()
 
     def create_entity(self):
         self.last_id += 1l
@@ -19,23 +20,16 @@ class EntityManager:
         self.component_manager.add_components(entity, configuration)
         return entity
 
-    def create_entity_from_blue_print(self, blue_print):
-        configuration = self.blue_print_manager.create_configuration(blue_print)
+    def create_entity_from_blueprint(self, blueprint):
+        configuration = self.blueprint_manager.create_configuration(blueprint)
         return self.create_entity_from_configuration(configuration)
 
 
-class ComponentManager:
-
-    def add_components(entity, configuration):
-        "TODO: Dummy"
-        pass
-
-
-class BluePrintManager:
-    """Points the a blue print file which contains information about the
+class BlueprintManager:
+    """Points the a blueprint file which contains information about the
     structure of an entity"""
 
-    def create_configuration(self, blue_print):
+    def create_configuration(self, blueprint):
         """TODO: either load prefetched configuration or lazy load it here.
         Since loading a bluebrint involves IO it may be advisable to prefetch
         the configuration into a dictionary are at least cache on first
