@@ -1,4 +1,5 @@
 """The model represents backing storage for entities."""
+from nightcaste import components
 
 
 class EntityManager:
@@ -42,7 +43,15 @@ class ComponentManager:
         self.components[component_type][entity_id] = component
 
     def add_components(self, entity_id, configuration):
-        pass
+        """Create and add components base on the given configuration"""
+        for component_name, attributes in configuration.components.iteritems():
+            component = getattr(components, component_name)()
+
+            "Add all attributes to component"
+            for attr_name, attr_value in attributes.iteritems():
+                setattr(component, attr_name, attr_value)
+
+            self.add_component(entity_id, component)
 
     def remove_component(self, entity_id, component_type):
         pass

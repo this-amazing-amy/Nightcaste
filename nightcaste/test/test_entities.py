@@ -32,13 +32,19 @@ class TestComponentManager:
         assert 1 in component_manager.components['Component']
         assert component_manager.components['Component'][1] == component
 
-    def test_add_components_by_configuration(self):
+    def test_add_components_by_configuration(self, component_manager):
         """Tests if the Component Manager can create components by
         configuration"""
         config = EntityConfiguration()
         config.add_attribute('Position', 'x', 42)
         config.add_attribute('Position', 'y', 27)
-        component_manager.add_components(1, config)
+        component_manager.add_components(2, config)
+        assert 'Position' in component_manager.components
+        assert 2 in component_manager.components['Position']
+
+        position = component_manager.components['Position'][2]
+        assert position.x == 42
+        assert position.y == 27
 
 
 class TestEntityConfiguration:
