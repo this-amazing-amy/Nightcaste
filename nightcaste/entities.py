@@ -41,6 +41,9 @@ class ComponentManager:
             self.components[component_type] = component_dict
         self.components[component_type][entity_id] = component
 
+    def add_components(self, entity_id, configuration):
+        pass
+
     def remove_component(self, entity_id, component_type):
         pass
 
