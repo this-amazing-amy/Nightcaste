@@ -1,5 +1,13 @@
+import pytest
 from nightcaste.entities import EntityManager
 from nightcaste.entities import EntityConfiguration
+from nightcaste.entities import ComponentManager
+from nightcaste.components import Component
+
+
+@pytest.fixture
+def component_manager():
+    return ComponentManager()
 
 
 class TestEntityManager:
@@ -11,6 +19,18 @@ class TestEntityManager:
 
         assert entity1 == 0
         assert entity2 == 1
+
+
+class TestComponentManager:
+
+    def test_add_component(self, component_manager):
+        """Tests if components are added to the manager correctly"""
+        id = 1
+        component = Component()
+        component_manager.add_component(id, component)
+        assert 'Component' in component_manager.components
+        assert 1 in component_manager.components['Component']
+        assert component_manager.components['Component'][1] == component
 
 
 class TestEntityConfiguration:
