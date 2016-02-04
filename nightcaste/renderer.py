@@ -22,7 +22,7 @@ class SimpleConsoleRenderer:
         positions = self.entity_manager.get_other_components_for_entities(
          renderables, "Position")
         for entity in renderables:
-            libtcod.console_clear()
+            libtcod.console_clear(0)
             libtcod.console_set_char(0, positions[entity].x,
                                      positions[entity].y,
                                      renderables[entity].character)
