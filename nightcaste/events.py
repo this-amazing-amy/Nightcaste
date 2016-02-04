@@ -15,25 +15,64 @@ class EventManager:
 
     def __init__(self):
         # Event queue, which is continuuously processed by process_events
-        self.queue = Queue()
+        self.events = Queue.Queue()
+        # self.queue = Queue.PriorityQueue()    If priority is needed
+        # self.deque = collections.deque()      Super fast unbounded queue
+        #                                       without locking
+
         # Dictionary of systems listening for events of different types
         # {'event_type': System}
         self.listeners = {}
 
-    def register_listener(self, system, event_type):
+    def register_listener(self, event_type, event_processor):
+        """Register a processor to delegate the processing of a certain event
+        type."""
+        if event_type in self.listeners:
+            self.listeners[event_type].append(event_processor)
+        else:
+            self.listeners.update({event_type: [event_processor]})
+
+    def remove_listener(self, event_type, event_processor):
+        "Unregisters the processor for events of the specified type."
+        if event_type in self.listeners:
+            self.listeners[event_type].remove(event_processor)
+
+    def purge_listener(self, processor):
         pass
 
-    def remove_listener(self, system, event_type):
-        pass
-
-    def purge_listener(self, system):
-        pass
-
-    def enqueue_event(self, event):
-        pass
+    def enqueue_event(self, event, rounds=0):
+        """Enques an event which will be processed later"""
+        self.events.put(event)
 
     def process_events(self, round):
-        pass
+        """Process all events in the queue.
+
+            Args:
+                round (long): The current round in the game.
+
+            Returns:
+                The number of process events in this round.
+
+        """
+        processed_events = 0
+        while not self.events.empty():
+            self.process_event(self.events.get_nowait(), round)
+            processed_events += 1
+        return processed_events
+
+    def process_event(self, event, round):
+        """Process a single event by delegating it to all registered processors.
+
+            Args:
+                event(Event): The event to be processed.
+                round (long): The current round in the game.
+
+        """
+        if event.type() not in self.listeners:
+            raise Warning("Now processor registered for " + event.type())
+
+        for processor in self.listeners[event.type()]:
+            processor.handle_event(event)
 
 
 class Event:
