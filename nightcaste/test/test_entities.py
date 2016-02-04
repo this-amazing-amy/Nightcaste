@@ -46,6 +46,12 @@ class TestComponentManager:
         assert position.x == 42
         assert position.y == 27
 
+    def test_get_component(self, component_manager):
+        """Tests retrieving a component"""
+        component = components.Component()
+        component_manager.add_component(3, component)
+        assert component_manager.get_component(3, component.type()) == component
+
 
 class TestEntityConfiguration:
 

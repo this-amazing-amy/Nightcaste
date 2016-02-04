@@ -37,9 +37,6 @@ class EventManager:
         if event_type in self.listeners:
             self.listeners[event_type].remove(event_processor)
 
-    def purge_listener(self, processor):
-        pass
-
     def enqueue_event(self, event, rounds=0):
         """Enques an event which will be processed later"""
         self.events.put(event)
@@ -69,10 +66,10 @@ class EventManager:
 
         """
         if event.type() not in self.listeners:
-            raise Warning("Now processor registered for " + event.type())
+            raise UserWarning("Now processor registered for " + event.type())
 
         for processor in self.listeners[event.type()]:
-            processor.handle_event(event)
+            processor.handle_event(event, round)
 
 
 class Event:

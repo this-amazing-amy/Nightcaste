@@ -17,7 +17,7 @@ class EventProcessor:
         self.event_manager = event_manager
         self.entity_manager = entity_manager
 
-    def handle_event(self, round, event):
+    def handle_event(self, event, round):
         """TODO: Docstring for handle_event.
 
         :round: TODO
@@ -26,3 +26,19 @@ class EventProcessor:
 
         """
         pass
+
+
+class MovementProcessor(EventProcessor):
+
+    def handle_event(self, event, round):
+        """Checks for collision and moves the entity the specified amount. If a
+        collision is detected an appropriate event will be created."""
+
+        # TODO: CollisionManager.check
+
+        position = self.entity_manager.get_entity_component(
+            event.entity, 'Position')
+        # TODO: Save absolute target position and go only evnt.steps if target
+        # not reached, reraise event (needs path finding logic)
+        position.x += event.dx
+        position.y += event.dy

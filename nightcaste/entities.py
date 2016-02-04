@@ -24,6 +24,12 @@ class EntityManager:
         configuration = self.blueprint_manager.create_configuration(blueprint)
         return self.create_entity_from_configuration(configuration)
 
+    def destroy_entity(entity):
+        pass
+
+    def get_entity_component(entity, component_type):
+        return self.component_manager.get_component(entity, component_type)
+
 
 class ComponentManager:
     """ The Component manager stores the components for all entities (represented by
@@ -57,7 +63,14 @@ class ComponentManager:
         pass
 
     def get_component(self, entity_id, component_type):
-        pass
+        """Get an entity component.
+
+            Returns:
+                The component or NONE if the component does not exists
+
+        """
+        component_dict = self.components.get(component_type, {})
+        return component_dict.get(entity_id)
 
     def get_all_of_type(self, component_type):
         pass

@@ -53,12 +53,24 @@ class TestEventManager:
         assert event_manager.listeners[event_type] == [processor, processor2]
 
     def test_remove_listener(self, event_manager, entity_manager):
-        """TODO: Docstring for test_unregister.
-        :returns: TODO
-
-        """
+        """Checks if a processor can be unregistered."""
         event_type = "TestUnregister"
         processor = EventProcessor(event_manager, entity_manager)
-        event_manager.listeners.update({event_type: [processor]})
+        processor2 = EventProcessor(event_manager, entity_manager)
+        event_manager.listeners.update({event_type: [processor, processor2]})
         event_manager.remove_listener(event_type, processor)
+        assert event_manager.listeners[event_type] == [processor2]
+        event_manager.remove_listener(event_type, processor2)
         assert event_manager.listeners[event_type] == []
+
+    def test_process_events(self, event_manager, entity_manager):
+        """Checks if the events in the queue are processed"""
+        event = Event()
+        event2 = Event()
+        event_type = event.type()
+        processor = EventProcessor(event_manager, entity_manager)
+        event_manager.listeners.update({event_type: [processor]})
+        event_manager.events.put(event)
+        event_manager.events.put(event2)
+        assert event_manager.process_events(1) > 0
+        assert event_manager.events.empty()
