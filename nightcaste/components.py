@@ -24,3 +24,17 @@ class Position(Component):
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
+
+
+class Renderable(Component):
+
+    """Represents an entity that can be rendered
+
+    Args:
+        character (str): printed character
+        z_index (int): Order to be printed (lowest first)
+    """
+
+    def __init__(self, character=None, z_index=0):
+        self._character = character
+        self._z_index = z_index

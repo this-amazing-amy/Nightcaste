@@ -10,6 +10,15 @@ def component_manager():
     return ComponentManager()
 
 
+@pytest.fixture
+def simple_configuration():
+    config = EntityConfiguration()
+    config.add_attribute('Position', 'x', 42)
+    config.add_attribute('Position', 'y', 23)
+    config.add_attribute('Renderable', 'character', '@')
+    return config
+
+
 class TestEntityManager:
 
     def test_create_entity(self):
@@ -19,6 +28,14 @@ class TestEntityManager:
 
         assert entity1 == 0
         assert entity2 == 1
+
+    def test_get_other_components_for_entites(self, simple_configuration):
+        em = EntityManager()
+        entity = em.create_entity_from_configuration(simple_configuration)
+        positions = em.get_all_of_type("Position")
+        renderables = em.get_other_components_for_entities(positions,
+                                                           "Renderable")
+        assert renderables[entity].character == "@"
 
 
 class TestComponentManager:

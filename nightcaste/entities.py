@@ -1,5 +1,5 @@
 """The model represents backing storage for entities."""
-from nightcaste import components
+import components
 
 
 class EntityManager:
@@ -27,8 +27,18 @@ class EntityManager:
     def destroy_entity(entity):
         pass
 
-    def get_entity_component(entity, component_type):
+    def get_entity_component(self, entity, component_type):
         return self.component_manager.get_component(entity, component_type)
+
+    def get_all_of_type(self, component_type):
+        return self.component_manager.get_all_of_type(component_type)
+
+    def get_other_components_for_entities(self, entity_list, component_type):
+        result = {}
+        for entity_id in entity_list:
+            result[entity_id] = self.get_entity_component(entity_id,
+                                                          component_type)
+        return result
 
 
 class ComponentManager:
@@ -43,10 +53,9 @@ class ComponentManager:
     def add_component(self, entity_id, component):
         component_type = component.type()
         component_dict = self.components.get(component_type, {})
-        if (component_dict is not None):
-            component_dict = {}
+        if (component_dict == {}):
             self.components[component_type] = component_dict
-        self.components[component_type][entity_id] = component
+        component_dict[entity_id] = component
 
     def add_components(self, entity_id, configuration):
         """Create and add components base on the given configuration"""
@@ -73,7 +82,14 @@ class ComponentManager:
         return component_dict.get(entity_id)
 
     def get_all_of_type(self, component_type):
-        pass
+        """Get all components of the given type
+
+            Returns:
+                A dictionary containing all components of component_type
+                or an empty dictionary, if none exist
+
+        """
+        return self.components.get(component_type, {})
 
 
 class BlueprintManager:
