@@ -66,7 +66,7 @@ class EventManager:
 
         """
         if event.type() not in self.listeners:
-            raise UserWarning("Now processor registered for " + event.type())
+            raise UserWarning("No processor registered for " + event.type())
 
         for processor in self.listeners[event.type()]:
             processor.handle_event(event, round)
