@@ -35,6 +35,7 @@ class Renderable(Component):
         z_index (int): Order to be printed (lowest first)
     """
 
-    def __init__(self, character=None, z_index=0):
+    def __init__(self, character=None, z_index=0, visible=True):
         self._character = character
         self._z_index = z_index
+        self.visible = True
