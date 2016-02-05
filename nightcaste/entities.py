@@ -7,45 +7,95 @@ class EntityManager:
     entites e.g their components"""
 
     def __init__(self):
-        self.last_id = -1l
+        self.last_id = -1
         self.component_manager = ComponentManager()
         self.blueprint_manager = BlueprintManager()
 
     def create_entity(self):
-        self.last_id += 1l
+        """Creates a new empty entity woth no components associated.
+
+            Returns:
+                The new entity identifier.
+
+        """
+        self.last_id += 1
         return self.last_id
 
     def create_entity_from_configuration(self, configuration):
+        """Constructs a new entity with the components and properties specified
+        in the configuration.
+
+            Args:
+                configuration (EntityConfiguration): The configuration from
+                    which the components are constructed.
+
+            Returns:
+                The new entity identifier.
+
+        """
         entity = self.create_entity()
         self.component_manager.add_components(entity, configuration)
         return entity
 
     def create_entity_from_blueprint(self, blueprint):
+        """Constructs a new entity by creating a configuration from a blueprint.
+
+            Args:
+                blueprint (str): The name of the blueprint.
+
+            Returns:
+                The new entity identifier.
+
+        """
         configuration = self.blueprint_manager.create_configuration(blueprint)
         return self.create_entity_from_configuration(configuration)
 
-    def destroy_entity(entity):
+    def destroy_entity(self, entity):
+        """Removes all components which belong to the given entity.
+
+            Args:
+                entity (object): The entity to destroy.
+
+        """
         self.component_manager.remove_components(entity)
-        #TODO: throw framework event
-        pass
 
     def get_entity_component(self, entity, component_type):
+        """Searches the specified component type for the given entity.
+
+            Args:
+                entity (object): The entity identifier.
+                component_type (str): The component type to search for.
+
+            Returns:
+                The specified entity component or None in case the component
+                could not be found.
+
+        """
         return self.component_manager.get_component(entity, component_type)
 
     def get_all_of_type(self, component_type):
+        """Get all components of the specified type.
+
+            Args:
+                component_type (str): The component type to retrieve.
+
+            Reutns:
+                A dictionary in the form of {entity: component}.
+
+        """
         return self.component_manager.get_all_of_type(component_type)
 
     def get_other_components_for_entities(self, entity_list, component_type):
         result = {}
         for entity_id in entity_list:
-            result[entity_id] = self.get_entity_component(entity_id,
-                                                          component_type)
+            result[entity_id] = self.get_entity_component(
+                entity_id, component_type)
         return result
 
 
 class ComponentManager:
-    """ The Component manager stores the components for all entities (represented by
-    int entity_id) """
+    """ The Component manager stores the components for all entities, which are
+    only represented through an internal entitiy identifier."""
 
     def __init__(self):
         # Two-dimensional dictionary holding the components of all entities
@@ -53,14 +103,17 @@ class ComponentManager:
         self.components = {}
 
     def add_component(self, entity_id, component):
+        """Adds the specified component for the given entity the the component
+        database."""
         component_type = component.type()
-        component_dict = self.components.get(component_type, {})
-        if (component_dict == {}):
+        component_dict = self.components.get(component_type)
+        if (component_dict is None):
+            component_dict = {}
             self.components[component_type] = component_dict
         component_dict[entity_id] = component
 
     def add_components(self, entity_id, configuration):
-        """Create and add components base on the given configuration"""
+        """Create and add components based on the given configuration."""
         for component_name, attributes in configuration.components.iteritems():
             component = getattr(components, component_name)()
 
@@ -71,12 +124,26 @@ class ComponentManager:
             self.add_component(entity_id, component)
 
     def remove_component(self, entity_id, component_type):
-        #TODO: check for existance
-        del self.components[component_type][entity_id]
-        pass
+        """Removes a specific entity component from the component database.
+
+            Args:
+                entity_id (long): The entity from which the component should be
+                    removed.
+                component_type (str): The the type of component to remove.
+
+            Returns:
+                The component which was removed or None if the component_type or
+                entity does not exists.
+
+        """
+        component_entities = self.components.get(component_type)
+        if component_entities is None:
+            return None
+        return component_entities.pop(entity_id, None)
 
     def remove_components(self, entity_id):
-        """Calls remove component for each known component type"""
+        """Calls remove component with the specified entity_id for each known
+        component type"""
         for component_type in self.components:
             self.remove_component(entity_id, component_type)
 
@@ -84,10 +151,12 @@ class ComponentManager:
         """Get an entity component.
 
             Returns:
-                The component or NONE if the component does not exists
+                The component or None if the component does not exists
 
         """
-        component_dict = self.components.get(component_type, {})
+        component_dict = self.components.get(component_type)
+        if component_dict is None:
+            return None
         return component_dict.get(entity_id)
 
     def get_all_of_type(self, component_type):
@@ -98,7 +167,10 @@ class ComponentManager:
                 or an empty dictionary, if none exist
 
         """
-        return self.components.get(component_type, {})
+        component_dict = self.components.get(component_type)
+        if component_dict is None:
+            component_dict = {}
+        return component_dict
 
 
 class BlueprintManager:

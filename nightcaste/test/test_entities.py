@@ -32,16 +32,16 @@ class TestEntityManager:
     def test_get_other_components_for_entites(self, simple_configuration):
         em = EntityManager()
         entity = em.create_entity_from_configuration(simple_configuration)
-        positions = em.get_all_of_type("Position")
-        renderables = em.get_other_components_for_entities(positions,
-                                                           "Renderable")
+        positions = em.get_all_of_type('Position')
+        renderables = em.get_other_components_for_entities(
+            positions, 'Renderable')
         assert renderables[entity].character == "@"
 
 
 class TestComponentManager:
 
     def test_add_component(self, component_manager):
-        """Tests if components are added to the manager correctly"""
+        """Tests if components are added to the manager correctly."""
         id = 1
         component = components.Component()
         component_manager.add_component(id, component)
@@ -51,7 +51,7 @@ class TestComponentManager:
 
     def test_add_components_by_configuration(self, component_manager):
         """Tests if the Component Manager can create components by
-        configuration"""
+        configuration."""
         config = EntityConfiguration()
         config.add_attribute('Position', 'x', 42)
         config.add_attribute('Position', 'y', 27)
@@ -64,18 +64,37 @@ class TestComponentManager:
         assert position.y == 27
 
     def test_get_component(self, component_manager):
-        """Tests retrieving a component"""
+        """Tests retrieving a component."""
         component = components.Component()
         component_manager.add_component(3, component)
-        assert component_manager.get_component(3, component.type()) == component
+        assert component_manager.get_component(
+            3, component.type()) == component
 
-    def test_remove_component(self):
-        # TODO: remove a speciic component an entity
-        pass
+    def test_remove_component(self, component_manager):
+        """Tests removing a single component."""
+        component1 = components.Component()
+        component2 = components.Position()
+        component_manager.add_component(4, component1)
+        component_manager.add_component(4, component2)
 
-    def test_remove_components(self):
-        # TODO: remove all compoennts of an entity
-        pass
+        component_manager.remove_component(4, component1.type())
+        assert component_manager.get_component(4, component1.type()) is None
+        assert component_manager.get_component(
+            4, component2.type()) == component2
+
+        component_manager.remove_component(4, component2.type())
+        assert component_manager.get_component(4, component2.type()) is None
+
+    def test_remove_components(self, component_manager):
+        """Tests removing all compoennts of an entity."""
+        component1 = components.Component()
+        component2 = components.Position()
+        component_manager.add_component(5, component1)
+        component_manager.add_component(5, component2)
+
+        component_manager.remove_components(5)
+        assert component_manager.get_component(5, component1.type()) is None
+        assert component_manager.get_component(5, component2.type()) is None
 
 
 class TestEntityConfiguration:
@@ -90,5 +109,5 @@ class TestEntityConfiguration:
     def test_get_attribute(self, simple_configuration):
         assert simple_configuration.get_attributes('Renderable') == {
             'character': '@'}
-        assert simple_configuration.get_attributes('Position') == {'x': 42,
-                                                                   'y': 23}
+        assert simple_configuration.get_attributes('Position') == {
+            'x': 42, 'y': 23}
