@@ -69,6 +69,14 @@ class TestComponentManager:
         component_manager.add_component(3, component)
         assert component_manager.get_component(3, component.type()) == component
 
+    def test_remove_component(self):
+        # TODO: remove a speciic component an entity
+        pass
+
+    def test_remove_components(self):
+        # TODO: remove all compoennts of an entity
+        pass
+
 
 class TestEntityConfiguration:
 
@@ -78,3 +86,9 @@ class TestEntityConfiguration:
         config.add_attribute('Position', 'y', 27)
 
         assert config.components == {'Position': {'x': 42, 'y': 27}}
+
+    def test_get_attribute(self, simple_configuration):
+        assert simple_configuration.get_attributes('Renderable') == {
+            'character': '@'}
+        assert simple_configuration.get_attributes('Position') == {'x': 42,
+                                                                   'y': 23}

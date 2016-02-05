@@ -25,6 +25,8 @@ class EntityManager:
         return self.create_entity_from_configuration(configuration)
 
     def destroy_entity(entity):
+        self.component_manager.remove_components(entity)
+        #TODO: throw framework event
         pass
 
     def get_entity_component(self, entity, component_type):
@@ -69,7 +71,14 @@ class ComponentManager:
             self.add_component(entity_id, component)
 
     def remove_component(self, entity_id, component_type):
+        #TODO: check for existance
+        del self.components[component_type][entity_id]
         pass
+
+    def remove_components(self, entity_id):
+        """Calls remove component for each known component type"""
+        for component_type in self.components:
+            self.remove_component(entity_id, component_type)
 
     def get_component(self, entity_id, component_type):
         """Get an entity component.
