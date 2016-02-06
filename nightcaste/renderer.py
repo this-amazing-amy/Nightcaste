@@ -19,11 +19,13 @@ class SimpleConsoleRenderer:
     def render(self):
         """ Renders all renderable entities to the console """
         renderables = self.entity_manager.get_all_of_type("Renderable")
-        positions = self.entity_manager.get_other_components_for_entities(
-         renderables, "Position")
-        for entity in renderables:
+        positions = self.entity_manager.get_components_for_entities(
+            renderables, "Position")
+        for entity, renderable in renderables.iteritems():
             libtcod.console_clear(0)
-            libtcod.console_set_char(0, positions[entity].x,
-                                     positions[entity].y,
-                                     renderables[entity].character)
+            libtcod.console_set_char(
+                0,
+                positions[entity].x,
+                positions[entity].y,
+                renderable.character)
         libtcod.console_flush()
