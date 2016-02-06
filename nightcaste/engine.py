@@ -25,6 +25,9 @@ def main():
     player_config.add_attribute("Position", "x", 0)
     player_config.add_attribute("Position", "y", 0)
     player_config.add_attribute("Renderable", "character", "@")
+    player_config.add_attribute("Color", "r", 239)
+    player_config.add_attribute("Color", "g", 228)
+    player_config.add_attribute("Color", "b", 176)
     entity_manager.player = entity_manager.create_entity_from_configuration(
         player_config)
     input_controller = InputController(entity_manager)

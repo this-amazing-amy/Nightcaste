@@ -30,7 +30,6 @@ class Position(Component):
 
 
 class Renderable(Component):
-
     """Represents an entity that can be rendered
 
     Args:
@@ -46,3 +45,23 @@ class Renderable(Component):
     def __str__(self):
         return '%s(%s, %d, %s)' % (
             self.type, self.character, self.z_index, self.visible)
+
+
+class Color(Component):
+    """Represents an entity with a color.
+    TODO: Merge with Renderable?
+
+    Args:
+        r (int): Red fraction of the color.
+        g (int): Green fraction of the color.
+        b (int): Blue fraction of the color.
+
+    """
+
+    def __init__(self, r=0, g=0, b=0):
+        self.r = r
+        self.g = g
+        self.b = b
+
+    def __str__(self):
+        return 'Color(%d, %d, %d)' % (self.r, self.g, self.b)
