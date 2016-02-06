@@ -1,6 +1,6 @@
 """Start Nightcaste"""
 
-import nightcaste
+from nightcaste import engine
 
 if __name__ == "__main__":
-    nightcaste.engine.main()
+    engine.main()
