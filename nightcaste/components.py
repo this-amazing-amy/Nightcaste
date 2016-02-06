@@ -25,6 +25,9 @@ class Position(Component):
         self.x = x
         self.y = y
 
+    def __str__(self):
+        return '%s(%d, %d)' % (self.type, self.x, self.y)
+
 
 class Renderable(Component):
 
@@ -36,6 +39,10 @@ class Renderable(Component):
     """
 
     def __init__(self, character=None, z_index=0, visible=True):
-        self._character = character
-        self._z_index = z_index
+        self.character = character
+        self.z_index = z_index
         self.visible = True
+
+    def __str__(self):
+        return '%s(%s, %d, %s)' % (
+            self.type, self.character, self.z_index, self.visible)

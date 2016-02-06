@@ -1,5 +1,8 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
+import logging
+
+logger = logging.getLogger('processors')
 
 
 class EventProcessor:
@@ -18,11 +21,11 @@ class EventProcessor:
         self.entity_manager = entity_manager
 
     def handle_event(self, event, round):
-        """TODO: Docstring for handle_event.
+        """Base method which does not do anything which useful for testing.
 
-        :round: TODO
-        :event: TODO
-        :returns: TODO
+            Args:
+                event: The event to process.
+                round: The current round and the game
 
         """
         pass
@@ -32,9 +35,15 @@ class MovementProcessor(EventProcessor):
 
     def handle_event(self, event, round):
         """Checks for collision and moves the entity the specified amount. If a
-        collision is detected an appropriate event will be created."""
+        collision is detected an appropriate event will be created.
 
-        # TODO: CollisionManager.check
+            Args:
+                event: The event to process.
+                round: The current round and the game
+
+        """
+
+        # TODO: CollisionManager.check and throw an appropriate event
 
         position = self.entity_manager.get_entity_component(
             event.entity, 'Position')
@@ -42,3 +51,4 @@ class MovementProcessor(EventProcessor):
         # not reached, reraise event (needs path finding logic)
         position.x += event.dx
         position.y += event.dy
+        logger.debug('Move Entity %s to position %s', event.entity, position)
