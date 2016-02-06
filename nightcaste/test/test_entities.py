@@ -11,7 +11,12 @@ def component_manager():
 
 
 @pytest.fixture
-def simple_configuration():
+def entity_manager():
+    return EntityManager()
+
+
+@pytest.fixture
+def simple_config():
     config = EntityConfiguration()
     config.add_attribute('Position', 'x', 42)
     config.add_attribute('Position', 'y', 23)
@@ -21,21 +26,58 @@ def simple_configuration():
 
 class TestEntityManager:
 
-    def test_create_entity(self):
-        em = EntityManager()
-        entity1 = em.create_entity()
-        entity2 = em.create_entity()
+    def test_create_entity(self, entity_manager):
+        entity1 = entity_manager.create_entity()
+        entity2 = entity_manager.create_entity()
 
-        assert entity1 == 0
-        assert entity2 == 1
+        assert entity1 is not None
+        assert entity2 is not None
+        assert entity1 != entity2
 
-    def test_get_other_components_for_entites(self, simple_configuration):
-        em = EntityManager()
-        entity = em.create_entity_from_configuration(simple_configuration)
-        positions = em.get_all_of_type('Position')
-        renderables = em.get_other_components_for_entities(
+    def test_create_entity_from_configuration(
+            self, entity_manager, simple_config):
+        entity = entity_manager.create_entity_from_configuration(simple_config)
+        position = entity_manager.get_entity_component(entity, 'Position')
+        renderable = entity_manager.get_entity_component(entity, 'Renderable')
+        assert entity is not None
+        assert position is not None
+        assert renderable is not None
+        assert position.x == 42
+        assert position.y == 23
+        assert renderable.character == '@'
+
+    def test_destroy_entity(self, entity_manager, simple_config):
+        entity = entity_manager.create_entity_from_configuration(simple_config)
+        entity_manager.destroy_entity(entity)
+        assert entity_manager.get_entity_component(entity, 'Position') is None
+        assert entity_manager.get_entity_component(entity, 'Renderable') is None
+
+    def test_get_entity_component(self, entity_manager, simple_config):
+        entity = entity_manager.create_entity_from_configuration(simple_config)
+        position = entity_manager.get_entity_component(entity, 'Position')
+        renderable = entity_manager.get_entity_component(entity, 'Renderable')
+        assert position is not None
+        assert renderable is not None
+
+    def test_get_all_of_type(self, entity_manager, simple_config):
+        entity_manager.create_entity_from_configuration(simple_config)
+        entity_manager.create_entity_from_configuration(simple_config)
+        positions = entity_manager.get_all_of_type('Position')
+        renderables = entity_manager.get_all_of_type('Renderable')
+        assert len(positions) > 1
+        assert len(renderables) > 1
+        for position in positions.itervalues():
+            assert position.type() == 'Position'
+        for renderable in renderables.itervalues():
+            assert renderable.type() == 'Renderable'
+
+    def test_get_components_for_entites(
+            self, entity_manager, simple_config):
+        entity = entity_manager.create_entity_from_configuration(simple_config)
+        positions = entity_manager.get_all_of_type('Position')
+        renderables = entity_manager.get_components_for_entities(
             positions, 'Renderable')
-        assert renderables[entity].character == "@"
+        assert renderables[entity].character == '@'
 
 
 class TestComponentManager:
@@ -106,8 +148,6 @@ class TestEntityConfiguration:
 
         assert config.components == {'Position': {'x': 42, 'y': 27}}
 
-    def test_get_attribute(self, simple_configuration):
-        assert simple_configuration.get_attributes('Renderable') == {
-            'character': '@'}
-        assert simple_configuration.get_attributes('Position') == {
-            'x': 42, 'y': 23}
+    def test_get_attribute(self, simple_config):
+        assert simple_config.get_attributes('Renderable') == {'character': '@'}
+        assert simple_config.get_attributes('Position') == {'x': 42, 'y': 23}

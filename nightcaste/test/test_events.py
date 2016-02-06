@@ -41,7 +41,8 @@ class TestEventManager:
         assert qsize_after == qsize_before + 1
 
     def test_register_listener(self, event_manager, entity_manager):
-        """TODO"""
+        """Test the enlistment of one or more processors for a specific event
+        type."""
         event_type = "TestRegister"
         processor = EventProcessor(event_manager, entity_manager)
         processor2 = EventProcessor(event_manager, entity_manager)
