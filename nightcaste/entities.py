@@ -79,18 +79,26 @@ class EntityManager:
             Args:
                 component_type (str): The component type to retrieve.
 
-            Reutns:
+            Returns:
                 A dictionary in the form of {entity: component}.
 
         """
         return self.component_manager.get_all_of_type(component_type)
 
-    def get_other_components_for_entities(self, entity_list, component_type):
-        result = {}
-        for entity_id in entity_list:
-            result[entity_id] = self.get_entity_component(
-                entity_id, component_type)
-        return result
+    def get_components_for_entities(self, entity_list, component_type):
+        """Get the components of the specified type and for the specified entity
+        list.
+
+            Args:
+                entity_list: List or dictionary containing entity identifiers.
+                component_type (str): The component type to return.
+
+            Returns:
+                A dictionary in the form of {entity: component}.
+
+        """
+        return {k: v for k, v in self.get_all_of_type(
+            component_type).iteritems() if k in entity_list}
 
 
 class ComponentManager:
