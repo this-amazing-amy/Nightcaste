@@ -7,7 +7,10 @@
             - events with two target entitys (src and target)
 
 """
+import logging
 import Queue
+
+logger = logging.getLogger('events')
 
 
 class EventManager:
@@ -27,6 +30,10 @@ class EventManager:
     def register_listener(self, event_type, event_processor):
         """Register a processor to delegate the processing of a certain event
         type."""
+        logger.debug(
+            'Register processor %s for event type %s',
+            event_processor,
+            event_type)
         if event_type in self.listeners:
             self.listeners[event_type].append(event_processor)
         else:
@@ -34,6 +41,10 @@ class EventManager:
 
     def remove_listener(self, event_type, event_processor):
         "Unregisters the processor for events of the specified type."
+        logger.debug(
+            'Unregister processor %s for event type %s',
+            event_processor,
+            event_type)
         if event_type in self.listeners:
             self.listeners[event_type].remove(event_processor)
 
@@ -65,6 +76,7 @@ class EventManager:
                 round (long): The current round in the game.
 
         """
+        logger.debug('Process event %s', event)
         if event.type() in self.listeners:
             for processor in self.listeners[event.type()]:
                 processor.handle_event(event, round)
