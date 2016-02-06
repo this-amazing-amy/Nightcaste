@@ -65,11 +65,9 @@ class EventManager:
                 round (long): The current round in the game.
 
         """
-        if event.type() not in self.listeners:
-            raise UserWarning("No processor registered for " + event.type())
-
-        for processor in self.listeners[event.type()]:
-            processor.handle_event(event, round)
+        if event.type() in self.listeners:
+            for processor in self.listeners[event.type()]:
+                processor.handle_event(event, round)
 
 
 class Event:
@@ -79,6 +77,9 @@ class Event:
     def type(self):
         """Returns the class name of the event"""
         return self.__class__.__name__
+
+    def __str__(self):
+        return self.type()
 
 
 class MoveAction(Event):
@@ -95,3 +96,6 @@ class MoveAction(Event):
         self.entity = entity
         self.dx = dx
         self.dy = dy
+
+    def __str__(self):
+        return '%s(%s, %s, %s)' % (self.type(), self.entity, self.dx, self.dy)
