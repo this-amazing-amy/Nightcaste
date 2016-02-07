@@ -1,14 +1,15 @@
-""" The Rendering Framework, wrapping around the libtcod
-    console. """
+"""The Rendering Framework, wrapping around the libtcod
+console."""
 import tcod as libtcod
 
 
 class SimpleConsoleRenderer:
 
-    def __init__(self, entity_manager):
+    def __init__(self, entity_manager, width=80, height=50):
         self.entity_manager = entity_manager
         self.console = 0
-        libtcod.console_init_root(80, 50, "Nightcaste Simple Console Renderer")
+        libtcod.console_init_root(
+            width, height, "Nightcaste Simple Console Renderer")
         libtcod.console_set_default_foreground(self.console, libtcod.white)
         libtcod.console_set_default_background(self.console, libtcod.black)
 
@@ -31,7 +32,8 @@ class SimpleConsoleRenderer:
         positions = self.entity_manager.get_components_for_entities(
             renderables, 'Position')
         self.clear()
-        for entity, renderable in renderables.iteritems():
+        for entity, renderable in sorted(
+                renderables.items(), key=lambda rdict: rdict[1].z_index):
             self._render_entity(entity, renderable, positions[entity])
         self.flush()
 

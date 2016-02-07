@@ -94,6 +94,23 @@ class Event:
         return self.type()
 
 
+class MapChange(Event):
+    """Indicates a map change.
+
+    Args:
+        map_name (str): The name of the map to change to.
+        level (int): Target map level.
+
+    """
+
+    def __init__(self, map_name, level):
+        self.map_name = map_name
+        self.level = level
+
+    def __str__(self):
+        return '%s(%s, %s)' % (self.type(), self.map_name, self.level)
+
+
 class MoveAction(Event):
     """This action indicates that an entity should be moved.
 
@@ -111,3 +128,8 @@ class MoveAction(Event):
 
     def __str__(self):
         return '%s(%s, %s, %s)' % (self.type(), self.entity, self.dx, self.dy)
+
+
+class WorldEnter(Event):
+    """Indicates the player has started the game and enters the world."""
+    pass
