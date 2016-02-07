@@ -254,8 +254,8 @@ class MapGenerator():
         height = 50
 
         tiles = [[None] * height] * width
-        for y in range(0, height - 1):
-            for x in range(0, width - 1):
+        for y in range(0, height):
+            for x in range(0, width):
                 if x == 0 or y == 0 or x == width - 1 or y == height - 1:
                     tiles[x][y] = self.create_tile(x, y, '#', True)
                 else:
