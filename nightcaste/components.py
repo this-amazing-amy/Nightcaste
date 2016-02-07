@@ -65,3 +65,36 @@ class Color(Component):
 
     def __str__(self):
         return 'Color(%d, %d, %d)' % (self.r, self.g, self.b)
+
+
+class Map(Component):
+    """A contains a 2 dimensional array referancing the tile entities. A map can
+    reference one parent and many childs for map navigation.
+
+    Args:
+        name (str): The name of the map.
+        level (int): How deep in the map tree.
+        parent (object): The parent entity.
+        tiles ([[object]]): 2-dimensional array with tile entities.
+        childs ([object]): List with child entities.
+
+    """
+
+    def __init__(self, name=None, level=0, parent=None, tiles=None, childs=[]):
+        self.name = name
+        self.level = level
+        self.parent = parent
+        self.tiles = tiles
+        self.childs = childs
+
+    def __str__(self):
+        return 'Map("%s", level %d)' % (self.name, self.level)
+
+    def add_child(self, child):
+        """Added a child to the list of know child maps.
+
+        Args:
+            child (object): The child entity to add.
+
+        """
+        self.childs.append(child)

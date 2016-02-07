@@ -2,10 +2,9 @@
 subsystems and runs the super loop"""
 from events import EventManager
 from entities import EntityManager
-from entities import EntityConfiguration
 from input import InputController
 from nightcaste import __version__
-from processors import MovementProcessor
+from processors import WorldInitializer
 from renderer import SimpleConsoleRenderer
 import logging
 
@@ -17,27 +16,15 @@ def main():
     event_manager = EventManager()
     entity_manager = EntityManager()
     renderer = SimpleConsoleRenderer(entity_manager)
-    round = 0l
-
-    # Creating Player from Configuration
-    # TODO: Make a Player Blueprint
-    player_config = EntityConfiguration()
-    player_config.add_attribute("Position", "x", 0)
-    player_config.add_attribute("Position", "y", 0)
-    player_config.add_attribute("Renderable", "character", "@")
-    player_config.add_attribute("Color", "r", 239)
-    player_config.add_attribute("Color", "g", 228)
-    player_config.add_attribute("Color", "b", 176)
-    entity_manager.player = entity_manager.create_entity_from_configuration(
-        player_config)
     input_controller = InputController(entity_manager)
-    # TODISCUSS: Do we need to save the Listeners?
-    event_manager.register_listener(
-        "MoveAction", MovementProcessor(
-            event_manager, entity_manager))
+    round = 0
+
+    # TODO Dummy: will be triggered from main menu
+    WorldInitializer(event_manager, entity_manager)
+
     renderer.render()
     while renderer.is_active():
-        round += 1l
+        round += 1
         logger.info('Round: %s', round)
         # TODISCUSS: Pass the and entity manager to input?
         input_event = input_controller.get_event()

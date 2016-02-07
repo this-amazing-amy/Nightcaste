@@ -1,4 +1,4 @@
-"""This module handles user inputs and transforms then into key codes"""
+"""This module handles user inputs and transforms then into key codes."""
 import events
 import logging
 import tcod as libtcod
@@ -9,14 +9,8 @@ logger = logging.getLogger('input')
 class InputController:
 
     def __init__(self, entity_manager):
-        self.key_actions = {
-            libtcod.KEY_UP: events.MoveAction(entity_manager.player, 0, -1),
-            libtcod.KEY_DOWN: events.MoveAction(entity_manager.player, 0, 1),
-            libtcod.KEY_LEFT: events.MoveAction(entity_manager.player, -1, 0),
-            libtcod.KEY_RIGHT: events.MoveAction(entity_manager.player, 1, 0),
-            # TODO: Make Renderer-Events (for menus, quitting, etc.)
-            libtcod.KEY_ESCAPE: False
-        }
+        self.entity_manager = entity_manager
+        # TODO: Make Renderer-Events (for menus, quitting, etc.)
 
     def get_event(self):
         """ Gets a keycode from input and returns an according event """
@@ -30,12 +24,22 @@ class InputController:
 
     def map_key_to_event(self, keycode):
         """ Determines, which event to throw at the given key """
-        """
-        # Only map downstrokes
-        if not libtcod.console_is_key_pressed(keycode):
-            return None
-        """
-        return self.key_actions.get(keycode, None)
+
+        # TODO Move to GameInputProcessor, MenuInputProcessor, Inventory....
+        if keycode == libtcod.KEY_ENTER:
+            return events.WorldEnter()
+        elif keycode == libtcod.KEY_UP:
+            return events.MoveAction(self.entity_manager.player, 0, -1)
+        elif keycode == libtcod.KEY_DOWN:
+            return events.MoveAction(self.entity_manager.player, 0, 1)
+        elif keycode == libtcod.KEY_LEFT:
+            return events.MoveAction(self.entity_manager.player, -1, 0)
+        elif keycode == libtcod.KEY_RIGHT:
+            return events.MoveAction(self.entity_manager.player, 1, 0)
+        elif keycode == libtcod.KEY_ESCAPE:
+            return False
+
+        return None
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
