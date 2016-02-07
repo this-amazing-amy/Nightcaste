@@ -94,6 +94,13 @@ class Event:
         return self.type()
 
 
+class KeyPressed(Event):
+    """Indicates the user has pressed a key."""
+
+    def __init__(self, code=None):
+        self.code = code
+
+
 class MapChange(Event):
     """Indicates a map change.
 
