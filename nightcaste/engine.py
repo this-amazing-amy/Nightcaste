@@ -5,6 +5,7 @@ from entities import EntityManager
 from input import InputController
 from nightcaste import __version__
 from processors import WorldInitializer
+from processors import MenuInputProcessor
 from renderer import SimpleConsoleRenderer
 import logging
 
@@ -20,7 +21,8 @@ def main():
     round = 0
 
     # TODO Dummy: will be triggered from main menu
-    WorldInitializer(event_manager, entity_manager)
+    MenuInputProcessor(event_manager, entity_manager).register()
+    WorldInitializer(event_manager, entity_manager).register()
 
     renderer.render()
     while renderer.is_active():

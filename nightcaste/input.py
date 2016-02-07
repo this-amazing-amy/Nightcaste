@@ -1,5 +1,5 @@
 """This module handles user inputs and transforms then into key codes."""
-import events
+from events import KeyPressed
 import logging
 import tcod as libtcod
 
@@ -14,32 +14,17 @@ class InputController:
 
     def get_event(self):
         """ Gets a keycode from input and returns an according event """
-        event = None
-        while event is None:
-            key = self.wait_for_input(True)
-            logger.debug('Key pressed: %s', key.vk)
-            event = self.map_key_to_event(key.vk)
+        key = self.wait_for_input(True)
+        event = self.map_key_to_event(key.vk)
         logger.debug('Action created: %s', event)
         return event
 
     def map_key_to_event(self, keycode):
         """ Determines, which event to throw at the given key """
-
-        # TODO Move to GameInputProcessor, MenuInputProcessor, Inventory....
-        if keycode == libtcod.KEY_ENTER:
-            return events.WorldEnter()
-        elif keycode == libtcod.KEY_UP:
-            return events.MoveAction(self.entity_manager.player, 0, -1)
-        elif keycode == libtcod.KEY_DOWN:
-            return events.MoveAction(self.entity_manager.player, 0, 1)
-        elif keycode == libtcod.KEY_LEFT:
-            return events.MoveAction(self.entity_manager.player, -1, 0)
-        elif keycode == libtcod.KEY_RIGHT:
-            return events.MoveAction(self.entity_manager.player, 1, 0)
-        elif keycode == libtcod.KEY_ESCAPE:
+        if keycode == libtcod.KEY_ESCAPE:
             return False
 
-        return None
+        return KeyPressed(keycode)
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
