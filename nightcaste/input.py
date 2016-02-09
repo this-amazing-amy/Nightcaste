@@ -1,5 +1,6 @@
 """This module handles user inputs and transforms then into key codes."""
 from events import KeyPressed
+from events import KeyReleased
 import logging
 import tcod as libtcod
 
@@ -8,31 +9,53 @@ logger = logging.getLogger('input')
 
 class InputController:
 
-    def __init__(self, entity_manager):
+    def __init__(self, blocking, event_manager, entity_manager):
+        self.blocking = blocking
         self.entity_manager = entity_manager
+        self.event_manager = event_manager
         # TODO: Make Renderer-Events (for menus, quitting, etc.)
 
-    def get_event(self, realtime):
-        """ Gets a keycode from input and returns an according event """
-        if (realtime):
-            key = self.check_for_input()
-        else:
+    def update_input(self, rounds, delta_time):
+        """Checks if the user has pressed a key and throws an appropriate
+        key event.
+
+            Returns:
+                True if the user has requested an immdiate close, otherwise
+                False.
+
+        """
+        if (self.blocking):
             key = self.wait_for_input(True)
-        event = self.map_key_to_event(key.vk)
-        logger.debug('Action created: %s', event)
-        return event
+        else:
+            key = self.check_for_input()
+        request_close = self.create_key_event(key)
+        return request_close
 
-    def map_key_to_event(self, keycode):
-        """ Determines, which event to throw at the given key """
-        if keycode == libtcod.KEY_ESCAPE:
+    def create_key_event(self, key):
+        """Determines, which event to throw for the given key.
+
+            Returns:
+                True if ESCAPE was pressed otherwise False.
+
+        """
+        if key.vk == libtcod.KEY_NONE:
             return False
+        elif key.vk == libtcod.KEY_ESCAPE:
+            return True
 
-        return KeyPressed(keycode)
+        # TODO pass whole tcod event or code and character and modifiers
+        if key.pressed:
+            key_event = KeyPressed(key.vk)
+        else:
+            key_event = KeyReleased(key.vk)
+        logger.debug('Input Event Detected: %s', key_event)
+
+        self.event_manager.enqueue_event(key_event)
+        return False
 
     def check_for_input(self):
-        """ Checks, if the user has pressed a key in this moment
-            and returns its key. Else, it returns None """
-
+        """ Returns the last key pressed. Returns KEY_NONE if no key was
+        pressed."""
         return libtcod.console_check_for_keypress()
 
     def wait_for_input(self, flush):
@@ -49,7 +72,4 @@ class InputController:
 
 
         """
-        key = libtcod.console_wait_for_keypress(flush)
-        while not libtcod.console_is_key_pressed(key.vk):
-            key = libtcod.console_wait_for_keypress(flush)
-        return key
+        return libtcod.console_wait_for_keypress(flush)

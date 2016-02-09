@@ -94,11 +94,20 @@ class Event:
         return self.type()
 
 
-class KeyPressed(Event):
-    """Indicates the user has pressed a key."""
-
+class KeyEvent(Event):
+    """Base Class for key events."""
     def __init__(self, code=None):
         self.code = code
+
+
+class KeyPressed(KeyEvent):
+    """Indicates the user has pressed a key."""
+    pass
+
+
+class KeyReleased(KeyEvent):
+    """Indicates the user has released a key."""
+    pass
 
 
 class MapChange(Event):
