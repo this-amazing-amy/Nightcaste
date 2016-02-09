@@ -12,9 +12,12 @@ class InputController:
         self.entity_manager = entity_manager
         # TODO: Make Renderer-Events (for menus, quitting, etc.)
 
-    def get_event(self):
+    def get_event(self, realtime):
         """ Gets a keycode from input and returns an according event """
-        key = self.wait_for_input(True)
+        if (realtime):
+            key = self.check_for_input()
+        else:
+            key = self.wait_for_input(True)
         event = self.map_key_to_event(key.vk)
         logger.debug('Action created: %s', event)
         return event
@@ -25,6 +28,12 @@ class InputController:
             return False
 
         return KeyPressed(keycode)
+
+    def check_for_input(self):
+        """ Checks, if the user has pressed a key in this moment
+            and returns its key. Else, it returns None """
+
+        return libtcod.console_check_for_keypress()
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
