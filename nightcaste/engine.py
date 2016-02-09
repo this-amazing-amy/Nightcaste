@@ -8,6 +8,7 @@ from processors import WorldInitializer
 from processors import MenuInputProcessor
 from renderer import SimpleConsoleRenderer
 import logging
+import time
 
 logger = logging.getLogger('engine')
 
@@ -19,6 +20,7 @@ def main():
     renderer = SimpleConsoleRenderer(entity_manager)
     input_controller = InputController(entity_manager)
     round = 0
+    prev_time = None
 
     # TODO Dummy: will be triggered from main menu
     MenuInputProcessor(event_manager, entity_manager).register()
@@ -26,14 +28,20 @@ def main():
 
     renderer.render()
     while renderer.is_active():
-        round += 1
-        logger.info('Round: %s', round)
+        if (prev_time is None):
+            prev_time = time.time()
+        current_time = time.time()
+        time_delta = current_time - prev_time
+
+        logger.info('Round: %s, Time passed: %s', round, time_delta)
+
         # TODISCUSS: Pass the and entity manager to input?
-        input_event = input_controller.get_event()
+        input_event = input_controller.get_event(True)
         if input_event is False:
             break
         event_manager.enqueue_event(input_event)
         event_manager.process_events(round)
         renderer.render()
 
+        prev_time = current_time
     return 0
