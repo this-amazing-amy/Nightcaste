@@ -46,6 +46,31 @@ class TestEntityManager:
         assert position.y == 23
         assert renderable.character == '@'
 
+    def test_create_entity_from_blueprint(self, entity_manager):
+        player = entity_manager.create_entity_from_blueprint(
+            'game.player')
+        assert player is not None
+        renderable = entity_manager.get_entity_component(player, 'Renderable')
+        assert renderable is not None
+        assert renderable.character == '@'
+        assert renderable.z_index == 9
+
+    def test_create_from_blueprint_and_config(self, entity_manager):
+        config = EntityConfiguration()
+        config.add_attribute('Position', 'x', 42)
+        config.add_attribute('Position', 'y', 27)
+        player = entity_manager.create_from_blueprint_and_config(
+            'game.player', config)
+        assert player is not None
+        renderable = entity_manager.get_entity_component(player, 'Renderable')
+        position = entity_manager.get_entity_component(player, 'Position')
+        assert position is not None
+        assert renderable is not None
+        assert position.x == 42
+        assert position.y == 27
+        assert renderable.character == '@'
+        assert renderable.z_index == 9
+
     def test_destroy_entity(self, entity_manager, simple_config):
         entity = entity_manager.create_entity_from_configuration(simple_config)
         entity_manager.destroy_entity(entity)
@@ -141,13 +166,33 @@ class TestComponentManager:
 
 class TestEntityConfiguration:
 
-    def test_add_configuration(self):
+    def test_add_component(self):
         config = EntityConfiguration()
+        config.add_component('Renderable')
+        assert config.get_attributes('Renderable') == {}
         config.add_attribute('Position', 'x', 42)
         config.add_attribute('Position', 'y', 27)
+        config.add_component('Position')
+        assert config.get_attributes('Position') == {'x': 42, 'y': 27}
 
-        assert config.components == {'Position': {'x': 42, 'y': 27}}
+    def test_add_attribute(self):
+        config = EntityConfiguration()
+        config.add_attribute('Position', 'x', 42)
+        assert config.get_attributes('Position') == {'x': 42}
+        config.add_attribute('Position', 'y', 27)
+        assert config.get_attributes('Position') == {'x': 42, 'y': 27}
 
     def test_get_attribute(self, simple_config):
         assert simple_config.get_attributes('Renderable') == {'character': '@'}
         assert simple_config.get_attributes('Position') == {'x': 42, 'y': 23}
+
+    def test_update(self):
+        config = EntityConfiguration()
+        config.add_attribute('Position', 'x', 42)
+        config.add_attribute('Position', 'y', 27)
+        other_config = EntityConfiguration()
+        config.add_attribute('Position', 'x', 34)
+        config.add_component('Renderable')
+        config.update(other_config)
+        assert config.get_attributes('Renderable') == {}
+        assert config.get_attributes('Position') == {'x': 34, 'y': 27}

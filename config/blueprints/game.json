@@ -1,0 +1,16 @@
+{
+	"player": {
+		"components": [
+			"Position",
+			"Renderable",
+			"Color"
+		],
+		"attributes": {
+			"Renderable.character": "@",
+			"Renderable.z_index": 9,
+			"Color.r": 239,
+			"Color.g": 228,
+			"Color.b": 176
+		}
+	}
+}

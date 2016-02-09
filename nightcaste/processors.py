@@ -1,6 +1,5 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-from entities import EntityConfiguration
 from entities import MapGenerator
 from events import MapChange
 from events import MoveAction
@@ -133,18 +132,8 @@ class WorldInitializer(EventProcessor):
         self._unregister('WorldEnter')
 
     def handle_event(self, event, round):
-        # Creating Player from Configuration
-        # TODO: Make a Player Blueprint
-        player_config = EntityConfiguration()
-        player_config.add_attribute('Position', 'x', 0)
-        player_config.add_attribute('Position', 'y', 0)
-        player_config.add_attribute('Renderable', 'character', "@")
-        player_config.add_attribute('Renderable', 'z_index', 99)
-        player_config.add_attribute('Color', 'r', 239)
-        player_config.add_attribute('Color', 'g', 228)
-        player_config.add_attribute('Color', 'b', 176)
-        self.entity_manager.player = self.entity_manager.create_entity_from_configuration(
-            player_config)
+        self.entity_manager.player = self.entity_manager.create_entity_from_blueprint(
+            'game.player')
 
         # TODISCUSS: Do we need to save the Listeners?
         MapProcessor(self.event_manager, self.entity_manager).register()
