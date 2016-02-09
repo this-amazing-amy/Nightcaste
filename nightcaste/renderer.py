@@ -61,7 +61,7 @@ class SimpleConsoleRenderer:
         if back_color is None:
             back_color = libtcod.console_get_default_background(self.console)
         libtcod.console_put_char_ex(
-            self.console, x, y, char, fore_color, back_color)
+            self.console, x, y, char.encode('utf-8'), fore_color, back_color)
 
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):

@@ -1,5 +1,10 @@
 """The model represents backing storage for entities."""
 import components
+import json
+import logging
+import os
+
+logger = logging.getLogger('entites')
 
 
 class EntityManager:
@@ -10,6 +15,16 @@ class EntityManager:
         self.last_id = -1
         self.component_manager = ComponentManager()
         self.blueprint_manager = BlueprintManager()
+
+        # TODO: Pass path from engine? Or pass someting similar like
+        # EntityConfiguration but more general
+        BP_DIR = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                '..',
+                'config',
+                'blueprints'))
+        self.blueprint_manager.initialize(BP_DIR)
 
     def create_entity(self):
         """Creates a new empty entity woth no components associated.
@@ -47,8 +62,27 @@ class EntityManager:
                 The new entity identifier.
 
         """
-        configuration = self.blueprint_manager.create_configuration(blueprint)
+        configuration = self.blueprint_manager.get_entity_configuration(
+            blueprint)
         return self.create_entity_from_configuration(configuration)
+
+    def create_from_blueprint_and_config(self, blueprint, entity_config):
+        """Constructs a new entity by creating a configuration from a blueprint
+        and updates it attributes with the given config.
+
+            Args:
+                blueprint (str): The name of the blueprint.
+                entity_config (EntityConfiguration): Config to update the
+                    template with
+
+            Returns:
+                The new entity identifier.
+
+        """
+        blueprint_config = self.blueprint_manager.get_entity_configuration(
+            blueprint)
+        blueprint_config.update(entity_config)
+        return self.create_entity_from_configuration(blueprint_config)
 
     def destroy_entity(self, entity):
         """Removes all components which belong to the given entity.
@@ -182,15 +216,64 @@ class ComponentManager:
 
 
 class BlueprintManager:
-    """Points the a blueprint file which contains information about the
-    structure of an entity"""
+    """Stores blueprints which can be used as templates for entity creation. The
+    blueprints are stored on disk in JSON format."""
 
-    def create_configuration(self, blueprint):
-        """TODO: either load prefetched configuration or lazy load it here.
-        Since loading a bluebrint involves IO it may be advisable to prefetch
-        the configuration into a dictionary are at least cache on first
-        access"""
-        return EntityConfiguration()
+    def __init__(self):
+        self.blue_prints = {}
+
+    def get_entity_configuration(self, blueprint):
+        """Get the entity configuration for the specified blueprint
+        """
+        return self.blue_prints.get(blueprint)
+
+    def initialize(self, blueprint_base_path):
+        """Loads all blueprints from the specified directory (not recursive).
+        The blueprint name is constructed as file.json_object. For example a
+        file named tiles.json with { stone_wall: {}} results in the name
+        tiles.stone_wall.
+
+        Args:
+            blueprint_base_path (str): Path to a directory containing the
+                blueprint files.
+
+        """
+        logger.info('Initializing Blueprints from: %s', blueprint_base_path)
+        for f in os.listdir(blueprint_base_path):
+            blueprint_path = os.path.join(blueprint_base_path, f)
+            if os.path.isfile(blueprint_path):
+                self._load_blueprints_from_file(blueprint_path)
+
+    def _load_blueprints_from_file(self, blueprint_path):
+        basename = os.path.splitext(os.path.basename(blueprint_path))[0]
+        logger.info('Loading %s', basename)
+        blueprint_config = self._load_json(blueprint_path)
+        for name, blueprint in blueprint_config.iteritems():
+            logger.info("Adding Blueprint: %s", name)
+            blue_print_name = basename + '.' + name
+            entity_config = self._create_entity_config(blueprint)
+            self.blue_prints.update({blue_print_name: entity_config})
+
+    def _load_json(self, path):
+        json_file = open(path)
+        try:
+            return json.load(json_file, 'utf-8')
+        finally:
+            json_file.close()
+
+    def _create_entity_config(self, blueprint):
+        entity_config = EntityConfiguration()
+        for component in blueprint['components']:
+            logger.debug('Adding blueprint component %s', component)
+            entity_config.add_component(component)
+        self._configue_entity_attributes(blueprint, entity_config)
+        return entity_config
+
+    def _configue_entity_attributes(self, blueprint, entity_config):
+        for attribute, value in blueprint['attributes'].iteritems():
+            component_attribute = attribute.split('.')
+            entity_config.add_attribute(
+                component_attribute[0], component_attribute[1], value)
 
 
 class EntityConfiguration:
@@ -202,11 +285,19 @@ class EntityConfiguration:
               => Complete object structure: Component with a List of Attributes
                  an Attribute is a key value pair
             - Provide easy acceess to all information
+            - Mimic Json Structure so an configuration and a blueprint can be
+              trated analog
+            - Make a mor general configuration object to configure processors
+              and systems with a configuration (which can be stored on disk^^)
 
     """
 
     def __init__(self):
         self.components = {}
+
+    def add_component(self, component):
+        if component not in self.components:
+            self.components.update({component: {}})
 
     def add_attribute(self, component, name, value):
         """Add an attribute for the specified component
@@ -223,6 +314,16 @@ class EntityConfiguration:
             return {}
 
         return self.components[component]
+
+    def update(self, other):
+        """Adds components and attributes from the given configuration to this
+        configuration. Existing attribute values are replaced."""
+        for other_component, attributes in other.components.iteritems():
+            if len(attributes) == 0 and other_component not in self.components:
+                self.add_component(other_component)
+            else:
+                for name, value in attributes.iteritems():
+                    self.add_attribute(other_component, name, value)
 
 
 class MapGenerator():
