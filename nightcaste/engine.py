@@ -15,10 +15,12 @@ logger = logging.getLogger('engine')
 
 def main():
     logger.info('Nightcaste v%s', __version__)
+    realtime = True
     event_manager = EventManager()
     entity_manager = EntityManager()
     renderer = SimpleConsoleRenderer(entity_manager)
-    input_controller = InputController(entity_manager)
+    input_controller = InputController(
+        not realtime, event_manager, entity_manager)
     round = 0
     prev_time = None
 
@@ -33,13 +35,10 @@ def main():
         current_time = time.time()
         time_delta = current_time - prev_time
 
-        logger.info('Round: %s, Time passed: %s', round, time_delta)
-
-        # TODISCUSS: Pass the and entity manager to input?
-        input_event = input_controller.get_event(True)
-        if input_event is False:
+        # TODO: event based exit
+        close_game = input_controller.update_input(round, time_delta)
+        if close_game:
             break
-        event_manager.enqueue_event(input_event)
         event_manager.process_events(round)
         renderer.render()
 
