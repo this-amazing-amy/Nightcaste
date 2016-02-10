@@ -33,8 +33,8 @@ class MapGenerator():
             level (int): The level of the map.
 
         """
-        height = 50
-        width = 80
+        height = 100
+        width = 140
 
         height = random.randrange(math.floor(height * 0.7), height)
         width = random.randrange(math.floor(width * 0.7), width)
@@ -76,7 +76,7 @@ class MapGenerator():
         """ Returns True, if the given position on the map has an enabled
         Colliding component """
         colliding = self.entity_manager.get_entity_component(self.tiles[x][y],
-                                                              "Colliding")
+                                                             "Colliding")
         return (colliding is not None and colliding.blocking)
 
     def create_corridor(self, node):
@@ -84,18 +84,16 @@ class MapGenerator():
         (x1, y1) = self.random_spot_in_node(self.left_child(node))
         (x2, y2) = self.random_spot_in_node(self.right_child(node))
         logger.info("Generating Corridor between %s and %s", (x1, y1), (x2, y2))
-        #if (random.randrange(2) == 1):
-        for y in range(min(y1, y2), max(y1, y2)):
-            self.tiles[x1][y] = self.create_tile("stone_floor", x1, y)
-        for x in range(min(x1, x2), max(x1, x2)):
-            self.tiles[x][y2] = self.create_tile("stone_floor", x, y2)
-        #else:
-        #    for x in range(min(start[0], end[0]), max(start[0], end[0])):
-        #        self.tiles[x][start[1]] = self.create_tile(
-        #            "stone_floor", x, start[1])
-        #    for y in range(min(start[1], end[1]), max(start[1], end[1])):
-        #        self.tiles[start[0]][y] = self.create_tile(
-        #            "stone_floor", start[0], y)
+        if (random.randrange(2) == 1):
+            for y in range(min(y1, y2), max(y1, y2)):
+                self.tiles[x1][y] = self.create_tile("stone_floor", x1, y)
+            for x in range(min(x1, x2), max(x1, x2)):
+                self.tiles[x][y2] = self.create_tile("stone_floor", x, y2)
+        else:
+            for x in range(min(x1, x2), max(x1, x2)):
+                self.tiles[x][y1] = self.create_tile("stone_floor", x, y1)
+            for y in range(min(y1, y2), max(y1, y2)):
+                self.tiles[x2][y] = self.create_tile("stone_floor", x2, y)
 
     def left_child(self, node):
         """ Returns the left child of the given node"""
@@ -129,7 +127,7 @@ class MapGenerator():
     def create_bsp_tree(self, width, height):
         """ Returns a new BSP tree, wrapping the libtcod bsp toolkit """
         tree = libtcod.bsp_new_with_size(0, 0, width - 2, height - 2)
-        libtcod.bsp_split_recursive(tree, 0, 4, 8, 8, 1.3, 1.3)
+        libtcod.bsp_split_recursive(tree, 0, 6, 8, 8, 1.3, 1.3)
         return tree
 
     def create_tile(self, blueprint, x, y):

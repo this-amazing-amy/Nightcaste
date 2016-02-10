@@ -95,6 +95,28 @@ class MenuInputProcessor(InputProcessor):
         return None
 
 
+class CollisionManager(EventProcessor):
+
+    def register(self):
+        self._register('CheckCollisionEvent')
+
+    def unregister(self):
+        self._unregister('CheckCollisionEvent')
+
+    def handle_event(self, event, round):
+        """ Checks, if the position given in the event is blocked, and if not,
+        throws the callback event """
+        if (self.is_blocked(event.map, event.x, event.y)):
+            pass
+
+    def is_blocked(self, map, x, y):
+        """ Returns True, if the given position on the map has an enabled
+        Colliding component """
+        colliding = self.entity_manager.get_entity_component(map.tiles[x][y],
+                                                             "Colliding")
+        return (colliding is not None and colliding.blocking)
+
+
 class MovementProcessor(EventProcessor):
 
     def register(self):
