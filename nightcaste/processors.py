@@ -54,10 +54,10 @@ class EventProcessor:
 class InputProcessor(EventProcessor):
 
     def register(self):
-        self._register('KeyReleased')
+        self._register('KeyPressed')
 
     def unregister(self):
-        self._unregister('KeyReleased')
+        self._unregister('KeyPressed')
 
     def handle_event(self, event, round):
         action = self._map_key_to_action(event.code)

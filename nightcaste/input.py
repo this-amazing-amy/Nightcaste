@@ -56,7 +56,10 @@ class InputController:
     def check_for_input(self):
         """ Returns the last key pressed. Returns KEY_NONE if no key was
         pressed."""
-        return libtcod.console_check_for_keypress()
+        key = libtcod.Key()
+        mouse = libtcod.Mouse()
+        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS, key, mouse)
+        return key
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
