@@ -1,7 +1,10 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
+import logging
 import tcod as libtcod
+
+logger = logging.getLogger('renderer')
 
 
 class SimpleConsoleRenderer:
@@ -16,8 +19,8 @@ class SimpleConsoleRenderer:
         self.menu_view = RenderableContainer()
         self.menu_view.add_child(MenuPane(self, 0, 0, width, height))
         self.game_view = RenderableContainer()
-        self.game_view.add_child(MapPane(self, 0, 0, width, height-5))
-        self.game_view.add_child(StatusPane(self, 0, height-5, width, 5))
+        self.game_view.add_child(MapPane(self, 0, 0, width, height - 5))
+        self.game_view.add_child(StatusPane(self, 0, height - 5, width, 5))
 
     def is_active(self):
         """Indicates if the console is still active.
@@ -42,24 +45,17 @@ class SimpleConsoleRenderer:
             self.game_view.render()
         self.flush()
 
-    def render_entity(self, entity, renderable, position):
-        self.put_char(
-            position.x,
-            position.y,
-            renderable.character,
-            self._get_tcod_color(entity))
-
     def _get_tcod_color(self, entity):
-        color=self.entity_manager.get_entity_component(entity, 'Color')
+        color = self.entity_manager.get_entity_component(entity, 'Color')
         if color is not None:
             return libtcod.Color(color.r, color.g, color.b)
         return None
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         if fore_color is None:
-            fore_color=libtcod.console_get_default_foreground(self.console)
+            fore_color = libtcod.console_get_default_foreground(self.console)
         if back_color is None:
-            back_color=libtcod.console_get_default_background(self.console)
+            back_color = libtcod.console_get_default_background(self.console)
         libtcod.console_put_char_ex(
             self.console, x, y, char.encode('utf-8'), fore_color, back_color)
 
@@ -71,8 +67,8 @@ class SimpleConsoleRenderer:
 class RenderableContainer:
 
     def __init__(self, active=True):
-        self.active=active
-        self.childs=[]
+        self.active = active
+        self.childs = []
 
     def add_child(self, child):
         self.childs.append(child)
@@ -87,11 +83,11 @@ class ContentPane:
     """Can be printed with colored text"""
 
     def __init__(self, renderer, absolute_x, absolute_y, width, height):
-        self.renderer=renderer
-        self.pos_x=absolute_x
-        self.pos_y=absolute_y
-        self.width=width
-        self.height=height
+        self.renderer = renderer
+        self.pos_x = absolute_x
+        self.pos_y = absolute_y
+        self.width = width
+        self.height = height
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.renderer.put_char(
@@ -119,13 +115,68 @@ class ContentPane:
 class MapPane(ContentPane):
 
     def render(self):
-        em=self.renderer.entity_manager
-        """Renders all renderable entities to the console."""
-        renderables=em.get_all_of_type('Renderable')
-        positions=em.get_components_for_entities(renderables, 'Position')
+        """Renders all entieties with a visable renderable component and with a
+        position in the current viewport."""
+        em = self.renderer.entity_manager
+        # TODO only update on player moved events
+        self._update_view_port()
+        # TODISCUSS: list comprehension before sort ???
+        renderables = {k: v for k, v in em.get_all_of_type(
+            'Renderable').iteritems() if v.visible}
         for entity, renderable in sorted(
-                renderables.items(), key=lambda rdict: rdict[1].z_index):
-            self.renderer.render_entity(entity, renderable, positions[entity])
+                renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
+            self._render_entity(entity, renderable)
+
+    def _render_entity(self, entity, renderable):
+        """Check if the position of the given entity is in the viewport and pass
+        the entety to the renderer with the recalculated position in the pane.
+
+        Args:
+            entity (object): the entity which should be rendered.
+            renderable (Renderable): The visible renderable component of the
+                given entity.
+
+        """
+        em = self.renderer.entity_manager
+        position = em.get_entity_component(entity, 'Position')
+        # TODO pass own color component to the renderer and map to tcod color in
+        # the latest possible moment
+        fore_color = self.renderer._get_tcod_color(entity)
+        if self._in_viewport(position):
+            self.put_char(
+                position.x - self.viewport_x,
+                position.y - self.viewport_y,
+                renderable.character,
+                fore_color)
+
+    def _update_view_port(self):
+        """The viewport is the visble range of the map. The viewport is always
+        centered on the player until it hits the edges of the map. The viewport
+        is represented by a start point + width and high of the pane."""
+        em = self.renderer.entity_manager
+        map = em.get_entity_component(em.current_map, 'Map')
+        player_pos = em.get_entity_component(em.player, 'Position')
+        # TODO Remove if pane is activated on world enter or if event triggered
+        if player_pos is not None:
+            self.viewport_x = max(player_pos.x - int(self.width / 2), 0)
+            self.viewport_y = max(player_pos.y - int(self.height / 2), 0)
+            self.viewport_x += min(map.width() -
+                                   (self.viewport_x + self.width), 0)
+            self.viewport_y += min(map.height() -
+                                   (self.viewport_y + self.height), 0)
+            logger.debug('Viewport: %d, %d', self.viewport_x, self.viewport_y)
+
+    def _in_viewport(self, position):
+        """Checks if the given position is in the current viewport.
+
+        Returns:
+            viewport_start <= position < viewport_start + width
+
+        """
+        if self.viewport_x <= position.x < self.viewport_x + self.width:
+            if self.viewport_y <= position.y < self.viewport_y + self.height:
+                return True
+        return False
 
 
 class StatusPane(ContentPane):
@@ -203,7 +254,7 @@ class MenuPane(ContentPane):
         self.put_text(15, 22, '  [Esc]  Exit game', libtcod.red, libtcod.sepia)
 
     def print_footer(self):
-        version='Nightcaste v' + __version__
+        version = 'Nightcaste v' + __version__
         self.put_text(
             self.width - len(version),
             self.height - 1,

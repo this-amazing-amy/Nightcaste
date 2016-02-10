@@ -101,6 +101,15 @@ class Map(Component):
     def __str__(self):
         return 'Map("%s", level %d)' % (self.name, self.level)
 
+    def width(self):
+        return len(self.tiles)
+
+    def height(self):
+        return len(self.tiles[0])
+
+    def get_entites_in_frame(self, x, y, width, height):
+        return [map_column[y:y+height] for map_column in self.tiles[x:x+width]]
+
     def add_child(self, child):
         """Added a child to the list of know child maps.
 
