@@ -15,6 +15,8 @@ class EntityManager:
         self.last_id = -1
         self.component_manager = ComponentManager()
         self.blueprint_manager = BlueprintManager()
+        self.current_map = None
+        self.player = None
 
         # TODO: Pass path from engine? Or pass someting similar like
         # EntityConfiguration but more general
@@ -36,7 +38,7 @@ class EntityManager:
         self.last_id += 1
         return self.last_id
 
-    def create_entity_from_configuration(self, configuration):
+    def new_from_config(self, configuration):
         """Constructs a new entity with the components and properties specified
         in the configuration.
 
@@ -52,7 +54,7 @@ class EntityManager:
         self.component_manager.add_components(entity, configuration)
         return entity
 
-    def create_entity_from_blueprint(self, blueprint):
+    def new_from_blueprint(self, blueprint):
         """Constructs a new entity by creating a configuration from a blueprint.
 
             Args:
@@ -64,9 +66,9 @@ class EntityManager:
         """
         configuration = self.blueprint_manager.get_entity_configuration(
             blueprint)
-        return self.create_entity_from_configuration(configuration)
+        return self.new_from_config(configuration)
 
-    def create_from_blueprint_and_config(self, blueprint, entity_config):
+    def new_from_blueprint_and_config(self, blueprint, entity_config):
         """Constructs a new entity by creating a configuration from a blueprint
         and updates it attributes with the given config.
 
@@ -82,7 +84,7 @@ class EntityManager:
         blueprint_config = self.blueprint_manager.get_entity_configuration(
             blueprint)
         blueprint_config.update(entity_config)
-        return self.create_entity_from_configuration(blueprint_config)
+        return self.new_from_config(blueprint_config)
 
     def destroy_entity(self, entity):
         """Removes all components which belong to the given entity.
@@ -266,10 +268,10 @@ class BlueprintManager:
         for component in blueprint['components']:
             logger.debug('Adding blueprint component %s', component)
             entity_config.add_component(component)
-        self._configue_entity_attributes(blueprint, entity_config)
+        self._configure_entity_attributes(blueprint, entity_config)
         return entity_config
 
-    def _configue_entity_attributes(self, blueprint, entity_config):
+    def _configure_entity_attributes(self, blueprint, entity_config):
         for attribute, value in blueprint['attributes'].iteritems():
             component_attribute = attribute.split('.')
             entity_config.add_attribute(
@@ -324,69 +326,3 @@ class EntityConfiguration:
             else:
                 for name, value in attributes.iteritems():
                     self.add_attribute(other_component, name, value)
-
-
-class MapGenerator():
-    """The Map Generator can generate predefined or random maps.
-
-    Args:
-        entity_manager (EntityManager): The entity manager for creating maps.
-
-    """
-
-    def __init__(self, entity_manager):
-        self.entity_manager = entity_manager
-        # TODO: Current map must be accessable to e.g. the collision detection,
-        # store in entity_manager or new class MapManager???
-        self.current_map = None
-
-    def generate_map(self, map_name, level):
-        """Loads the map configuration based on map name and level and generates
-        the new map.
-
-        Args:
-            map_name (str): The name of the map to generate.
-            level (int): The level of the map.
-
-        """
-        # TODO: make it global constant or dynamic for each map (needs scrolling
-        # support
-        width = 80
-        height = 50
-
-        tiles = [[None] * height] * width
-        for y in range(0, height):
-            for x in range(0, width):
-                if x == 0 or y == 0 or x == width - 1 or y == height - 1:
-                    tiles[x][y] = self.create_tile(x, y, '#', True)
-                else:
-                    tiles[x][y] = self.create_tile(x, y, '.', False)
-
-        map_config = EntityConfiguration()
-        map_config.add_attribute('Map', 'name', map_name)
-        map_config.add_attribute('Map', 'tiles', tiles)
-        map_config.add_attribute('Map', 'level', level)
-
-        new_map = self.entity_manager.create_entity_from_configuration(
-            map_config)
-        self.map_change(new_map)
-
-    def create_tile(self, x, y, char, collidable):
-        """Creates a tile with the specified properties."""
-        tile_config = EntityConfiguration()
-        tile_config.add_attribute('Position', 'x', x)
-        tile_config.add_attribute('Position', 'y', y)
-        tile_config.add_attribute('Renderable', 'character', char)
-        # TODO: Add Collidable
-        return self.entity_manager.create_entity_from_configuration(tile_config)
-
-    def map_change(self, new_map):
-        """Changes the current map with the specified map."""
-        if self.current_map is not None:
-            new_mc = self.entity_manager.get_entity_component(new_map, 'Map')
-            cur_mc = self.entity_manager.get_entity_component(
-                self.current_map, 'Map')
-            new_mc.parent = self.current_map
-            cur_mc.add_child(new_map)
-        self.current_map = new_map
-        # TODO: Throw event so the mobs can be placed

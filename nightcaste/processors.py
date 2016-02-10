@@ -1,6 +1,6 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-from entities import MapGenerator
+from mapcreation import MapGenerator
 from events import MapChange
 from events import MoveAction
 from events import WorldEnter
@@ -46,6 +46,9 @@ class EventProcessor:
 
     def _unregister(self, event_type):
         self.event_manager.remove_listener(event_type, self)
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class InputProcessor(EventProcessor):
@@ -118,7 +121,10 @@ class MovementProcessor(EventProcessor):
         # not reached, reraise event (needs path finding logic)
         position.x += event.dx
         position.y += event.dy
-        logger.debug('Move Entity %s to position %s', event.entity, position)
+        logger.debug(
+            'Move Entity %s to position %s',
+            event.entity,
+            position)
 
 
 class WorldInitializer(EventProcessor):
@@ -132,17 +138,17 @@ class WorldInitializer(EventProcessor):
         self._unregister('WorldEnter')
 
     def handle_event(self, event, round):
-        self.entity_manager.player = self.entity_manager.create_entity_from_blueprint(
+        self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
 
         # TODISCUSS: Do we need to save the Listeners?
-        MapProcessor(self.event_manager, self.entity_manager).register()
+        MapChangeProcessor(self.event_manager, self.entity_manager).register()
         MovementProcessor(self.event_manager, self.entity_manager).register()
 
         self.event_manager.enqueue_event(MapChange('World', 0))
 
 
-class MapProcessor(EventProcessor):
+class MapChangeProcessor(EventProcessor):
     """Listens on MapChange Events and uses chnages or generates the maps
     accordingly."""
 
@@ -161,7 +167,19 @@ class MapProcessor(EventProcessor):
             'Generating Map %s on level %d',
             event.map_name,
             event.level)
-        self.map_generator.generate_map(event.map_name, event.level)
+        new_map = self.map_generator.generate_map(event.map_name, event.level)
         # place player at the dungeon entry
         self.event_manager.enqueue_event(
             MoveAction(self.entity_manager.player, 20, 10))
+        self.change_map(new_map)
+
+    def change_map(self, new_map):
+        """Changes the current map with the specified map."""
+        if self.entity_manager.current_map is not None:
+            new_mc = self.entity_manager.get_entity_component(new_map, 'Map')
+            cur_mc = self.entity_manager.get_entity_component(
+                self.entity_manager.current_map, 'Map')
+            new_mc.parent = self.entity_manager.current_map
+            cur_mc.add_child(new_map)
+        self.entity_manager.current_map = new_map
+        # TODO: Throw event so the mobs can be placed
