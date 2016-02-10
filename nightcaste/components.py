@@ -26,7 +26,7 @@ class Position(Component):
         self.y = y
 
     def __str__(self):
-        return '%s(%d, %d)' % (self.type, self.x, self.y)
+        return '%s(%d, %d)' % (self.type(), self.x, self.y)
 
 
 class Renderable(Component):
@@ -44,7 +44,17 @@ class Renderable(Component):
 
     def __str__(self):
         return '%s(%s, %d, %s)' % (
-            self.type, self.character, self.z_index, self.visible)
+            self.type(), self.character, self.z_index, self.visible)
+
+
+class Colliding(Component):
+    """ Anything that can collide with each other """
+
+    def __init__(self, blocking=True):
+        self.blocking = blocking
+
+    def __str__(self):
+        return '%s(%s)' % (self.type(), self.blocking)
 
 
 class Color(Component):
@@ -76,16 +86,17 @@ class Map(Component):
         level (int): How deep in the map tree.
         parent (object): The parent entity.
         tiles ([[object]]): 2-dimensional array with tile entities.
-        childs ([object]): List with child entities.
+        children ([object]): List with child entities.
 
     """
 
-    def __init__(self, name=None, level=0, parent=None, tiles=None, childs=[]):
+    def __init__(self, name=None, level=0, parent=None, tiles=None,
+                 children=[]):
         self.name = name
         self.level = level
         self.parent = parent
         self.tiles = tiles
-        self.childs = childs
+        self.children = children
 
     def __str__(self):
         return 'Map("%s", level %d)' % (self.name, self.level)
@@ -97,4 +108,4 @@ class Map(Component):
             child (object): The child entity to add.
 
         """
-        self.childs.append(child)
+        self.children.append(child)

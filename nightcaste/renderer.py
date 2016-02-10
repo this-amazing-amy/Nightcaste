@@ -11,7 +11,7 @@ class SimpleConsoleRenderer:
         self.console = 0
         libtcod.console_init_root(
             width, height, "Nightcaste Simple Console Renderer")
-        libtcod.console_set_default_foreground(self.console, libtcod.white)
+        libtcod.console_set_default_foreground(self.console, libtcod.grey)
         libtcod.console_set_default_background(self.console, libtcod.black)
         self.menu_view = RenderableContainer()
         self.menu_view.add_child(MenuPane(self, 0, 0, width, height))
@@ -50,16 +50,16 @@ class SimpleConsoleRenderer:
             self._get_tcod_color(entity))
 
     def _get_tcod_color(self, entity):
-        color = self.entity_manager.get_entity_component(entity, 'Color')
+        color=self.entity_manager.get_entity_component(entity, 'Color')
         if color is not None:
             return libtcod.Color(color.r, color.g, color.b)
         return None
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         if fore_color is None:
-            fore_color = libtcod.console_get_default_foreground(self.console)
+            fore_color=libtcod.console_get_default_foreground(self.console)
         if back_color is None:
-            back_color = libtcod.console_get_default_background(self.console)
+            back_color=libtcod.console_get_default_background(self.console)
         libtcod.console_put_char_ex(
             self.console, x, y, char.encode('utf-8'), fore_color, back_color)
 
@@ -71,8 +71,8 @@ class SimpleConsoleRenderer:
 class RenderableContainer:
 
     def __init__(self, active=True):
-        self.active = active
-        self.childs = []
+        self.active=active
+        self.childs=[]
 
     def add_child(self, child):
         self.childs.append(child)
@@ -87,11 +87,11 @@ class ContentPane:
     """Can be printed with colored text"""
 
     def __init__(self, renderer, absolute_x, absolute_y, width, height):
-        self.renderer = renderer
-        self.pos_x = absolute_x
-        self.pos_y = absolute_y
-        self.width = width
-        self.height = height
+        self.renderer=renderer
+        self.pos_x=absolute_x
+        self.pos_y=absolute_y
+        self.width=width
+        self.height=height
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.renderer.put_char(
@@ -119,10 +119,10 @@ class ContentPane:
 class MapPane(ContentPane):
 
     def render(self):
-        em = self.renderer.entity_manager
+        em=self.renderer.entity_manager
         """Renders all renderable entities to the console."""
-        renderables = em.get_all_of_type('Renderable')
-        positions = em.get_components_for_entities(renderables, 'Position')
+        renderables=em.get_all_of_type('Renderable')
+        positions=em.get_components_for_entities(renderables, 'Position')
         for entity, renderable in sorted(
                 renderables.items(), key=lambda rdict: rdict[1].z_index):
             self.renderer.render_entity(entity, renderable, positions[entity])
@@ -203,7 +203,7 @@ class MenuPane(ContentPane):
         self.put_text(15, 22, '  [Esc]  Exit game', libtcod.red, libtcod.sepia)
 
     def print_footer(self):
-        version = 'Nightcaste v' + __version__
+        version='Nightcaste v' + __version__
         self.put_text(
             self.width - len(version),
             self.height - 1,
