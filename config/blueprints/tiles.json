@@ -3,14 +3,32 @@
 		"components": [
 			"Position",
 			"Renderable",
-			"Color"
+			"Color",
+                        "Colliding"
 		],
 		"attributes": {
 			"Renderable.character": "#",
 			"Renderable.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
-			"Color.b": 195
+			"Color.b": 195,
+                        "Colliding.blocking": true
 		}
-	}
+	},
+	"stone_floor": {
+		"components": [
+			"Position",
+			"Renderable",
+			"Color",
+                        "Colliding"
+		],
+		"attributes": {
+			"Renderable.character": ".",
+			"Renderable.z_index": 1,
+			"Color.r": 195,
+			"Color.g": 195,
+			"Color.b": 195,
+                        "Colliding.blocking": false
+		}
+        }
 }
