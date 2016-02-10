@@ -82,7 +82,7 @@ class EventManager:
                 processor.handle_event(event, round)
 
 
-class Event:
+class Event(object):
     """Base class for all events. An Event contains the necessary information
     for a System to react accordingly."""
 
@@ -91,7 +91,10 @@ class Event:
         return self.__class__.__name__
 
     def __str__(self):
-        return self.type()
+        result = self.type()+" ("
+        for prop, val in self.__dict__.iteritems():
+            result += str(prop)+": "+str(val)+", "
+        return result[:-2] + ")"
 
 
 class KeyEvent(Event):
@@ -123,8 +126,24 @@ class MapChange(Event):
         self.map_name = map_name
         self.level = level
 
-    def __str__(self):
-        return '%s(%s, %s)' % (self.type(), self.map_name, self.level)
+
+class CheckCollision(Event):
+    """ Checks the given position for colliding entities
+
+    Args:
+        map (int): entity_id of the map to test on
+        x (int): x position to test
+        y (int): y position to test
+        callback (Event): Event to call, if nothing is colliding
+        fail (Event): Event to call, if something is colliding
+    """
+
+    def __init__(self, map, x, y, callback, fail=None):
+        self.map = map
+        self.x = x
+        self.y = y
+        self.callback = callback
+        self.fail = fail
 
 
 class MoveAction(Event):
@@ -141,9 +160,6 @@ class MoveAction(Event):
         self.entity = entity
         self.dx = dx
         self.dy = dy
-
-    def __str__(self):
-        return '%s(%s, %s, %s)' % (self.type(), self.entity, self.dx, self.dy)
 
 
 class WorldEnter(Event):
