@@ -97,6 +97,15 @@ class Event(object):
         return result[:-2] + ")"
 
 
+class EntityMoved(Event):
+    """Indicates an entity was moved to a new position"""
+
+    def __init__(self, entity, new_x, new_y):
+        self.entity = entity
+        self.new_x = new_x
+        self.new_y = new_y
+
+
 class KeyEvent(Event):
     """Base Class for key events."""
     def __init__(self, code=None):
@@ -152,6 +161,12 @@ class MoveAction(Event):
         self.entity = entity
         self.dx = dx
         self.dy = dy
+
+
+class ViewChanged(Event):
+
+    def __init__(self, active_view):
+        self.active_view = active_view
 
 
 class WorldEnter(Event):

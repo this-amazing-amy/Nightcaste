@@ -1,10 +1,12 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-from mapcreation import MapGenerator
+from events import EntitiesCollided
+from events import EntityMoved
 from events import MapChange
 from events import MoveAction
+from events import ViewChanged
 from events import WorldEnter
-from events import EntitiesCollided
+from mapcreation import MapGenerator
 import tcod as libtcod
 import logging
 
@@ -99,10 +101,9 @@ class MenuInputProcessor(InputProcessor):
 class MovementProcessor(EventProcessor):
 
     def __init__(self, event_manager, entity_manager, no_collision=False):
-        self.event_manager = event_manager
-        self.entity_manager = entity_manager
-        self.collision_manager = CollisionManager(self.entity_manager,
-                                                  self.event_manager,
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        self.collision_manager = CollisionManager(entity_manager,
+                                                  event_manager,
                                                   no_collision)
 
     def register(self):
@@ -141,6 +142,8 @@ class MovementProcessor(EventProcessor):
             logger.debug('Move Entity %s to position %s,%s. There are now: %s',
                          event.entity, target_x, target_y,
                          map[target_x][target_y])
+            self.event_manager.enqueue_event(
+                EntityMoved(event.entity, target_x, target_y))
 
 
 class WorldInitializer(EventProcessor):
@@ -232,3 +235,33 @@ class CollisionManager():
             self.event_manager.enqueue_event(EntitiesCollided(active))
             return active
         return None
+
+
+class ViewProcessor(EventProcessor):
+    """Listen on events which requires the view to react in some way. Therefore,
+    the view has to provide methods to change its state."""
+
+    def __init__(self, event_manager, entity_manager, view_controller):
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        self.view_controller = view_controller
+
+    def register(self):
+        self._register('WorldEnter')
+        self._register('MenuOpen')
+        self._register('EntityMoved')
+
+    def unregister(self):
+        self._unregister('WorldEnter')
+        self._unregister('MenuOpen')
+        self._unregister('EntityMoved')
+
+    def handle_event(self, event, round):
+        if event.type() == 'EntityMoved' and event.entity == self.entity_manager.player:
+            self.view_controller.update_view('game')
+        elif event.type() == 'WorldEnter':
+            if self.view_controller.show('game'):
+                # TODO let view_controller throw the event?
+                self.event_manager.enqueue_event(ViewChanged('game'))
+        elif event.type() == 'MenuOpen':
+            if self.view_controller.show('menu'):
+                self.event_manager.enqueue_event(ViewChanged('menu'))
