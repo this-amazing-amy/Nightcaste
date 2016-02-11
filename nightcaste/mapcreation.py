@@ -39,6 +39,7 @@ class MapGenerator():
         height = random.randrange(math.floor(height * 0.7), height)
         width = random.randrange(math.floor(width * 0.7), width)
 
+        self.rooms = []
         self.tiles = self.create_empty_map(width, height)
         tree = self.create_bsp_tree(width, height)
         self.traverse_tree(tree, self.process_node)
@@ -56,10 +57,10 @@ class MapGenerator():
         width = random.randrange(node.w / 2, node.w)
         height = random.randrange(node.h / 2, node.h)
         room = Room(node.x, node.y, width, height)
-        for x in range(room.x + 1, room.x + width+1):
-            for y in range(room.y + 1, room.y + height+1):
-                self.entity_manager.destroy_entity(self.tiles[x][y])
-                self.tiles[x][y] = self.create_tile("stone_floor", x, y)
+        for x in range(room.x + 1, room.x + width + 1):
+            for y in range(room.y + 1, room.y + height + 1):
+                self.entity_manager.destroy_entity(self.get_tile(x, y))
+                self.tiles[x][y] = [self.create_tile("stone_floor", x, y)]
         logger.debug("Created room on %s,%s sized %sx%s", node.x, node.y,
                      width, height)
         self.rooms.append(room)
@@ -72,28 +73,35 @@ class MapGenerator():
             y = random.randrange(node.y, node.y + node.h - 1)
         return (x, y)
 
+    def get_tile(self, x, y):
+        """ Returns the bottommost entity at the given position """
+        if isinstance(self.tiles[x][y], list) and len(self.tiles[x][y]) > 0:
+            return self.tiles[x][y][0]
+
     def is_blocked(self, x, y):
         """ Returns True, if the given position on the map has an enabled
         Colliding component """
-        colliding = self.entity_manager.get_entity_component(self.tiles[x][y],
-                                                             "Colliding")
-        return (colliding is not None and colliding.blocking)
+        colliding = self.entity_manager.get_entity_component(
+            self.get_tile(x, y),
+            "Colliding")
+        return (colliding is not None and colliding.active)
 
     def create_corridor(self, node):
         """ Creates a corridor between random spots in two nodes"""
         (x1, y1) = self.random_spot_in_node(self.left_child(node))
         (x2, y2) = self.random_spot_in_node(self.right_child(node))
-        logger.info("Generating Corridor between %s and %s", (x1, y1), (x2, y2))
+        logger.info("Generating Corridor between %s and %s",
+                    (x1, y1), (x2, y2))
         if (random.randrange(2) == 1):
             for y in range(min(y1, y2), max(y1, y2)):
-                self.tiles[x1][y] = self.create_tile("stone_floor", x1, y)
+                self.tiles[x1][y] = [self.create_tile("stone_floor", x1, y)]
             for x in range(min(x1, x2), max(x1, x2)):
-                self.tiles[x][y2] = self.create_tile("stone_floor", x, y2)
+                self.tiles[x][y2] = [self.create_tile("stone_floor", x, y2)]
         else:
             for x in range(min(x1, x2), max(x1, x2)):
-                self.tiles[x][y1] = self.create_tile("stone_floor", x, y1)
+                self.tiles[x][y1] = [self.create_tile("stone_floor", x, y1)]
             for y in range(min(y1, y2), max(y1, y2)):
-                self.tiles[x2][y] = self.create_tile("stone_floor", x2, y)
+                self.tiles[x2][y] = [self.create_tile("stone_floor", x2, y)]
 
     def left_child(self, node):
         """ Returns the left child of the given node"""
@@ -120,7 +128,7 @@ class MapGenerator():
         """ Returns a new Tile array with set size filled with walls"""
 
         logger.debug("Map size: %sx%s", width, height)
-        return [[self.create_tile("stone_wall", x, y)
+        return [[[self.create_tile("stone_wall", x, y)]
                  for y in range(0, height)]
                 for x in range(0, width)]
 
@@ -144,7 +152,7 @@ class MapGenerator():
         tile_config.add_attribute('Position', 'x', x)
         tile_config.add_attribute('Position', 'y', y)
         tile_config.add_attribute('Renderable', 'character', char)
-        tile_config.add_attribute('Colliding', 'blocking', colliding)
+        tile_config.add_attribute('Colliding', 'active', colliding)
         return self.entity_manager.new_from_config(tile_config)
 
 

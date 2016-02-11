@@ -11,6 +11,12 @@ class Component:
         """Returns the class name of the component."""
         return self.__class__.__name__
 
+    def __str__(self):
+        result = self.type()+" ("
+        for prop, val in self.__dict__.iteritems():
+            result += str(prop)+": "+str(val)+", "
+        return result[:-2] + ")"
+
 
 class Position(Component):
     """Represents a position on a plane.
@@ -24,9 +30,6 @@ class Position(Component):
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
-
-    def __str__(self):
-        return '%s(%d, %d)' % (self.type(), self.x, self.y)
 
 
 class Renderable(Component):
@@ -42,24 +45,16 @@ class Renderable(Component):
         self.z_index = z_index
         self.visible = True
 
-    def __str__(self):
-        return '%s(%s, %d, %s)' % (
-            self.type(), self.character, self.z_index, self.visible)
-
 
 class Colliding(Component):
     """ Anything that can collide with each other """
 
-    def __init__(self, blocking=True):
-        self.blocking = blocking
-
-    def __str__(self):
-        return '%s(%s)' % (self.type(), self.blocking)
+    def __init__(self, active=True):
+        self.active = active
 
 
 class Color(Component):
     """Represents an entity with a color.
-    TODO: Merge with Renderable?
 
     Args:
         r (int): Red fraction of the color.
@@ -72,9 +67,6 @@ class Color(Component):
         self.r = r
         self.g = g
         self.b = b
-
-    def __str__(self):
-        return 'Color(%d, %d, %d)' % (self.r, self.g, self.b)
 
 
 class Map(Component):
@@ -97,9 +89,6 @@ class Map(Component):
         self.parent = parent
         self.tiles = tiles
         self.children = children
-
-    def __str__(self):
-        return 'Map("%s", level %d)' % (self.name, self.level)
 
     def width(self):
         return len(self.tiles)

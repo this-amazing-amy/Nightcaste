@@ -164,7 +164,7 @@ class MapPane(ContentPane):
                                    (self.viewport_x + self.width), 0)
             self.viewport_y += min(map.height() -
                                    (self.viewport_y + self.height), 0)
-            logger.debug('Viewport: %d, %d', self.viewport_x, self.viewport_y)
+            # logger.debug('Viewport: %d, %d', self.viewport_x, self.viewport_y)
 
     def _in_viewport(self, position):
         """Checks if the given position is in the current viewport.

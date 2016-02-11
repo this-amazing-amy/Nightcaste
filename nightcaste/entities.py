@@ -109,6 +109,13 @@ class EntityManager:
         """
         return self.component_manager.get_component(entity, component_type)
 
+    def set_entity_attribute(self, entity_id, component, attribute, value):
+        """ Set an attribute of component of entity """
+
+        component = self.get_entity_component(entity_id, component)
+        if component is not None:
+            component.attribute = value
+
     def get_all_of_type(self, component_type):
         """Get all components of the specified type.
 
@@ -135,6 +142,10 @@ class EntityManager:
         """
         return {k: v for k, v in self.get_all_of_type(
             component_type).iteritems() if k in entity_list}
+
+    def get_current_map(self):
+        """ Returns the tiles array of the current map """
+        return self.get_entity_component(self.current_map, "Map").tiles
 
 
 class ComponentManager:
@@ -202,6 +213,7 @@ class ComponentManager:
         if component_dict is None:
             return None
         return component_dict.get(entity_id)
+
 
     def get_all_of_type(self, component_type):
         """Get all components of the given type

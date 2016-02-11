@@ -4,6 +4,7 @@ from mapcreation import MapGenerator
 from events import MapChange
 from events import MoveAction
 from events import WorldEnter
+from events import EntitiesCollided
 import tcod as libtcod
 import logging
 
@@ -95,29 +96,14 @@ class MenuInputProcessor(InputProcessor):
         return None
 
 
-class CollisionManager(EventProcessor):
-
-    def register(self):
-        self._register('CheckCollisionEvent')
-
-    def unregister(self):
-        self._unregister('CheckCollisionEvent')
-
-    def handle_event(self, event, round):
-        """ Checks, if the position given in the event is blocked, and if not,
-        throws the callback event """
-        if (self.is_blocked(event.map, event.x, event.y)):
-            pass
-
-    def is_blocked(self, map, x, y):
-        """ Returns True, if the given position on the map has an enabled
-        Colliding component """
-        colliding = self.entity_manager.get_entity_component(map.tiles[x][y],
-                                                             "Colliding")
-        return (colliding is not None and colliding.blocking)
-
-
 class MovementProcessor(EventProcessor):
+
+    def __init__(self, event_manager, entity_manager, no_collision=False):
+        self.event_manager = event_manager
+        self.entity_manager = entity_manager
+        self.collision_manager = CollisionManager(self.entity_manager,
+                                                  self.event_manager,
+                                                  no_collision)
 
     def register(self):
         self._register('MoveAction')
@@ -135,18 +121,26 @@ class MovementProcessor(EventProcessor):
 
         """
 
-        # TODO: CollisionManager.check and throw an appropriate event
-
         position = self.entity_manager.get_entity_component(
             event.entity, 'Position')
-        # TODO: Save absolute target position and go only evnt.steps if target
-        # not reached, reraise event (needs path finding logic)
-        position.x += event.dx
-        position.y += event.dy
-        logger.debug(
-            'Move Entity %s to position %s',
-            event.entity,
-            position)
+
+        target_x = position.x + event.dx
+        target_y = position.y + event.dy
+
+        collision = self.collision_manager.check(
+            self.entity_manager.current_map,
+            target_x, target_y)
+
+        if (collision is None):
+            map = self.entity_manager.get_current_map()
+            map[position.x][position.y] = [entity for entity in map[
+                position.x][position.y] if entity != event.entity]
+            map[target_x][target_y].append(event.entity)
+            position.x = target_x
+            position.y = target_y
+            logger.debug('Move Entity %s to position %s,%s. There are now: %s',
+                         event.entity, target_x, target_y,
+                         map[target_x][target_y])
 
 
 class WorldInitializer(EventProcessor):
@@ -205,3 +199,36 @@ class MapChangeProcessor(EventProcessor):
             cur_mc.add_child(new_map)
         self.entity_manager.current_map = new_map
         # TODO: Throw event so the mobs can be placed
+
+
+class CollisionManager():
+
+    def __init__(self, entity_manager, event_manager, dummy=False):
+        self.entity_manager = entity_manager
+        self.event_manager = event_manager
+        self.dummy = dummy
+
+    def check(self, map, x, y, component="Colliding"):
+        """ Checks for collisions on map-(x,y) and returns all entites
+        colliding on this spot.
+
+        Args:
+            map (int): Entity_id of the map to test on
+            x (int): x position to check
+            y (int): y position to check
+            component (str): Component identifier which determines collision
+            e.g. to test for other collisions (fov)
+        """
+        if self.dummy:
+            return None
+        map = self.entity_manager.get_entity_component(map, "Map").tiles
+        collidings = {entity: self.entity_manager.get_entity_component(
+            entity,
+            component)
+            for entity in map[x][y]}
+        active = [e for e, v in collidings.iteritems() if v.active]
+        if (len(active) > 0):
+            # TODO: Throw better collision event
+            self.event_manager.enqueue_event(EntitiesCollided(active))
+            return active
+        return None
