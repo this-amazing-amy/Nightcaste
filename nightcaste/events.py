@@ -46,7 +46,13 @@ class EventManager:
             event_processor,
             event_type)
         if event_type in self.listeners:
-            self.listeners[event_type].remove(event_processor)
+            try:
+                self.listeners[event_type].remove(event_processor)
+            except ValueError:
+                logger.debug(
+                    '%s is already unregistered from %s!',
+                    event_processor,
+                    event_type)
 
     def enqueue_event(self, event, rounds=0):
         """Enques an event which will be processed later"""
@@ -91,9 +97,9 @@ class Event(object):
         return self.__class__.__name__
 
     def __str__(self):
-        result = self.type()+" ("
+        result = self.type() + " ("
         for prop, val in self.__dict__.iteritems():
-            result += str(prop)+": "+str(val)+", "
+            result += str(prop) + ": " + str(val) + ", "
         return result[:-2] + ")"
 
 
@@ -108,6 +114,7 @@ class EntityMoved(Event):
 
 class KeyEvent(Event):
     """Base Class for key events."""
+
     def __init__(self, code=None):
         self.code = code
 
@@ -145,6 +152,11 @@ class EntitiesCollided(Event):
 
     def __init__(self, entities):
         self.entities = entities
+
+
+class MenuOpen(Event):
+    """Open the menu."""
+    pass
 
 
 class MoveAction(Event):

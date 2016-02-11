@@ -4,8 +4,9 @@ from events import EventManager
 from entities import EntityManager
 from input import InputController
 from nightcaste import __version__
-from processors import WorldInitializer
+from processors import GameInputProcessor
 from processors import MenuInputProcessor
+from processors import WorldInitializer
 from renderer import SimpleConsoleRenderer
 import logging
 import time
@@ -24,8 +25,9 @@ def main():
     round = 0
     prev_time = None
 
-    # TODO Dummy: will be triggered from main menu
+    # TODO Implement ProcessorManager in order to create and manage processors
     MenuInputProcessor(event_manager, entity_manager).register()
+    GameInputProcessor(event_manager, entity_manager).register()
     WorldInitializer(event_manager, entity_manager).register()
 
     renderer.render()

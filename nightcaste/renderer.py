@@ -1,6 +1,8 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
+from nightcaste.events import MenuOpen
+from nightcaste.processors import ViewProcessor
 from nightcaste.processors import ViewProcessor
 import logging
 import tcod as libtcod
@@ -28,7 +30,9 @@ class SimpleConsoleRenderer:
         game_view = self.view_controller.add_view('game')
         game_view.add_pane('map', MapPane(self, 0, 0, width, height - 5))
         game_view.add_pane('status', StatusPane(self, 0, height - 5, width, 5))
-        self.view_controller.show('menu')
+
+        # self.view_controller.show('menu')
+        event_manager.enqueue_event(MenuOpen())
 
     def is_active(self):
         """Indicates if the console is still active.
