@@ -1,6 +1,7 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
+from nightcaste.processors import ViewProcessor
 import logging
 import tcod as libtcod
 
@@ -9,18 +10,25 @@ logger = logging.getLogger('renderer')
 
 class SimpleConsoleRenderer:
 
-    def __init__(self, entity_manager, width=80, height=55):
+    def __init__(self, event_manager, entity_manager, width=80, height=55):
+        self.event_manager = event_manager
         self.entity_manager = entity_manager
         self.console = 0
-        libtcod.console_init_root(
-            width, height, "Nightcaste Simple Console Renderer")
+        libtcod.console_init_root(width, height, "Nightcaste " + __version__)
         libtcod.console_set_default_foreground(self.console, libtcod.grey)
         libtcod.console_set_default_background(self.console, libtcod.black)
-        self.menu_view = RenderableContainer()
-        self.menu_view.add_child(MenuPane(self, 0, 0, width, height))
-        self.game_view = RenderableContainer()
-        self.game_view.add_child(MapPane(self, 0, 0, width, height - 5))
-        self.game_view.add_child(StatusPane(self, 0, height - 5, width, 5))
+
+        # TODO move code to some GUI wor Window class which knows the renderer
+        # and make the renderer itself more stupid (just wrap tcod functions)
+        self.view_controller = ViewController()
+        ViewProcessor(self.event_manager, self.entity_manager,
+                      self.view_controller).register()
+        menu_view = self.view_controller.add_view('menu')
+        menu_view.add_pane('main_menu', MenuPane(self, 0, 0, width, height))
+        game_view = self.view_controller.add_view('game')
+        game_view.add_pane('map', MapPane(self, 0, 0, width, height - 5))
+        game_view.add_pane('status', StatusPane(self, 0, height - 5, width, 5))
+        self.view_controller.show('menu')
 
     def is_active(self):
         """Indicates if the console is still active.
@@ -37,12 +45,9 @@ class SimpleConsoleRenderer:
 
     def render(self):
         self.clear()
-        # TODO: Hook up Renderer to event system so the views can be switched
-        # TODO: Or Make Game Status (MENU, RUNNING, PAUSED)
-        if self.menu_view.active:
-            self.menu_view.render()
-        if self.game_view.active:
-            self.game_view.render()
+        # TODO: reverse responsibility: the view controller knows the renderer
+        # and calls its methods
+        self.view_controller.render()
         self.flush()
 
     def _get_tcod_color(self, entity):
@@ -64,30 +69,75 @@ class SimpleConsoleRenderer:
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
 
 
-class RenderableContainer:
+class ViewController:
 
-    def __init__(self, active=True):
-        self.active = active
-        self.childs = []
+    def __init__(self):
+        self._views = {}
+        self._active_view = None
 
-    def add_child(self, child):
-        self.childs.append(child)
+    def add_view(self, name):
+        view = View()
+        self._views.update({name: view})
+        return view
+
+    def get_view(self, name):
+        return self._views.get(name)
+
+    def update_view(self, name):
+        view = self.get_view(name)
+        if view is not None:
+            view.update()
+
+    def show(self, name):
+        """Shows the specified view. This methods disables all other views."""
+        view_changed = False
+        for id, view in self._views.iteritems():
+            if name == id and not view.active:
+                view.active = True
+                view_changed = True
+                self._active_view = view
+            else:
+                view.active = False
+        return view_changed
 
     def render(self):
-        """Renders all childs"""
-        for child in self.childs:
-            child.render()
+        if self._active_view is not None:
+            self._active_view.render()
+
+
+class View:
+
+    def __init__(self, active=False):
+        self._panes = {}
+        self.active = active
+
+    def add_pane(self, name, pane):
+        # TODO refactor: create pane and let the view manage the panes (also
+        # check for coliding panes, etc
+        self._panes.update({name: pane})
+
+    def update(self):
+        """Calls update on all panes"""
+        for pane in self._panes.itervalues():
+            pane.update()
+
+    def render(self):
+        """Renders all panes."""
+        for pane in sorted(self._panes.itervalues(), key=lambda v: v.z_index):
+            pane.render()
 
 
 class ContentPane:
     """Can be printed with colored text"""
 
-    def __init__(self, renderer, absolute_x, absolute_y, width, height):
+    def __init__(self, renderer, absolute_x,
+                 absolute_y, width, height, z_index=0):
         self.renderer = renderer
         self.pos_x = absolute_x
         self.pos_y = absolute_y
         self.width = width
         self.height = height
+        self.z_index = z_index
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.renderer.put_char(
@@ -111,15 +161,29 @@ class ContentPane:
             for y in range(0, self.height):
                 self.put_char(x, y, ' ', None, color)
 
+    def update(self):
+        """Updates the internal state of the pane."""
+        pass
+
 
 class MapPane(ContentPane):
+    """Renders every visisble component, e.g the map with all its entities"""
+
+    def __init__(self, renderer, absolute_x,
+                 absolute_y, width, height, z_index=0):
+        ContentPane.__init__(self, renderer, absolute_x,
+                             absolute_y, width, height, z_index=0)
+        self.viewport_x = 0
+        self.viewport_y = 0
+
+    def update(self):
+        """Updates the view port"""
+        self._update_view_port()
 
     def render(self):
         """Renders all entieties with a visable renderable component and with a
         position in the current viewport."""
         em = self.renderer.entity_manager
-        # TODO only update on player moved events
-        self._update_view_port()
         # TODISCUSS: list comprehension before sort ???
         renderables = {k: v for k, v in em.get_all_of_type(
             'Renderable').iteritems() if v.visible}
@@ -156,15 +220,11 @@ class MapPane(ContentPane):
         em = self.renderer.entity_manager
         map = em.get_entity_component(em.current_map, 'Map')
         player_pos = em.get_entity_component(em.player, 'Position')
-        # TODO Remove if pane is activated on world enter or if event triggered
-        if player_pos is not None:
-            self.viewport_x = max(player_pos.x - int(self.width / 2), 0)
-            self.viewport_y = max(player_pos.y - int(self.height / 2), 0)
-            self.viewport_x += min(map.width() -
-                                   (self.viewport_x + self.width), 0)
-            self.viewport_y += min(map.height() -
-                                   (self.viewport_y + self.height), 0)
-            # logger.debug('Viewport: %d, %d', self.viewport_x, self.viewport_y)
+        self.viewport_x = max(player_pos.x - int(self.width / 2), 0)
+        self.viewport_y = max(player_pos.y - int(self.height / 2), 0)
+        self.viewport_x += min(map.width() - (self.viewport_x + self.width), 0)
+        self.viewport_y += min(map.height() -
+                               (self.viewport_y + self.height), 0)
 
     def _in_viewport(self, position):
         """Checks if the given position is in the current viewport.

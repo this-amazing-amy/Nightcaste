@@ -18,7 +18,7 @@ def main():
     realtime = True
     event_manager = EventManager()
     entity_manager = EntityManager()
-    renderer = SimpleConsoleRenderer(entity_manager)
+    renderer = SimpleConsoleRenderer(event_manager, entity_manager)
     input_controller = InputController(
         not realtime, event_manager, entity_manager)
     round = 0
