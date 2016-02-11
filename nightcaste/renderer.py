@@ -3,36 +3,19 @@ console."""
 from nightcaste import __version__
 from nightcaste.events import MenuOpen
 from nightcaste.processors import ViewProcessor
-from nightcaste.processors import ViewProcessor
 import logging
 import tcod as libtcod
 
 logger = logging.getLogger('renderer')
 
 
-class SimpleConsoleRenderer:
+class TcodConsoleRenderer:
 
-    def __init__(self, event_manager, entity_manager, width=80, height=55):
-        self.event_manager = event_manager
-        self.entity_manager = entity_manager
-        self.console = 0
-        libtcod.console_init_root(width, height, "Nightcaste " + __version__)
+    def __init__(self, console, title, width=80, height=55):
+        self.console = console
+        libtcod.console_init_root(width, height, title)
         libtcod.console_set_default_foreground(self.console, libtcod.grey)
         libtcod.console_set_default_background(self.console, libtcod.black)
-
-        # TODO move code to some GUI wor Window class which knows the renderer
-        # and make the renderer itself more stupid (just wrap tcod functions)
-        self.view_controller = ViewController()
-        ViewProcessor(self.event_manager, self.entity_manager,
-                      self.view_controller).register()
-        menu_view = self.view_controller.add_view('menu')
-        menu_view.add_pane('main_menu', MenuPane(self, 0, 0, width, height))
-        game_view = self.view_controller.add_view('game')
-        game_view.add_pane('map', MapPane(self, 0, 0, width, height - 5))
-        game_view.add_pane('status', StatusPane(self, 0, height - 5, width, 5))
-
-        # self.view_controller.show('menu')
-        event_manager.enqueue_event(MenuOpen())
 
     def is_active(self):
         """Indicates if the console is still active.
@@ -47,18 +30,8 @@ class SimpleConsoleRenderer:
         """Flush the changes to screen."""
         libtcod.console_flush()
 
-    def render(self):
-        self.clear()
-        # TODO: reverse responsibility: the view controller knows the renderer
-        # and calls its methods
-        self.view_controller.render()
-        self.flush()
-
-    def _get_tcod_color(self, entity):
-        color = self.entity_manager.get_entity_component(entity, 'Color')
-        if color is not None:
-            return libtcod.Color(color.r, color.g, color.b)
-        return None
+    def _get_tcod_color(self, color):
+        return libtcod.Color(color.r, color.g, color.b)
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         if fore_color is None:
@@ -71,6 +44,48 @@ class SimpleConsoleRenderer:
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
+
+
+class Window:
+    """A window an which something can be rendered. Supports multiple views with
+    content panes in them."""
+
+    def __init__(self, number, title, width, height,
+                 event_manager, entity_manager):
+        self.event_manager = event_manager
+        self.entity_manager = entity_manager
+        self.view_controller = ViewController()
+        self.renderer = TcodConsoleRenderer(number, title, width, height)
+
+        ViewProcessor(
+            event_manager,
+            entity_manager,
+            self.view_controller).register()
+        event_manager.enqueue_event(MenuOpen())
+
+        # TODO: Push the logic HOW to construct the panes further up to the
+        # engine or even to configuration files
+        menu_view = self.view_controller.add_view('menu')
+        menu_view.add_pane('main_menu', MenuPane(self, 0, 0, width, height))
+        game_view = self.view_controller.add_view('game')
+        game_view.add_pane('map', MapPane(self, 0, 0, width, height - 5))
+        game_view.add_pane('status', StatusPane(self, 0, height - 5, width, 5))
+
+    def is_active(self):
+        return True
+
+    def put_char(self, x, y, char, fore_color, back_color):
+        """Delegates the call to the renderer."""
+        self.renderer.put_char(x, y, char, fore_color, back_color)
+
+    def put_text(self, x, y, text, fore_color, back_color):
+        """Delegates the call to the renderer."""
+        self.renderer.put_text(x, y, text, fore_color, back_color)
+
+    def render(self):
+        self.renderer.clear()
+        self.view_controller.render()
+        self.renderer.flush()
 
 
 class ViewController:
@@ -134,9 +149,9 @@ class View:
 class ContentPane:
     """Can be printed with colored text"""
 
-    def __init__(self, renderer, absolute_x,
+    def __init__(self, window, absolute_x,
                  absolute_y, width, height, z_index=0):
-        self.renderer = renderer
+        self.window = window
         self.pos_x = absolute_x
         self.pos_y = absolute_y
         self.width = width
@@ -144,18 +159,18 @@ class ContentPane:
         self.z_index = z_index
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
-        self.renderer.put_char(
+        self.window.put_char(
             self.pos_x + x,
             self.pos_y + y,
             char,
             fore_color,
             back_color)
 
-    def put_text(self, x, y, char, fore_color=None, back_color=None):
-        self.renderer.put_text(
+    def put_text(self, x, y, text, fore_color=None, back_color=None):
+        self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
-            char,
+            text,
             fore_color,
             back_color)
 
@@ -163,7 +178,7 @@ class ContentPane:
         # TODO make it better ^^
         for x in range(0, self.width):
             for y in range(0, self.height):
-                self.put_char(x, y, ' ', None, color)
+                self.put_char(x, y, ' ', color, color)
 
     def update(self):
         """Updates the internal state of the pane."""
@@ -173,9 +188,9 @@ class ContentPane:
 class MapPane(ContentPane):
     """Renders every visisble component, e.g the map with all its entities"""
 
-    def __init__(self, renderer, absolute_x,
+    def __init__(self, window, absolute_x,
                  absolute_y, width, height, z_index=0):
-        ContentPane.__init__(self, renderer, absolute_x,
+        ContentPane.__init__(self, window, absolute_x,
                              absolute_y, width, height, z_index=0)
         self.viewport_x = 0
         self.viewport_y = 0
@@ -187,7 +202,7 @@ class MapPane(ContentPane):
     def render(self):
         """Renders all entieties with a visable renderable component and with a
         position in the current viewport."""
-        em = self.renderer.entity_manager
+        em = self.window.entity_manager
         # TODISCUSS: list comprehension before sort ???
         renderables = {k: v for k, v in em.get_all_of_type(
             'Renderable').iteritems() if v.visible}
@@ -196,8 +211,9 @@ class MapPane(ContentPane):
             self._render_entity(entity, renderable)
 
     def _render_entity(self, entity, renderable):
-        """Check if the position of the given entity is in the viewport and pass
-        the entety to the renderer with the recalculated position in the pane.
+        """Check if the position of the given entity is in the viewport and
+        render the entety to the window with the recalculated position in the
+        pane.
 
         Args:
             entity (object): the entity which should be rendered.
@@ -205,23 +221,26 @@ class MapPane(ContentPane):
                 given entity.
 
         """
-        em = self.renderer.entity_manager
+        em = self.window.entity_manager
         position = em.get_entity_component(entity, 'Position')
-        # TODO pass own color component to the renderer and map to tcod color in
+        fore_color = em.get_entity_component(entity, 'Color')
+        # TODO pass own color component to the window and map to tcod color in
         # the latest possible moment
-        fore_color = self.renderer._get_tcod_color(entity)
+        fore_color = self.window.renderer._get_tcod_color(fore_color)
+        back_color = libtcod.black
         if self._in_viewport(position):
             self.put_char(
                 position.x - self.viewport_x,
                 position.y - self.viewport_y,
                 renderable.character,
-                fore_color)
+                fore_color,
+                back_color)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
         centered on the player until it hits the edges of the map. The viewport
         is represented by a start point + width and high of the pane."""
-        em = self.renderer.entity_manager
+        em = self.window.entity_manager
         map = em.get_entity_component(em.current_map, 'Map')
         player_pos = em.get_entity_component(em.player, 'Position')
         self.viewport_x = max(player_pos.x - int(self.width / 2), 0)

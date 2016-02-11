@@ -7,7 +7,7 @@ from nightcaste import __version__
 from processors import GameInputProcessor
 from processors import MenuInputProcessor
 from processors import WorldInitializer
-from renderer import SimpleConsoleRenderer
+from renderer import Window
 import logging
 import time
 
@@ -19,9 +19,9 @@ def main():
     realtime = True
     event_manager = EventManager()
     entity_manager = EntityManager()
-    renderer = SimpleConsoleRenderer(event_manager, entity_manager)
     input_controller = InputController(
         not realtime, event_manager, entity_manager)
+    renderer = Window(0, 'Nightcaste ' + __version__, 80, 55, event_manager, entity_manager)
     round = 0
     prev_time = None
 
