@@ -57,21 +57,30 @@ class EventProcessor:
 class InputProcessor(EventProcessor):
 
     def register(self):
-        self._register('KeyPressed')
+        self._register('ViewChanged')
 
     def unregister(self):
-        self._unregister('KeyPressed')
+        self._unregister('ViewChanged')
 
     def handle_event(self, event, round):
-        action = self._map_key_to_action(event.code)
-        logger.debug('Mapped key %s to action %s', event.code, action)
-        if action is not None:
-            self.event_manager.enqueue_event(action)
+        if event.type() == 'KeyPressed':
+            action = self._map_key_to_action(event.code)
+            logger.debug('Mapped key %s to action %s', event.code, action)
+            if action is not None:
+                self.event_manager.enqueue_event(action)
+        else:
+            if self._is_responsible_for(event.active_view):
+                self._register('KeyPressed')
+            else:
+                self._unregister('KeyPressed')
 
 
 class GameInputProcessor(InputProcessor):
     """Handle all key inputs if the player is in the world and not showing a
     menu."""
+
+    def _is_responsible_for(self, view_name):
+        return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
         if keycode == libtcod.KEY_UP:
@@ -87,13 +96,11 @@ class GameInputProcessor(InputProcessor):
 
 class MenuInputProcessor(InputProcessor):
 
+    def _is_responsible_for(self, view_name):
+        return view_name == 'menu'
+
     def _map_key_to_action(self, keycode):
         if keycode == libtcod.KEY_ENTER:
-            # TODO Who is resposible for adding and removing the key listeners
-            self.unregister()
-            GameInputProcessor(
-                self.event_manager,
-                self.entity_manager).register()
             return WorldEnter()
         return None
 
