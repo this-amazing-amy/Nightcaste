@@ -34,9 +34,9 @@ class TestEntityManager:
         assert entity2 is not None
         assert entity1 != entity2
 
-    def test_create_entity_from_configuration(
+    def test_new_from_config(
             self, entity_manager, simple_config):
-        entity = entity_manager.create_entity_from_configuration(simple_config)
+        entity = entity_manager.new_from_config(simple_config)
         position = entity_manager.get_entity_component(entity, 'Position')
         renderable = entity_manager.get_entity_component(entity, 'Renderable')
         assert entity is not None
@@ -46,9 +46,8 @@ class TestEntityManager:
         assert position.y == 23
         assert renderable.character == '@'
 
-    def test_create_entity_from_blueprint(self, entity_manager):
-        player = entity_manager.create_entity_from_blueprint(
-            'game.player')
+    def test_new_from_blueprint(self, entity_manager):
+        player = entity_manager.new_from_blueprint('game.player')
         assert player is not None
         renderable = entity_manager.get_entity_component(player, 'Renderable')
         assert renderable is not None
@@ -59,7 +58,7 @@ class TestEntityManager:
         config = EntityConfiguration()
         config.add_attribute('Position', 'x', 42)
         config.add_attribute('Position', 'y', 27)
-        player = entity_manager.create_from_blueprint_and_config(
+        player = entity_manager.new_from_blueprint_and_config(
             'game.player', config)
         assert player is not None
         renderable = entity_manager.get_entity_component(player, 'Renderable')
@@ -72,21 +71,21 @@ class TestEntityManager:
         assert renderable.z_index == 9
 
     def test_destroy_entity(self, entity_manager, simple_config):
-        entity = entity_manager.create_entity_from_configuration(simple_config)
+        entity = entity_manager.new_from_config(simple_config)
         entity_manager.destroy_entity(entity)
         assert entity_manager.get_entity_component(entity, 'Position') is None
         assert entity_manager.get_entity_component(entity, 'Renderable') is None
 
     def test_get_entity_component(self, entity_manager, simple_config):
-        entity = entity_manager.create_entity_from_configuration(simple_config)
+        entity = entity_manager.new_from_config(simple_config)
         position = entity_manager.get_entity_component(entity, 'Position')
         renderable = entity_manager.get_entity_component(entity, 'Renderable')
         assert position is not None
         assert renderable is not None
 
     def test_get_all_of_type(self, entity_manager, simple_config):
-        entity_manager.create_entity_from_configuration(simple_config)
-        entity_manager.create_entity_from_configuration(simple_config)
+        entity_manager.new_from_config(simple_config)
+        entity_manager.new_from_config(simple_config)
         positions = entity_manager.get_all_of_type('Position')
         renderables = entity_manager.get_all_of_type('Renderable')
         assert len(positions) > 1
@@ -98,7 +97,7 @@ class TestEntityManager:
 
     def test_get_components_for_entites(
             self, entity_manager, simple_config):
-        entity = entity_manager.create_entity_from_configuration(simple_config)
+        entity = entity_manager.new_from_config(simple_config)
         positions = entity_manager.get_all_of_type('Position')
         renderables = entity_manager.get_components_for_entities(
             positions, 'Renderable')

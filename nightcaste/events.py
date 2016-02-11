@@ -23,8 +23,8 @@ class EventManager:
         # self.deque = collections.deque()      Super fast unbounded queue
         #                                       without locking
 
-        # Dictionary of systems listening for events of different types
-        # {'event_type': System}
+        # Dictionary of processors listening for events of different types
+        # {'event_type': EventProcessor}
         self.listeners = {}
 
     def register_listener(self, event_type, event_processor):
@@ -127,23 +127,15 @@ class MapChange(Event):
         self.level = level
 
 
-class CheckCollision(Event):
-    """ Checks the given position for colliding entities
+class EntitiesCollided(Event):
+    """ Indicated that two or more entities have collided
 
     Args:
-        map (int): entity_id of the map to test on
-        x (int): x position to test
-        y (int): y position to test
-        callback (Event): Event to call, if nothing is colliding
-        fail (Event): Event to call, if something is colliding
+        entities ([int]): The colliding entities
     """
 
-    def __init__(self, map, x, y, callback, fail=None):
-        self.map = map
-        self.x = x
-        self.y = y
-        self.callback = callback
-        self.fail = fail
+    def __init__(self, entities):
+        self.entities = entities
 
 
 class MoveAction(Event):

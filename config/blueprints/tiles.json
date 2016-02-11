@@ -12,7 +12,7 @@
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
-                        "Colliding.blocking": true
+                        "Colliding.active": true
 		}
 	},
 	"stone_floor": {
@@ -28,7 +28,7 @@
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
-                        "Colliding.blocking": false
+                        "Colliding.active": false
 		}
         }
 }
