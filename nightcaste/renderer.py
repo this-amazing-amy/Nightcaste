@@ -1,6 +1,7 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
+from nightcaste.components import Color
 from nightcaste.events import MenuOpen
 from nightcaste.processors import ViewProcessor
 import logging
@@ -13,6 +14,7 @@ class TcodConsoleRenderer:
 
     def __init__(self, console, title, width=80, height=55):
         self.console = console
+        self.color_cache = {}
         libtcod.console_init_root(width, height, title)
         libtcod.console_set_default_foreground(self.console, libtcod.grey)
         libtcod.console_set_default_background(self.console, libtcod.black)
@@ -31,13 +33,15 @@ class TcodConsoleRenderer:
         libtcod.console_flush()
 
     def _get_tcod_color(self, color):
-        return libtcod.Color(color.r, color.g, color.b)
+        tcod_color = self.color_cache.get(color)
+        if tcod_color is None:
+            tcod_color = libtcod.Color(color.r, color.g, color.b)
+            self.color_cache.update({color: tcod_color})
+        return tcod_color
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
-        if fore_color is None:
-            fore_color = libtcod.console_get_default_foreground(self.console)
-        if back_color is None:
-            back_color = libtcod.console_get_default_background(self.console)
+        fore_color = self._get_tcod_color(fore_color)
+        back_color = self._get_tcod_color(back_color)
         libtcod.console_put_char_ex(
             self.console, x, y, char.encode('utf-8'), fore_color, back_color)
 
@@ -157,24 +161,26 @@ class ContentPane:
         self.width = width
         self.height = height
         self.z_index = z_index
+        self.default_background = Color(0, 0, 0)
+        self.default_foreground = Color(175, 175, 175)
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.window.put_char(
             self.pos_x + x,
             self.pos_y + y,
             char,
-            fore_color,
-            back_color)
+            self.default_foreground if fore_color is None else fore_color,
+            self.default_background if back_color is None else back_color)
 
     def put_text(self, x, y, text, fore_color=None, back_color=None):
         self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
             text,
-            fore_color,
-            back_color)
+            self.default_foreground if fore_color is None else fore_color,
+            self.default_background if back_color is None else back_color)
 
-    def print_background(self, color):
+    def print_background(self, color=None):
         # TODO make it better ^^
         for x in range(0, self.width):
             for y in range(0, self.height):
@@ -206,11 +212,16 @@ class MapPane(ContentPane):
         # TODISCUSS: list comprehension before sort ???
         renderables = {k: v for k, v in em.get_all_of_type(
             'Renderable').iteritems() if v.visible}
+        positions = em.get_all_of_type('Position')
+        colors = em.get_all_of_type('Color')
         for entity, renderable in sorted(
                 renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
-            self._render_entity(entity, renderable)
+            self._render_entity(
+                renderable,
+                positions[entity],
+                colors[entity])
 
-    def _render_entity(self, entity, renderable):
+    def _render_entity(self, renderable, position, color):
         """Check if the position of the given entity is in the viewport and
         render the entety to the window with the recalculated position in the
         pane.
@@ -221,20 +232,12 @@ class MapPane(ContentPane):
                 given entity.
 
         """
-        em = self.window.entity_manager
-        position = em.get_entity_component(entity, 'Position')
-        fore_color = em.get_entity_component(entity, 'Color')
-        # TODO pass own color component to the window and map to tcod color in
-        # the latest possible moment
-        fore_color = self.window.renderer._get_tcod_color(fore_color)
-        back_color = libtcod.black
         if self._in_viewport(position):
             self.put_char(
                 position.x - self.viewport_x,
                 position.y - self.viewport_y,
                 renderable.character,
-                fore_color,
-                back_color)
+                color)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
@@ -271,7 +274,9 @@ class StatusPane(ContentPane):
 class MenuPane(ContentPane):
 
     def render(self):
-        self.print_background(libtcod.sepia)
+        self.default_background = Color(127, 101, 63)
+        self.default_foreground = Color(127, 0, 0)
+        self.print_background()
         self.print_logo()
         self.print_menu()
         self.print_footer()
@@ -281,66 +286,46 @@ class MenuPane(ContentPane):
         self.put_text(
             10,
             10,
-            ' _   _ _       _     _                _       ',
-            libtcod.red,
-            libtcod.sepia)
+            ' _   _ _       _     _                _       ')
         self.put_text(
             10,
             11,
-            '| \ | (_)     | |   | |              | |      ',
-            libtcod.red,
-            libtcod.sepia)
+            '| \ | (_)     | |   | |              | |      ')
         self.put_text(
             10,
             12,
-            '|  \| |_  __ _| |__ | |_ ___ __ _ ___| |_ ___ ',
-            libtcod.red,
-            libtcod.sepia)
+            '|  \| |_  __ _| |__ | |_ ___ __ _ ___| |_ ___ ')
         self.put_text(
             10,
             13,
-            '| . ` | |/ _` | \'_ \| __/ __/ _` / __| __/ _ \\',
-            libtcod.red,
-            libtcod.sepia)
+            '| . ` | |/ _` | \'_ \| __/ __/ _` / __| __/ _ \\')
         self.put_text(
             10,
             14,
-            '| |\  | | (_| | | | | || (_| (_| \__ \ ||  __/',
-            libtcod.red,
-            libtcod.sepia)
+            '| |\  | | (_| | | | | || (_| (_| \__ \ ||  __/')
         self.put_text(
             10,
             15,
-            '|_| \_|_|\__, |_| |_|\__\___\__,_|___/\__\___|',
-            libtcod.red,
-            libtcod.sepia)
+            '|_| \_|_|\__, |_| |_|\__\___\__,_|___/\__\___|')
         self.put_text(
             10,
             16,
-            '          __/ |                               ',
-            libtcod.red,
-            libtcod.sepia)
+            '          __/ |                               ')
         self.put_text(
             10,
             17,
-            '         |___/                                ',
-            libtcod.red,
-            libtcod.sepia)
+            '         |___/                                ')
 
     def print_menu(self):
         self.put_text(
             15,
             20,
-            '[Enter]  Enter the world',
-            libtcod.red,
-            libtcod.sepia)
-        self.put_text(15, 22, '  [Esc]  Exit game', libtcod.red, libtcod.sepia)
+            '[Enter]  Enter the world')
+        self.put_text(15, 22, '  [Esc]  Exit game')
 
     def print_footer(self):
         version = 'Nightcaste v' + __version__
         self.put_text(
             self.width - len(version),
             self.height - 1,
-            version,
-            libtcod.red,
-            libtcod.sepia)
+            version)
