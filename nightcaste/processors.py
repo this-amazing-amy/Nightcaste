@@ -6,6 +6,7 @@ from events import MapChange
 from events import MoveAction
 from events import ViewChanged
 from events import WorldEnter
+from events import UseEntityAction
 from mapcreation import MapGenerator
 import tcod as libtcod
 import logging
@@ -91,6 +92,10 @@ class GameInputProcessor(InputProcessor):
             return MoveAction(self.entity_manager.player, -1, 0)
         elif keycode == libtcod.KEY_RIGHT:
             return MoveAction(self.entity_manager.player, 1, 0)
+        elif keycode == libtcod.KEY_ENTER:
+            # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
+            # entities
+            return UseEntityAction(self.entity_manager.player, 0, 0)
         return None
 
 
@@ -170,6 +175,7 @@ class WorldInitializer(EventProcessor):
         # TODISCUSS: Do we need to save the Listeners?
         MapChangeProcessor(self.event_manager, self.entity_manager).register()
         MovementProcessor(self.event_manager, self.entity_manager).register()
+        UseEntityProcessor(self.event_manager, self.entity_manager).register()
 
         self.event_manager.enqueue_event(MapChange('World', 0))
 
@@ -236,12 +242,35 @@ class CollisionManager():
             entity,
             component)
             for entity in map[x][y]}
-        active = [e for e, v in collidings.iteritems() if v.active]
+        active = [e for e, v in collidings.iteritems()
+                  if v is not None and v.active]
         if (len(active) > 0):
             # TODO: Throw better collision event
             self.event_manager.enqueue_event(EntitiesCollided(active))
             return active
         return None
+
+
+class UseEntityProcessor(EventProcessor):
+    """ Listens for UseEntity Events, determines Target Entity and throws its
+    Use-Event """
+
+    def register(self):
+        self._register("UseEntityAction")
+
+    def unregister(self):
+        self._unregister("UseEntityAction")
+
+    def handle_event(self, event, round):
+        user = self.entity_manager.get_entity_component(event.user, "Position")
+        target = (user.x + event.direction[0], user.y + event.direction[1])
+        entities = self.entity_manager.get_current_map()[target[0]][target[1]]
+        useables = {x: self.entity_manager.get_entity_component(x, "Useable")
+                    for x in entities}
+        for i in useables:
+            if (useables[i] is not None):
+                self.event_manager.throw(useables[i].useEvent,
+                                         {'usedEntity': i})
 
 
 class ViewProcessor(EventProcessor):
@@ -263,7 +292,8 @@ class ViewProcessor(EventProcessor):
         self._unregister('EntityMoved')
 
     def handle_event(self, event, round):
-        if event.type() == 'EntityMoved' and event.entity == self.entity_manager.player:
+        player = self.entity_manager.player
+        if event.type() == 'EntityMoved' and event.entity == player:
             self.view_controller.update_view('game')
         elif event.type() == 'WorldEnter':
             if self.view_controller.show('game'):
