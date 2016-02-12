@@ -20,7 +20,7 @@
 			"Position",
 			"Renderable",
 			"Color",
-                        "Colliding"
+                        "Useable"
 		],
 		"attributes": {
 			"Renderable.character": ".",
@@ -28,7 +28,7 @@
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
-                        "Colliding.active": false
+                        "Useable.useEvent": "FloorUsed"
 		}
         }
 }

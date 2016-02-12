@@ -58,6 +58,10 @@ class EventManager:
         """Enques an event which will be processed later"""
         self.events.put(event)
 
+    def throw(self, eventIdentifier, data=None):
+        """ Enqueues an event from an identifier String"""
+        self.events.put(BaseEvent(eventIdentifier, data))
+
     def process_events(self, round):
         """Process all events in the queue.
 
@@ -86,6 +90,27 @@ class EventManager:
         if event.type() in self.listeners:
             for processor in self.listeners[event.type()]:
                 processor.handle_event(event, round)
+
+
+class BaseEvent(object):
+    """Base class for all events. An Event contains the necessary information
+    for a System to react accordingly."""
+
+    def __init__(self, identifier, data):
+        self.identifier = identifier
+        self.data = data
+
+    def type(self):
+        """Returns the class name of the event"""
+        # TODO: When refactoring event system, this can be removed, its calls
+        # should be changed accordingly
+        return self.__class__.__name__
+
+    def __str__(self):
+        result = self.type() + " ("
+        for prop, val in self.__dict__.iteritems():
+            result += str(prop) + ": " + str(val) + ", "
+        return result[:-2] + ")"
 
 
 class Event(object):
@@ -173,6 +198,19 @@ class MoveAction(Event):
         self.entity = entity
         self.dx = dx
         self.dy = dy
+
+
+class UseEntityAction(Event):
+    """ Use an entity
+
+    Args:
+        user (long): Entity ID of the 'user', mostly the player
+        direction ((int, int)): Direction in which to look for useables
+    """
+
+    def __init__(self, user, direction):
+        self.user = user
+        self.direction = direction
 
 
 class ViewChanged(Event):
