@@ -4,6 +4,17 @@ import tcod as libtcod
 
 logger = logging.getLogger('input')
 
+KEY_ENTER = libtcod.KEY_ENTER
+KEY_ESCAPE = libtcod.KEY_ESCAPE
+KEY_DOWN = libtcod.KEY_DOWN
+KEY_LEFT = libtcod.KEY_LEFT
+KEY_RIGHT = libtcod.KEY_RIGHT
+KEY_UP = libtcod.KEY_UP
+
+
+def is_key_pressed(code):
+    return libtcod.console_is_key_pressed(code)
+
 
 class InputController:
 
@@ -27,8 +38,7 @@ class InputController:
             self.wait_for_input(True)
         else:
             self.check_for_input()
-        request_close = self.create_key_event()
-        return request_close
+        self.create_key_event()
 
     def create_key_event(self):
         """Determines, which event to throw for the given key.
@@ -38,9 +48,7 @@ class InputController:
 
         """
         if self.key.vk == libtcod.KEY_NONE:
-            return False
-        elif self.key.vk == libtcod.KEY_ESCAPE:
-            return True
+            pass
 
         # TODO pass whole tcod event or code and character and modifiers
         if self.key.pressed:

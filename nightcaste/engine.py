@@ -2,7 +2,7 @@
 subsystems and runs the super loop"""
 from events import EventManager
 from entities import EntityManager
-from input import InputController
+import input
 from nightcaste import __version__
 from processors import SystemManager
 from renderer import WindowManager
@@ -24,7 +24,7 @@ def main():
         event_manager,
         entity_manager,
         get_systems_config())
-    input_controller = InputController(
+    input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
     window_manager = WindowManager(event_manager, entity_manager)
     window = create_window(window_manager)
@@ -39,9 +39,8 @@ def main():
         current_time = time.time()
         time_delta = current_time - prev_time
 
-        # TODO: event based exit
-        close_game = input_controller.update_input(round, time_delta)
-        if close_game:
+        input_controller.update_input(round, time_delta)
+        if input.is_key_pressed(input.KEY_ESCAPE):
             break
         event_manager.process_events(round)
         system_manager.update(round, time_delta)
