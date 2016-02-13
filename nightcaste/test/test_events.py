@@ -4,7 +4,6 @@ import pytest
 from nightcaste.entities import EntityManager
 from nightcaste.events import Event
 from nightcaste.events import EventManager
-from nightcaste.events import MoveAction
 from nightcaste.processors import EventProcessor
 
 
@@ -22,11 +21,8 @@ class TestEvent:
 
     def test_type(self):
         """Tests if events return their correct type"""
-        event = Event()
-        move = MoveAction(42, 1, -1)
-
-        assert event.type() == 'Event'
-        assert move.type() == 'MoveAction'
+        event = Event("Event")
+        assert event.identifier == 'Event'
 
 
 class TestEventManager:
@@ -35,7 +31,7 @@ class TestEventManager:
     def test_enque_event(self, event_manager):
         """Check if the number of events increases if an event is enqueued."""
         qsize_before = event_manager.events.qsize()
-        event_manager.enqueue_event(Event())
+        event_manager.throw("Event")
         qsize_after = event_manager.events.qsize()
 
         assert qsize_after == qsize_before + 1
@@ -66,9 +62,9 @@ class TestEventManager:
 
     def test_process_events(self, event_manager, entity_manager):
         """Checks if the events in the queue are processed"""
-        event = Event()
-        event2 = Event()
-        event_type = event.type()
+        event = Event("id")
+        event2 = Event("id2")
+        event_type = event.identifier
         processor = EventProcessor(event_manager, entity_manager)
         event_manager.listeners.update({event_type: [processor]})
         event_manager.events.put(event)
