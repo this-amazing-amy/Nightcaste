@@ -49,6 +49,30 @@ class TcodConsoleRenderer:
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
 
 
+class WindowManager:
+
+    def __init__(self, event_manager, entity_manager):
+        self.windows = []
+        self.event_manager = event_manager
+        self.entity_manager = entity_manager
+
+    def create_empty_window(self, title, width, height):
+        window = Window(len(self.windows), title, width,
+                        height, self.event_manager, self.entity_manager)
+        self.windows.append(window)
+        return window
+
+    def create_window_from_config(self, config):
+        window = Window(len(self.windows) + 1,
+                        config['title'],
+                        config['width'],
+                        config['height'],
+                        self.event_manager,
+                        self.entity_manager)
+        self.windows.append(window)
+        return window
+
+
 class Window:
     """A window an which something can be rendered. Supports multiple views with
     content panes in them."""
@@ -59,20 +83,13 @@ class Window:
         self.entity_manager = entity_manager
         self.view_controller = ViewController()
         self.renderer = TcodConsoleRenderer(number, title, width, height)
-
         ViewProcessor(
             event_manager,
             entity_manager,
             self.view_controller).register()
-        event_manager.throw("MenuOpen")
 
-        # TODO: Push the logic HOW to construct the panes further up to the
-        # engine or even to configuration files
-        menu_view = self.view_controller.add_view('menu')
-        menu_view.add_pane('main_menu', MenuPane(self, 0, 0, width, height))
-        game_view = self.view_controller.add_view('game')
-        game_view.add_pane('map', MapPane(self, 0, 0, width, height - 5))
-        game_view.add_pane('status', StatusPane(self, 0, height - 5, width, 5))
+    def add_view(self, name):
+        return self.view_controller.add_view(name)
 
     def is_active(self):
         return True
