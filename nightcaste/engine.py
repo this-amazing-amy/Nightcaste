@@ -7,7 +7,10 @@ from nightcaste import __version__
 from processors import GameInputProcessor
 from processors import MenuInputProcessor
 from processors import WorldInitializer
-from renderer import Window
+from renderer import WindowManager
+from renderer import MenuPane
+from renderer import MapPane
+from renderer import StatusPane
 import logging
 import time
 
@@ -21,7 +24,8 @@ def main():
     entity_manager = EntityManager()
     input_controller = InputController(
         not realtime, event_manager, entity_manager)
-    renderer = Window(0, 'Nightcaste ' + __version__, 80, 55, event_manager, entity_manager)
+    window_manager = WindowManager(event_manager, entity_manager)
+    window = create_window(window_manager)
     round = 0
     prev_time = None
 
@@ -30,8 +34,9 @@ def main():
     GameInputProcessor(event_manager, entity_manager).register()
     WorldInitializer(event_manager, entity_manager).register()
 
-    renderer.render()
-    while renderer.is_active():
+    event_manager.throw("MenuOpen")
+    window.render()
+    while window.is_active():
         if (prev_time is None):
             prev_time = time.time()
         current_time = time.time()
@@ -42,7 +47,21 @@ def main():
         if close_game:
             break
         event_manager.process_events(round)
-        renderer.render()
+        window.render()
 
         prev_time = current_time
     return 0
+
+
+def create_window(window_manager):
+    width = 80
+    height = 55
+    window = window_manager.create_empty_window(
+        'Nightcaste ' + __version__, width, height)
+
+    menu_view = window.add_view('menu')
+    menu_view.add_pane('main_menu', MenuPane(window, 0, 0, width, height))
+    game_view = window.add_view('game')
+    game_view.add_pane('map', MapPane(window, 0, 0, width, height - 5))
+    game_view.add_pane('status', StatusPane(window, 0, height - 5, width, 5))
+    return window
