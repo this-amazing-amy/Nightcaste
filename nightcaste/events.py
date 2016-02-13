@@ -54,9 +54,9 @@ class EventManager:
                     event_processor,
                     event_type)
 
-    def enqueue_event(self, event, rounds=0):
-        """Enques an event which will be processed later"""
-        self.events.put(event)
+    def throw(self, eventIdentifier, data=None):
+        """ Enqueues an event from an identifier String"""
+        self.events.put(Event(eventIdentifier, data))
 
     def process_events(self, round):
         """Process all events in the queue.
@@ -83,8 +83,8 @@ class EventManager:
 
         """
         logger.debug('Process event %s', event)
-        if event.type() in self.listeners:
-            for processor in self.listeners[event.type()]:
+        if event.identifier in self.listeners:
+            for processor in self.listeners[event.identifier]:
                 processor.handle_event(event, round)
 
 
@@ -92,95 +92,13 @@ class Event(object):
     """Base class for all events. An Event contains the necessary information
     for a System to react accordingly."""
 
-    def type(self):
-        """Returns the class name of the event"""
-        return self.__class__.__name__
+    def __init__(self, identifier, data=None):
+        self.identifier = identifier
+        self.data = data
 
     def __str__(self):
-        result = self.type() + " ("
-        for prop, val in self.__dict__.iteritems():
-            result += str(prop) + ": " + str(val) + ", "
+        result = self.identifier + " ("
+        if self.data is not None:
+            for prop, val in self.data.iteritems():
+                result += str(prop) + ": " + str(val) + ", "
         return result[:-2] + ")"
-
-
-class EntityMoved(Event):
-    """Indicates an entity was moved to a new position"""
-
-    def __init__(self, entity, new_x, new_y):
-        self.entity = entity
-        self.new_x = new_x
-        self.new_y = new_y
-
-
-class KeyEvent(Event):
-    """Base Class for key events."""
-
-    def __init__(self, code=None):
-        self.code = code
-
-
-class KeyPressed(KeyEvent):
-    """Indicates the user has pressed a key."""
-    pass
-
-
-class KeyReleased(KeyEvent):
-    """Indicates the user has released a key."""
-    pass
-
-
-class MapChange(Event):
-    """Indicates a map change.
-
-    Args:
-        map_name (str): The name of the map to change to.
-        level (int): Target map level.
-
-    """
-
-    def __init__(self, map_name, level):
-        self.map_name = map_name
-        self.level = level
-
-
-class EntitiesCollided(Event):
-    """ Indicated that two or more entities have collided
-
-    Args:
-        entities ([int]): The colliding entities
-    """
-
-    def __init__(self, entities):
-        self.entities = entities
-
-
-class MenuOpen(Event):
-    """Open the menu."""
-    pass
-
-
-class MoveAction(Event):
-    """This action indicates that an entity should be moved.
-
-    Args:
-        entity (long): The entity which should be moved.
-        dx (int): The distance to move horizontal.
-        dy (int): The distance to move vertical.
-
-    """
-
-    def __init__(self, entity, dx, dy):
-        self.entity = entity
-        self.dx = dx
-        self.dy = dy
-
-
-class ViewChanged(Event):
-
-    def __init__(self, active_view):
-        self.active_view = active_view
-
-
-class WorldEnter(Event):
-    """Indicates the player has started the game and enters the world."""
-    pass
