@@ -20,6 +20,10 @@ def main():
     realtime = True
     event_manager = EventManager()
     entity_manager = EntityManager()
+    behaviour_manager = BehaviourManager(
+        event_manager,
+        entity_manager,
+        get_behaviour_config())
     system_manager = SystemManager(
         event_manager,
         entity_manager,
@@ -39,6 +43,7 @@ def main():
         current_time = time.time()
         time_delta = current_time - prev_time
 
+        behaviour_manager.update(round, time_delta)
         input_controller.update_input(round, time_delta)
         if input.is_key_pressed(input.KEY_ESCAPE):
             break
@@ -59,6 +64,10 @@ def get_systems_config():
             'MapChangeProcessor',
             'MovementProcessor',
             'UseEntityProcessor']}
+
+
+def get_behaviour_config():
+    return {'component_behaviours': []}
 
 
 def create_window(window_manager):
