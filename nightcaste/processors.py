@@ -1,10 +1,60 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
 from mapcreation import MapGenerator
+import importlib
 import tcod as libtcod
 import logging
 
 logger = logging.getLogger('processors')
+
+
+class SystemManager:
+    """Creates, configures and manages all GameSystems.
+
+    Args:
+        event_manager(EventManager): The event manager will be pass to all new
+            systems.
+        entity_manager (EntityManager): The entity manager will be passed to all
+            systems.
+        config (dict): (Optitonally) Create new systems from config.
+
+    """
+
+    def __init__(self, event_manager, entity_manager, config=None):
+        self.systems = []
+        self.event_manager = event_manager
+        self.entity_manager = entity_manager
+        if config is not None:
+            self.configure(config)
+
+    def configure(self, config):
+        """Configure systems based on there name.
+
+        Args:
+            config: {'systems': []}
+        """
+        if 'systems' in config:
+            for system_name in config['systems']:
+                self.add_system_by_name(system_name)
+
+    def add_system(self, system):
+        """Adds a system and calls its register function"""
+        self.systems.append(system)
+        # TODO rename to more general intialize
+        system.register()
+
+    def add_system_by_name(self, system_name):
+        """Create and initialize a new system. The system has to be class in the
+        module processors."""
+        module = importlib.import_module('nightcaste.processors')
+        system_class = getattr(module, system_name)
+        system = system_class(self.event_manager, self.entity_manager)
+        self.add_system(system)
+
+    def update(self, round, delta_time):
+        """Calls update on all systems."""
+        for system in self.systems:
+            system.update(round, delta_time)
 
 
 class EventProcessor:
@@ -30,6 +80,9 @@ class EventProcessor:
                 round: The current round and the game
 
         """
+        pass
+
+    def update(self, round, delta_time):
         pass
 
     def register(self):
@@ -78,6 +131,7 @@ class GameInputProcessor(InputProcessor):
         return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
+        """
         if keycode == libtcod.KEY_UP:
             return ("MoveAction", {'entity': self.entity_manager.player,
                                    'dx': 0, 'dy': -1})
@@ -96,6 +150,7 @@ class GameInputProcessor(InputProcessor):
             return ("UseEntityAction",
                     {'entity': self.entity_manager.player,
                      'dx': 0, 'dy': 0})
+                                   """
         return None
 
 
@@ -174,12 +229,6 @@ class WorldInitializer(EventProcessor):
     def handle_event(self, event, round):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
-
-        # TODISCUSS: Do we need to save the Listeners?
-        MapChangeProcessor(self.event_manager, self.entity_manager).register()
-        MovementProcessor(self.event_manager, self.entity_manager).register()
-        UseEntityProcessor(self.event_manager, self.entity_manager).register()
-
         self.event_manager.throw('MapChange', {'map': 'World', 'level': 0})
 
 
