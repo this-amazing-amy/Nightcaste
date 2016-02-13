@@ -1,6 +1,4 @@
 """This module handles user inputs and transforms then into key codes."""
-from events import KeyPressed
-from events import KeyReleased
 import logging
 import tcod as libtcod
 
@@ -45,12 +43,12 @@ class InputController:
 
         # TODO pass whole tcod event or code and character and modifiers
         if key.pressed:
-            key_event = KeyPressed(key.vk)
+            key_event = "KeyPressed"
         else:
-            key_event = KeyReleased(key.vk)
+            key_event = "KeyReleased"
         logger.debug('Input Event Detected: %s', key_event)
 
-        self.event_manager.enqueue_event(key_event)
+        self.event_manager.throw(key_event, {'keycode': key.vk})
         return False
 
     def check_for_input(self):

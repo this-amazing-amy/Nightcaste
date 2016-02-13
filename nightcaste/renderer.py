@@ -1,7 +1,6 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
-from nightcaste.events import MenuOpen
 from nightcaste.processors import ViewProcessor
 import logging
 import tcod as libtcod
@@ -61,7 +60,7 @@ class Window:
             event_manager,
             entity_manager,
             self.view_controller).register()
-        event_manager.enqueue_event(MenuOpen())
+        event_manager.throw("MenuOpen")
 
         # TODO: Push the logic HOW to construct the panes further up to the
         # engine or even to configuration files
