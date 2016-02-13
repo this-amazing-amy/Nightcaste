@@ -2,10 +2,11 @@
 import pytest
 from nightcaste.entities import EntityConfiguration
 from nightcaste.entities import EntityManager
-from nightcaste.events import MoveAction
+from nightcaste.events import Event
 from nightcaste.events import EventManager
 from nightcaste.processors import CollisionManager
 from nightcaste.processors import MovementProcessor
+from nightcaste.mapcreation import MapGenerator
 
 
 @pytest.fixture
@@ -37,7 +38,10 @@ class TestMovementProcessor:
         """Tests if an entity's position is changed."""
         processor = MovementProcessor(event_manager, entity_manager, True)
         entity = entity_manager.new_from_config(simple_config)
-        event = MoveAction(entity, 1, -1)   # RIGHT-UP
+        event = Event("MoveAction", {"entity": entity, "dx": 1, "dy": -1})
+        # RIGHT-UP
+        mg = MapGenerator(entity_manager)
+        entity_manager.current_map = mg.generate_map("map", 0)
 
         processor.handle_event(event, 1)
         position = entity_manager.get_entity_component(entity, 'Position')
