@@ -4,9 +4,7 @@ from events import EventManager
 from entities import EntityManager
 from input import InputController
 from nightcaste import __version__
-from processors import GameInputProcessor
-from processors import MenuInputProcessor
-from processors import WorldInitializer
+from processors import SystemManager
 from renderer import WindowManager
 from renderer import MenuPane
 from renderer import MapPane
@@ -22,17 +20,16 @@ def main():
     realtime = True
     event_manager = EventManager()
     entity_manager = EntityManager()
+    system_manager = SystemManager(
+        event_manager,
+        entity_manager,
+        get_systems_config())
     input_controller = InputController(
         not realtime, event_manager, entity_manager)
     window_manager = WindowManager(event_manager, entity_manager)
     window = create_window(window_manager)
     round = 0
     prev_time = None
-
-    # TODO Implement ProcessorManager in order to create and manage processors
-    MenuInputProcessor(event_manager, entity_manager).register()
-    GameInputProcessor(event_manager, entity_manager).register()
-    WorldInitializer(event_manager, entity_manager).register()
 
     event_manager.throw("MenuOpen")
     window.render()
@@ -47,10 +44,22 @@ def main():
         if close_game:
             break
         event_manager.process_events(round)
+        system_manager.update(round, time_delta)
         window.render()
 
         prev_time = current_time
     return 0
+
+
+def get_systems_config():
+    return {
+        'systems': [
+            'MenuInputProcessor',
+            'GameInputProcessor',
+            'WorldInitializer',
+            'MapChangeProcessor',
+            'MovementProcessor',
+            'UseEntityProcessor']}
 
 
 def create_window(window_manager):
