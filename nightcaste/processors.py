@@ -1,11 +1,5 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-from events import EntitiesCollided
-from events import EntityMoved
-from events import MapChange
-from events import MoveAction
-from events import ViewChanged
-from events import WorldEnter
 from mapcreation import MapGenerator
 import tcod as libtcod
 import logging
@@ -63,13 +57,14 @@ class InputProcessor(EventProcessor):
         self._unregister('ViewChanged')
 
     def handle_event(self, event, round):
-        if event.type() == 'KeyPressed':
-            action = self._map_key_to_action(event.code)
-            logger.debug('Mapped key %s to action %s', event.code, action)
+        if event.identifier == 'KeyPressed':
+            action = self._map_key_to_action(event.data["keycode"])
+            logger.debug('Mapped key %s to action %s', event.data["keycode"],
+                         action)
             if action is not None:
-                self.event_manager.enqueue_event(action)
+                self.event_manager.throw(action[0], action[1])
         else:
-            if self._is_responsible_for(event.active_view):
+            if self._is_responsible_for(event.data["active_view"]):
                 self._register('KeyPressed')
             else:
                 self._unregister('KeyPressed')
@@ -84,13 +79,23 @@ class GameInputProcessor(InputProcessor):
 
     def _map_key_to_action(self, keycode):
         if keycode == libtcod.KEY_UP:
-            return MoveAction(self.entity_manager.player, 0, -1)
+            return ("MoveAction", {'entity': self.entity_manager.player,
+                                   'dx': 0, 'dy': -1})
         elif keycode == libtcod.KEY_DOWN:
-            return MoveAction(self.entity_manager.player, 0, 1)
+            return ("MoveAction", {'entity': self.entity_manager.player,
+                                   'dx': 0, 'dy': 1})
         elif keycode == libtcod.KEY_LEFT:
-            return MoveAction(self.entity_manager.player, -1, 0)
+            return ("MoveAction", {'entity': self.entity_manager.player,
+                                   'dx': -1, 'dy': 0})
         elif keycode == libtcod.KEY_RIGHT:
-            return MoveAction(self.entity_manager.player, 1, 0)
+            return ("MoveAction", {'entity': self.entity_manager.player,
+                                   'dx': 1, 'dy': 0})
+        elif keycode == libtcod.KEY_ENTER:
+            # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
+            # entities
+            return ("UseEntityAction",
+                    {'entity': self.entity_manager.player,
+                     'dx': 0, 'dy': 0})
         return None
 
 
@@ -101,7 +106,7 @@ class MenuInputProcessor(InputProcessor):
 
     def _map_key_to_action(self, keycode):
         if keycode == libtcod.KEY_ENTER:
-            return WorldEnter()
+            return ("WorldEnter", None)
         return None
 
 
@@ -130,10 +135,10 @@ class MovementProcessor(EventProcessor):
         """
 
         position = self.entity_manager.get_entity_component(
-            event.entity, 'Position')
+            event.data['entity'], 'Position')
 
-        target_x = position.x + event.dx
-        target_y = position.y + event.dy
+        target_x = position.x + event.data['dx']
+        target_y = position.y + event.data['dy']
 
         collision = self.collision_manager.check(
             self.entity_manager.current_map,
@@ -142,15 +147,16 @@ class MovementProcessor(EventProcessor):
         if (collision is None):
             map = self.entity_manager.get_current_map()
             map[position.x][position.y] = [entity for entity in map[
-                position.x][position.y] if entity != event.entity]
-            map[target_x][target_y].append(event.entity)
+                position.x][position.y] if entity != event.data['entity']]
+            map[target_x][target_y].append(event.data['entity'])
             position.x = target_x
             position.y = target_y
             logger.debug('Move Entity %s to position %s,%s. There are now: %s',
-                         event.entity, target_x, target_y,
+                         event.data['entity'], target_x, target_y,
                          map[target_x][target_y])
-            self.event_manager.enqueue_event(
-                EntityMoved(event.entity, target_x, target_y))
+            self.event_manager.throw("EntityMoved",
+                                     {'entity': event.data['entity'],
+                                      'x': target_x, 'y': target_y})
 
 
 class WorldInitializer(EventProcessor):
@@ -170,8 +176,9 @@ class WorldInitializer(EventProcessor):
         # TODISCUSS: Do we need to save the Listeners?
         MapChangeProcessor(self.event_manager, self.entity_manager).register()
         MovementProcessor(self.event_manager, self.entity_manager).register()
+        UseEntityProcessor(self.event_manager, self.entity_manager).register()
 
-        self.event_manager.enqueue_event(MapChange('World', 0))
+        self.event_manager.throw('MapChange', {'map': 'World', 'level': 0})
 
 
 class MapChangeProcessor(EventProcessor):
@@ -191,12 +198,14 @@ class MapChangeProcessor(EventProcessor):
     def handle_event(self, event, round):
         logger.debug(
             'Generating Map %s on level %d',
-            event.map_name,
-            event.level)
-        new_map = self.map_generator.generate_map(event.map_name, event.level)
+            event.data["map"],
+            event.data["level"])
+        new_map = self.map_generator.generate_map(
+            event.data['map'], event.data['level'])
         # place player at the dungeon entry
-        self.event_manager.enqueue_event(
-            MoveAction(self.entity_manager.player, 20, 10))
+        self.event_manager.throw('MoveAction',
+                                 {'entity': self.entity_manager.player,
+                                  'dx': 20, 'dy': 10})
         self.change_map(new_map)
 
     def change_map(self, new_map):
@@ -236,12 +245,37 @@ class CollisionManager():
             entity,
             component)
             for entity in map[x][y]}
-        active = [e for e, v in collidings.iteritems() if v.active]
+        active = [e for e, v in collidings.iteritems()
+                  if v is not None and v.active]
         if (len(active) > 0):
             # TODO: Throw better collision event
-            self.event_manager.enqueue_event(EntitiesCollided(active))
+            self.event_manager.throw("EntitiesCollided", {"entities": active})
             return active
         return None
+
+
+class UseEntityProcessor(EventProcessor):
+    """ Listens for UseEntity Events, determines Target Entity and throws its
+    Use-Event """
+
+    def register(self):
+        self._register("UseEntityAction")
+
+    def unregister(self):
+        self._unregister("UseEntityAction")
+
+    def handle_event(self, event, round):
+        user = self.entity_manager.get_entity_component(event.data['user'],
+                                                        "Position")
+        target = (user.x + event.data['direction'][0],
+                  user.y + event.data['direction'][1])
+        entities = self.entity_manager.get_current_map()[target[0]][target[1]]
+        useables = {x: self.entity_manager.get_entity_component(x, "Useable")
+                    for x in entities}
+        for i in useables:
+            if (useables[i] is not None):
+                self.event_manager.throw(useables[i].useEvent,
+                                         {'usedEntity': i})
 
 
 class ViewProcessor(EventProcessor):
@@ -263,12 +297,15 @@ class ViewProcessor(EventProcessor):
         self._unregister('EntityMoved')
 
     def handle_event(self, event, round):
-        if event.type() == 'EntityMoved' and event.entity == self.entity_manager.player:
+        player = self.entity_manager.player
+        if event.identifier == 'EntityMoved' and event.data['entity'] == player:
             self.view_controller.update_view('game')
-        elif event.type() == 'WorldEnter':
+        elif event.identifier == 'WorldEnter':
             if self.view_controller.show('game'):
                 # TODO let view_controller throw the event?
-                self.event_manager.enqueue_event(ViewChanged('game'))
-        elif event.type() == 'MenuOpen':
+                self.event_manager.throw(
+                    'ViewChanged', {'active_view': 'game'})
+        elif event.identifier == 'MenuOpen':
             if self.view_controller.show('menu'):
-                self.event_manager.enqueue_event(ViewChanged('menu'))
+                self.event_manager.throw(
+                    'ViewChanged', {'active_view': 'menu'})

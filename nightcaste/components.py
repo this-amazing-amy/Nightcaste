@@ -107,3 +107,15 @@ class Map(Component):
 
         """
         self.children.append(child)
+
+
+class Useable(Component):
+    """ An entity that can be used (eg doors, stairs, chests, etc.)
+    On use, its useEvent will be called with the entity's id as a parameter
+
+    Args:
+        useEvent (str): Identifier for the event that will be thrown on use
+    """
+
+    def __init__(self, useEvent=None):
+        self.useEvent = useEvent
