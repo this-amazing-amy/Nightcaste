@@ -146,8 +146,10 @@ class MovementProcessor(EventProcessor):
 
         if (collision is None):
             map = self.entity_manager.get_current_map()
-            map[position.x][position.y] = [entity for entity in map[
-                position.x][position.y] if entity != event.data['entity']]
+            try:
+                map[position.x][position.y].remove(event.data['entity'])
+            except ValueError:
+                pass
             map[target_x][target_y].append(event.data['entity'])
             position.x = target_x
             position.y = target_y

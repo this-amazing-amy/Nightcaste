@@ -11,7 +11,8 @@ class InputController:
         self.blocking = blocking
         self.entity_manager = entity_manager
         self.event_manager = event_manager
-        # TODO: Make Renderer-Events (for menus, quitting, etc.)
+        self.key = libtcod.Key()
+        self.mouse = libtcod.Mouse()
 
     def update_input(self, rounds, delta_time):
         """Checks if the user has pressed a key and throws an appropriate
@@ -23,41 +24,41 @@ class InputController:
 
         """
         if (self.blocking):
-            key = self.wait_for_input(True)
+            self.wait_for_input(True)
         else:
-            key = self.check_for_input()
-        request_close = self.create_key_event(key)
+            self.check_for_input()
+        request_close = self.create_key_event()
         return request_close
 
-    def create_key_event(self, key):
+    def create_key_event(self):
         """Determines, which event to throw for the given key.
 
             Returns:
                 True if ESCAPE was pressed otherwise False.
 
         """
-        if key.vk == libtcod.KEY_NONE:
+        if self.key.vk == libtcod.KEY_NONE:
             return False
-        elif key.vk == libtcod.KEY_ESCAPE:
+        elif self.key.vk == libtcod.KEY_ESCAPE:
             return True
 
         # TODO pass whole tcod event or code and character and modifiers
-        if key.pressed:
-            key_event = "KeyPressed"
+        if self.key.pressed:
+            key_event = 'KeyPressed'
         else:
-            key_event = "KeyReleased"
+            key_event = 'KeyReleased'
         logger.debug('Input Event Detected: %s', key_event)
 
-        self.event_manager.throw(key_event, {'keycode': key.vk})
+        self.event_manager.throw(
+            key_event, {
+                'keycode': self.key.vk, 'char': self.key.c})
         return False
 
     def check_for_input(self):
         """ Returns the last key pressed. Returns KEY_NONE if no key was
         pressed."""
-        key = libtcod.Key()
-        mouse = libtcod.Mouse()
-        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS, key, mouse)
-        return key
+        libtcod.sys_check_for_event(
+            libtcod.EVENT_KEY_PRESS, self.key, self.mouse)
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
@@ -73,4 +74,4 @@ class InputController:
 
 
         """
-        return libtcod.console_wait_for_keypress(flush)
+        self.key = libtcod.console_wait_for_keypress(flush)
