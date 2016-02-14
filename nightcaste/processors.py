@@ -131,26 +131,12 @@ class GameInputProcessor(InputProcessor):
         return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
-        """
-        if keycode == libtcod.KEY_UP:
-            return ("MoveAction", {'entity': self.entity_manager.player,
-                                   'dx': 0, 'dy': -1})
-        elif keycode == libtcod.KEY_DOWN:
-            return ("MoveAction", {'entity': self.entity_manager.player,
-                                   'dx': 0, 'dy': 1})
-        elif keycode == libtcod.KEY_LEFT:
-            return ("MoveAction", {'entity': self.entity_manager.player,
-                                   'dx': -1, 'dy': 0})
-        elif keycode == libtcod.KEY_RIGHT:
-            return ("MoveAction", {'entity': self.entity_manager.player,
-                                   'dx': 1, 'dy': 0})
-        elif keycode == libtcod.KEY_ENTER:
+        if keycode == libtcod.KEY_ENTER:
             # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
             # entities
             return ("UseEntityAction",
                     {'entity': self.entity_manager.player,
                      'dx': 0, 'dy': 0})
-                                   """
         return None
 
 
