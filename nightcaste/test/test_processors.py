@@ -6,6 +6,8 @@ from nightcaste.events import Event
 from nightcaste.events import EventManager
 from nightcaste.processors import CollisionManager
 from nightcaste.processors import MovementProcessor
+from nightcaste.processors import WorldInitializer
+from nightcaste.processors import SystemManager
 from nightcaste.mapcreation import MapGenerator
 
 
@@ -26,6 +28,21 @@ def simple_config():
     config.add_attribute('Position', 'y', 23)
     config.add_attribute('Renderable', 'character', '@')
     return config
+
+
+class TestSystemManager:
+
+    def test_configure(self, event_manager, entity_manager):
+        instance = SystemManager(event_manager, entity_manager)
+        config = {
+            'systems': [
+                'WorldInitializer',
+                'MovementProcessor']}
+
+        assert len(instance.systems) == 0
+        instance.configure(config)
+        assert isinstance(instance.systems[0], WorldInitializer)
+        assert isinstance(instance.systems[1], MovementProcessor)
 
 
 class TestEventProcessor:
