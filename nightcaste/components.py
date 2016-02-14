@@ -69,6 +69,12 @@ class Color(Component):
         self.b = b
 
 
+class InputComponent(Component):
+    """Entity which are receiving input. (WIP Currently Empty will contain e.g
+    MoveDirection)"""
+    pass
+
+
 class Map(Component):
     """A contains a 2 dimensional array referancing the tile entities. A map can
     reference one parent and many childs for map navigation.

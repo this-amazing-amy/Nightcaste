@@ -1,5 +1,6 @@
 """The engine is the main module of the game. It initializes all necessary
 subsystems and runs the super loop"""
+from behaviour import BehaviourManager
 from events import EventManager
 from entities import EntityManager
 import input
@@ -67,7 +68,8 @@ def get_systems_config():
 
 
 def get_behaviour_config():
-    return {'component_behaviours': []}
+    return {'component_behaviours': [
+        {'component_type': 'InputComponent', 'name': 'InputBehaviour'}]}
 
 
 def create_window(window_manager):

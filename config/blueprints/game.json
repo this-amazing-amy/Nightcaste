@@ -4,7 +4,8 @@
 			"Position",
 			"Renderable",
 			"Color",
-                        "Colliding"
+                        "Colliding",
+                        "InputComponent"
 		],
 		"attributes": {
 			"Renderable.character": "@",
