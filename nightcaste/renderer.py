@@ -5,6 +5,7 @@ from nightcaste.components import Color
 from nightcaste.processors import ViewProcessor
 import logging
 import tcod as libtcod
+import pygame
 
 logger = logging.getLogger('renderer')
 
@@ -49,6 +50,58 @@ class TcodConsoleRenderer:
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
 
 
+class PygameRenderer:
+
+    def __init__(self, console, title, width=80, height=55):
+        self.console = console
+        self.color_cache = {}
+        pygame.init()
+        self.tilesize = 8
+        self.screen = pygame.display.set_mode([width*self.tilesize,
+                                               height*self.tilesize])
+        self.surface = pygame.Surface((self.tilesize * width,
+                                       self.tilesize * height))
+        self.tiles = self.load_tile_table("terminal.png",
+                                          self.tilesize, self.tilesize)
+        self.tileset = {'.': (2,14), '#': (2, 3), '@': (0, 4), ' ': (0, 0)}
+
+    def load_tile_table(self, filename, width, height):
+        image = pygame.image.load(filename).convert()
+        image_width, image_height = image.get_size()
+        tile_table = []
+        for tile_x in range(0, image_width/width):
+            line = []
+            tile_table.append(line)
+            for tile_y in range(0, image_height/height):
+                rect = (tile_x*width, tile_y*height, width, height)
+                line.append(image.subsurface(rect))
+        return tile_table
+
+    def clear(self):
+        """Removes all content from the console"""
+        libtcod.console_clear(self.console)
+
+    def flush(self):
+        """Flush the changes to screen."""
+        pygame.display.flip()
+
+    def _get_tcod_color(self, color):
+        tcod_color = self.color_cache.get(color)
+        if tcod_color is None:
+            tcod_color = libtcod.Color(color.r, color.g, color.b)
+            self.color_cache.update({color: tcod_color})
+        return tcod_color
+
+    def put_char(self, x, y, char, fore_color=None, back_color=None):
+        coords = self.tileset[char]
+        tile = self.tiles[coords[0]][coords[1]]
+        self.surface.blit(tile, (x*self.tilesize, y*self.tilesize))
+
+    def put_text(self, x, y, text, fcolor=None, bcolor=None):
+        for text_index in range(0, len(text)):
+            self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
+
+
 class WindowManager:
 
     def __init__(self, event_manager, entity_manager):
@@ -82,7 +135,7 @@ class Window:
         self.event_manager = event_manager
         self.entity_manager = entity_manager
         self.view_controller = ViewController()
-        self.renderer = TcodConsoleRenderer(number, title, width, height)
+        self.renderer = PygameRenderer(number, title, width, height)
         ViewProcessor(
             event_manager,
             entity_manager,
@@ -284,7 +337,8 @@ class MapPane(ContentPane):
 class StatusPane(ContentPane):
 
     def render(self):
-        self.put_text(0, 0, 'Health: 100')
+        pass
+    #self.put_text(0, 0, 'Health: 100')
 
 
 class MenuPane(ContentPane):
@@ -293,9 +347,9 @@ class MenuPane(ContentPane):
         self.default_background = Color(127, 101, 63)
         self.default_foreground = Color(127, 0, 0)
         self.print_background()
-        self.print_logo()
-        self.print_menu()
-        self.print_footer()
+        #self.print_logo()
+        #self.print_menu()
+        #self.print_footer()
 
     def print_logo(self):
         # TODO put logo to a file or so
