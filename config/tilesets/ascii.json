@@ -1,0 +1,61 @@
+{
+    "general": {
+        "filename": "terminal.png",
+	"tile_width": 8,
+	"tile_height": 8
+    },
+    "tiles": [
+    	{
+		"key": " ",
+		"position": [0,0]
+    	},
+    	{
+		"key": "@",
+		"position": [0,4]
+    	},
+    	{
+		"key": "#",
+		"position": [2,3]
+    	},
+    	{
+		"key": "(",
+		"position": [2,8]
+    	},
+    	{
+		"key": ")",
+		"position": [2,9]
+    	},
+    	{
+		"key": ",",
+		"position": [2,12]
+    	},
+    	{
+		"key": ".",
+		"position": [2,14]
+    	},
+    	{
+		"key": "/",
+		"position": [2,15]
+    	},
+    	{
+		"key": "\\",
+		"position": [5,12]
+    	},
+    	{
+		"key": "_",
+		"position": [5,15]
+    	},
+    	{
+		"key": "`",
+		"position": [6,0]
+    	},
+    	{
+		"key": "|",
+		"position": [7,12]
+    	},
+    	{
+		"key": "'",
+		"position": [14,15]
+    	}
+    ]
+}
