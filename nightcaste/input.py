@@ -1,19 +1,19 @@
 """This module handles user inputs and transforms then into key codes."""
 import logging
-import tcod as libtcod
+import pygame
 
 logger = logging.getLogger('input')
 
-KEY_ENTER = libtcod.KEY_ENTER
-KEY_ESCAPE = libtcod.KEY_ESCAPE
-KEY_DOWN = libtcod.KEY_DOWN
-KEY_LEFT = libtcod.KEY_LEFT
-KEY_RIGHT = libtcod.KEY_RIGHT
-KEY_UP = libtcod.KEY_UP
+K_ENTER = pygame.K_RETURN
+K_ESCAPE = pygame.K_ESCAPE
+K_DOWN = pygame.K_DOWN
+K_LEFT = pygame.K_LEFT
+K_RIGHT = pygame.K_RIGHT
+K_UP = pygame.K_UP
 
 
-def is_key_pressed(code):
-    return libtcod.console_is_key_pressed(code)
+def is_pressed(code):
+    return pygame.key.get_pressed()[code]
 
 
 class InputController:
@@ -22,10 +22,9 @@ class InputController:
         self.blocking = blocking
         self.entity_manager = entity_manager
         self.event_manager = event_manager
-        self.key = libtcod.Key()
-        self.mouse = libtcod.Mouse()
+        self.request_close = False
 
-    def update_input(self, rounds, delta_time):
+    def update(self, rounds, delta_time):
         """Checks if the user has pressed a key and throws an appropriate
         key event.
 
@@ -38,35 +37,17 @@ class InputController:
             self.wait_for_input(True)
         else:
             self.check_for_input()
-        self.create_key_event()
-
-    def create_key_event(self):
-        """Determines, which event to throw for the given key.
-
-            Returns:
-                True if ESCAPE was pressed otherwise False.
-
-        """
-        if self.key.vk == libtcod.KEY_NONE:
-            pass
-
-        # TODO pass whole tcod event or code and character and modifiers
-        if self.key.pressed:
-            key_event = 'KeyPressed'
-        else:
-            key_event = 'KeyReleased'
-        logger.debug('Input Event Detected: %s', key_event)
-
-        self.event_manager.throw(
-            key_event, {
-                'keycode': self.key.vk, 'char': self.key.c})
-        return False
+        return self.request_close
 
     def check_for_input(self):
         """ Returns the last key pressed. Returns KEY_NONE if no key was
         pressed."""
-        libtcod.sys_check_for_event(
-            libtcod.EVENT_KEY_PRESS, self.key, self.mouse)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                self.request_close = True
+            elif event.type == pygame.KEYDOWN:
+                self.event_manager.throw('KeyPressed', {'keycode': event.key})
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code
@@ -82,4 +63,5 @@ class InputController:
 
 
         """
-        self.key = libtcod.console_wait_for_keypress(flush)
+        # TODO check blocking input with pygame
+        pass

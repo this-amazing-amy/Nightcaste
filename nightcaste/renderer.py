@@ -63,7 +63,6 @@ class PygameRenderer:
     def __init__(self, console, title, width=80, height=55):
         self.console = console
         self.color_cache = {}
-        pygame.init()
 
         tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
         tiles_config = json.load(tileset_file)
@@ -87,13 +86,6 @@ class PygameRenderer:
         """Flush the changes to screen."""
         self.screen.blit(self.surface, (0, 0))
         pygame.display.flip()
-
-    def _get_tcod_color(self, color):
-        tcod_color = self.color_cache.get(color)
-        if tcod_color is None:
-            tcod_color = libtcod.Color(color.r, color.g, color.b)
-            self.color_cache.update({color: tcod_color})
-        return tcod_color
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         tile = self.tileset.get_tile(char)
@@ -123,7 +115,6 @@ class TileSet:
         for tile_def in tile_definitions:
             key = tile_def['key']
             tableposition = tile_def['position']
-            # TODO Json and Tuples? Or store row and columns separate?
             tile = tile_table[tableposition[0]][tableposition[1]]
             self.add_tile(key, tile)
 
@@ -131,8 +122,7 @@ class TileSet:
         self.tiles.update({key: tile})
 
     def get_tile(self, key):
-        # TODO throw key error if tile not exists? At least log something....
-        return self.tiles.get(key)
+        return self.tiles[key]
 
     def _load_tile_table(self, filename):
         image = pygame.image.load(filename).convert()
