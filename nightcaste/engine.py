@@ -3,14 +3,15 @@ subsystems and runs the super loop"""
 from behaviour import BehaviourManager
 from events import EventManager
 from entities import EntityManager
-import input
 from nightcaste import __version__
 from processors import SystemManager
 from renderer import WindowManager
 from renderer import MenuPane
 from renderer import MapPane
 from renderer import StatusPane
+import input
 import logging
+import pygame
 import time
 
 logger = logging.getLogger('engine')
@@ -19,6 +20,7 @@ logger = logging.getLogger('engine')
 def main():
     logger.info('Nightcaste v%s', __version__)
     realtime = True
+    pygame.init()
     event_manager = EventManager()
     entity_manager = EntityManager()
     behaviour_manager = BehaviourManager(
@@ -37,7 +39,6 @@ def main():
     prev_time = None
 
     event_manager.throw("MenuOpen")
-    window.render()
     while window.is_active():
         if (prev_time is None):
             prev_time = time.time()
@@ -45,8 +46,8 @@ def main():
         time_delta = current_time - prev_time
 
         behaviour_manager.update(round, time_delta)
-        input_controller.update_input(round, time_delta)
-        if input.is_key_pressed(input.KEY_ESCAPE):
+        request_close = input_controller.update(round, time_delta)
+        if request_close or input.is_pressed(input.K_ESCAPE):
             break
         event_manager.process_events(round)
         system_manager.update(round, time_delta)

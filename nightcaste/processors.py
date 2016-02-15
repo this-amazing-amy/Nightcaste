@@ -2,7 +2,7 @@
 itself in the EventManager in order to retrieve the events to process"""
 from mapcreation import MapGenerator
 import importlib
-import tcod as libtcod
+import input
 import logging
 
 logger = logging.getLogger('processors')
@@ -131,7 +131,7 @@ class GameInputProcessor(InputProcessor):
         return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
-        if keycode == libtcod.KEY_ENTER:
+        if keycode == input.K_ENTER:
             # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
             # entities
             return ("UseEntityAction",
@@ -146,7 +146,7 @@ class MenuInputProcessor(InputProcessor):
         return view_name == 'menu'
 
     def _map_key_to_action(self, keycode):
-        if keycode == libtcod.KEY_ENTER:
+        if keycode == input.K_ENTER:
             return ("WorldEnter", None)
         return None
 

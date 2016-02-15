@@ -73,13 +73,13 @@ class InputBehaviour(EntityComponentBehaviour):
 
     def update(self, round, delta_time):
         """Converts input to an appropriate InputAction."""
-        if input.is_key_pressed(input.KEY_LEFT):
+        if input.is_pressed(input.K_LEFT):
             self.move(-1, 0)
-        elif input.is_key_pressed(input.KEY_RIGHT):
+        elif input.is_pressed(input.K_RIGHT):
             self.move(1, 0)
-        elif input.is_key_pressed(input.KEY_DOWN):
+        elif input.is_pressed(input.K_DOWN):
             self.move(0, 1)
-        elif input.is_key_pressed(input.KEY_UP):
+        elif input.is_pressed(input.K_UP):
             self.move(0, -1)
 
     def move(self, dx, dy):
