@@ -10,8 +10,12 @@ import pygame
 import tcod as libtcod
 
 logger = logging.getLogger('renderer')
-
-TILESET_DIR = path.abspath(path.join(path.dirname(__file__), '..', 'config', 'tilesets'))
+TILESET_DIR = path.abspath(
+    path.join(
+        path.dirname(__file__),
+        '..',
+        'config',
+        'tilesets'))
 
 
 class TcodConsoleRenderer:
@@ -63,12 +67,17 @@ class PygameRenderer:
 
         tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
         tiles_config = json.load(tileset_file)
-
-        screen_width = width * 8
-        screen_height = height * 8
-        self.screen = pygame.display.set_mode([screen_width, screen_height])
+        # Only configures the tile size the tileset image cannot be loaded yet
         self.tileset = TileSet(tiles_config)
+        screen_width = width * self.tileset.tile_width
+        screen_height = height * self.tileset.tile_height
+        self.screen = pygame.display.set_mode([screen_width, screen_height])
         self.surface = pygame.Surface((screen_width, screen_height))
+
+        # We cannot load the image before the screen is initialized but we need
+        # the tile size to calculate the screen size so here come the "real"
+        # TileSet __init__ wich create the tiles map (will be changed "soon")
+        self.tileset.configure_tiles(tiles_config)
 
     def clear(self):
         """Removes all content from the console"""
@@ -102,13 +111,13 @@ class TileSet:
 
     def __init__(self, config):
         self.tiles = {}
-        self._configure(config)
-
-    def _configure(self, config):
         general_config = config['general']
-        filename = path.join(TILESET_DIR, general_config['filename'])
         self.tile_width = general_config['tile_width']
         self.tile_height = general_config['tile_height']
+
+    def configure_tiles(self, config):
+        general_config = config['general']
+        filename = path.join(TILESET_DIR, general_config['filename'])
         tile_table = self._load_tile_table(filename)
         tile_definitions = config['tiles']
         for tile_def in tile_definitions:
@@ -377,8 +386,7 @@ class MapPane(ContentPane):
 class StatusPane(ContentPane):
 
     def render(self):
-        pass
-    #self.put_text(0, 0, 'Health: 100')
+        self.put_text(0, 0, 'Health: 100')
 
 
 class MenuPane(ContentPane):
@@ -388,8 +396,8 @@ class MenuPane(ContentPane):
         self.default_foreground = Color(127, 0, 0)
         # self.print_background()
         self.print_logo()
-        # self.print_menu()
-        # self.print_footer()
+        self.print_menu()
+        self.print_footer()
 
     def print_logo(self):
         # TODO put logo to a file or so

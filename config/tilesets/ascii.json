@@ -38,8 +38,160 @@
 		"position": [2,15]
     	},
     	{
+		"key": "0",
+		"position": [3,0]
+    	},
+    	{
+		"key": "1",
+		"position": [3,1]
+    	},
+    	{
+		"key": "2",
+		"position": [3,2]
+    	},
+    	{
+		"key": "3",
+		"position": [3,3]
+    	},
+    	{
+		"key": "4",
+		"position": [3,4]
+    	},
+    	{
+		"key": "5",
+		"position": [3,5]
+    	},
+    	{
+		"key": "6",
+		"position": [3,6]
+    	},
+    	{
+		"key": "7",
+		"position": [3,7]
+    	},
+    	{
+		"key": "8",
+		"position": [3,8]
+    	},
+    	{
+		"key": "9",
+		"position": [3,9]
+    	},
+    	{
+		"key": "A",
+		"position": [4,1]
+    	},
+    	{
+		"key": "B",
+		"position": [4,2]
+    	},
+    	{
+		"key": "C",
+		"position": [4,3]
+    	},
+    	{
+		"key": "D",
+		"position": [4,4]
+    	},
+    	{
+		"key": "E",
+		"position": [4,5]
+    	},
+    	{
+		"key": "F",
+		"position": [4,6]
+    	},
+    	{
+		"key": "G",
+		"position": [4,7]
+    	},
+    	{
+		"key": "H",
+		"position": [4,8]
+    	},
+    	{
+		"key": "I",
+		"position": [4,9]
+    	},
+    	{
+		"key": "J",
+		"position": [4,10]
+    	},
+    	{
+		"key": "K",
+		"position": [4,11]
+    	},
+    	{
+		"key": "L",
+		"position": [4,12]
+    	},
+    	{
+		"key": "M",
+		"position": [4,13]
+    	},
+    	{
+		"key": "N",
+		"position": [4,14]
+    	},
+    	{
+		"key": "O",
+		"position": [4,15]
+    	},
+    	{
+		"key": "P",
+		"position": [5,0]
+    	},
+    	{
+		"key": "Q",
+		"position": [5,1]
+    	},
+    	{
+		"key": "R",
+		"position": [5,2]
+    	},
+    	{
+		"key": "S",
+		"position": [5,3]
+    	},
+    	{
+		"key": "T",
+		"position": [5,4]
+    	},
+    	{
+		"key": "U",
+		"position": [5,5]
+    	},
+    	{
+		"key": "V",
+		"position": [5,6]
+    	},
+    	{
+		"key": "W",
+		"position": [5,7]
+    	},
+    	{
+		"key": "X",
+		"position": [5,8]
+    	},
+    	{
+		"key": "Y",
+		"position": [5,9]
+    	},
+    	{
+		"key": "Z",
+		"position": [5,10]
+    	},
+    	{
+		"key": "[",
+		"position": [5,11]
+    	},
+    	{
 		"key": "\\",
 		"position": [5,12]
+    	},
+    	{
+		"key": "]",
+		"position": [5,13]
     	},
     	{
 		"key": "_",
@@ -48,6 +200,110 @@
     	{
 		"key": "`",
 		"position": [6,0]
+    	},
+    	{
+		"key": "a",
+		"position": [6,1]
+    	},
+    	{
+		"key": "b",
+		"position": [6,2]
+    	},
+    	{
+		"key": "c",
+		"position": [6,3]
+    	},
+    	{
+		"key": "d",
+		"position": [6,4]
+    	},
+    	{
+		"key": "e",
+		"position": [6,5]
+    	},
+    	{
+		"key": "f",
+		"position": [6,6]
+    	},
+    	{
+		"key": "g",
+		"position": [6,7]
+    	},
+    	{
+		"key": "h",
+		"position": [6,8]
+    	},
+    	{
+		"key": "i",
+		"position": [6,9]
+    	},
+    	{
+		"key": "j",
+		"position": [6,10]
+    	},
+    	{
+		"key": "k",
+		"position": [6,11]
+    	},
+    	{
+		"key": "l",
+		"position": [6,12]
+    	},
+    	{
+		"key": "m",
+		"position": [6,13]
+    	},
+    	{
+		"key": "n",
+		"position": [6,14]
+    	},
+    	{
+		"key": "o",
+		"position": [6,15]
+    	},
+    	{
+		"key": "p",
+		"position": [7,0]
+    	},
+    	{
+		"key": "q",
+		"position": [7,1]
+    	},
+    	{
+		"key": "r",
+		"position": [7,2]
+    	},
+    	{
+		"key": "s",
+		"position": [7,3]
+    	},
+    	{
+		"key": "t",
+		"position": [7,4]
+    	},
+    	{
+		"key": "u",
+		"position": [7,5]
+    	},
+    	{
+		"key": "v",
+		"position": [7,6]
+    	},
+    	{
+		"key": "w",
+		"position": [7,7]
+    	},
+    	{
+		"key": "x",
+		"position": [7,8]
+    	},
+    	{
+		"key": "y",
+		"position": [7,9]
+    	},
+    	{
+		"key": "z",
+		"position": [7,10]
     	},
     	{
 		"key": "|",
