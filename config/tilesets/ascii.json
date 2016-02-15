@@ -10,10 +10,6 @@
 		"position": [0,0]
     	},
     	{
-		"key": "@",
-		"position": [0,4]
-    	},
-    	{
 		"key": "#",
 		"position": [2,3]
     	},
@@ -76,6 +72,14 @@
     	{
 		"key": "9",
 		"position": [3,9]
+    	},
+    	{
+		"key": ":",
+		"position": [3,10]
+    	},
+    	{
+		"key": "@",
+		"position": [4,0]
     	},
     	{
 		"key": "A",
