@@ -3,11 +3,15 @@ console."""
 from nightcaste import __version__
 from nightcaste.components import Color
 from nightcaste.processors import ViewProcessor
+from os import path
+import json
 import logging
-import tcod as libtcod
 import pygame
+import tcod as libtcod
 
 logger = logging.getLogger('renderer')
+
+TILESET_DIR = path.abspath(path.join(path.dirname(__file__), '..', 'config', 'tilesets'))
 
 
 class TcodConsoleRenderer:
@@ -56,33 +60,23 @@ class PygameRenderer:
         self.console = console
         self.color_cache = {}
         pygame.init()
-        self.tilesize = 8
-        self.screen = pygame.display.set_mode([width*self.tilesize,
-                                               height*self.tilesize])
-        self.surface = pygame.Surface((self.tilesize * width,
-                                       self.tilesize * height))
-        self.tiles = self.load_tile_table("terminal.png",
-                                          self.tilesize, self.tilesize)
-        self.tileset = {'.': (2,14), '#': (2, 3), '@': (0, 4), ' ': (0, 0)}
 
-    def load_tile_table(self, filename, width, height):
-        image = pygame.image.load(filename).convert()
-        image_width, image_height = image.get_size()
-        tile_table = []
-        for tile_x in range(0, image_width/width):
-            line = []
-            tile_table.append(line)
-            for tile_y in range(0, image_height/height):
-                rect = (tile_x*width, tile_y*height, width, height)
-                line.append(image.subsurface(rect))
-        return tile_table
+        tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
+        tiles_config = json.load(tileset_file)
+
+        screen_width = width * 8
+        screen_height = height * 8
+        self.screen = pygame.display.set_mode([screen_width, screen_height])
+        self.tileset = TileSet(tiles_config)
+        self.surface = pygame.Surface((screen_width, screen_height))
 
     def clear(self):
         """Removes all content from the console"""
-        libtcod.console_clear(self.console)
+        pass
 
     def flush(self):
         """Flush the changes to screen."""
+        self.screen.blit(self.surface, (0, 0))
         pygame.display.flip()
 
     def _get_tcod_color(self, color):
@@ -93,13 +87,59 @@ class PygameRenderer:
         return tcod_color
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
-        coords = self.tileset[char]
-        tile = self.tiles[coords[0]][coords[1]]
-        self.surface.blit(tile, (x*self.tilesize, y*self.tilesize))
+        tile = self.tileset.get_tile(char)
+        self.surface.blit(
+            tile,
+            (x * self.tileset.tile_width,
+             y * self.tileset.tile_height))
 
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
+
+
+class TileSet:
+
+    def __init__(self, config):
+        self.tiles = {}
+        self._configure(config)
+
+    def _configure(self, config):
+        general_config = config['general']
+        filename = path.join(TILESET_DIR, general_config['filename'])
+        self.tile_width = general_config['tile_width']
+        self.tile_height = general_config['tile_height']
+        tile_table = self._load_tile_table(filename)
+        tile_definitions = config['tiles']
+        for tile_def in tile_definitions:
+            key = tile_def['key']
+            tableposition = tile_def['position']
+            # TODO Json and Tuples? Or store row and columns separate?
+            tile = tile_table[tableposition[0]][tableposition[1]]
+            self.add_tile(key, tile)
+
+    def add_tile(self, key, tile):
+        self.tiles.update({key: tile})
+
+    def get_tile(self, key):
+        # TODO throw key error if tile not exists? At least log something....
+        return self.tiles.get(key)
+
+    def _load_tile_table(self, filename):
+        image = pygame.image.load(filename).convert()
+        image_width, image_height = image.get_size()
+        tile_table = []
+        for tile_x in range(0, image_width / self.tile_width):
+            line = []
+            tile_table.append(line)
+            for tile_y in range(0, image_height / self.tile_height):
+                rect = (
+                    tile_x * self.tile_width,
+                    tile_y * self.tile_height,
+                    self.tile_width,
+                    self.tile_height)
+                line.append(image.subsurface(rect))
+        return tile_table
 
 
 class WindowManager:
@@ -346,10 +386,10 @@ class MenuPane(ContentPane):
     def render(self):
         self.default_background = Color(127, 101, 63)
         self.default_foreground = Color(127, 0, 0)
-        self.print_background()
-        #self.print_logo()
-        #self.print_menu()
-        #self.print_footer()
+        # self.print_background()
+        self.print_logo()
+        # self.print_menu()
+        # self.print_footer()
 
     def print_logo(self):
         # TODO put logo to a file or so
