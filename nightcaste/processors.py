@@ -28,7 +28,7 @@ class SystemManager:
             self.configure(config)
 
     def configure(self, config):
-        """Configure systems based on there name.
+        """Configure systems based on their name.
 
         Args:
             config: {'systems': []}
