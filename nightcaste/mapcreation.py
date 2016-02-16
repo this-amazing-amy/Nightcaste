@@ -133,6 +133,11 @@ class MapGenerator():
         libtcod.bsp_split_recursive(tree, 0, 6, 8, 8, 1.3, 1.3)
         return tree
 
+    def remove_tile(self, x, y):
+        if (len(self.tiles) > x and len(self.tiles[x]) > y):
+            for entity in self.tiles[x][y]:
+                self.entity_manager.destroy_entity(entity)
+
     def get_tile(self, x, y):
         """ Returns the bottommost entity at the given position """
         if isinstance(self.tiles[x][y], list) and len(self.tiles[x][y]) > 0:
@@ -140,14 +145,17 @@ class MapGenerator():
 
     def create_tile(self, blueprint, x, y):
         """ Creates a tile from the specified blueprint name """
+        self.remove_tile(x, y)
         tile_config = EntityConfiguration()
         tile_config.add_attribute('Position', 'x', x)
         tile_config.add_attribute('Position', 'y', y)
+
         return self.entity_manager.new_from_blueprint_and_config(
             "tiles." + blueprint, tile_config)
 
     def create_custom_tile(self, x, y, char, colliding):
         """Creates a tile with the specified properties."""
+        self.remove_tile(x, y)
         tile_config = EntityConfiguration()
         tile_config.add_attribute('Position', 'x', x)
         tile_config.add_attribute('Position', 'y', y)
