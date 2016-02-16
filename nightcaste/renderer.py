@@ -18,46 +18,6 @@ TILESET_DIR = path.abspath(
         'tilesets'))
 
 
-class TcodConsoleRenderer:
-
-    def __init__(self, console, title, width=80, height=55):
-        self.console = console
-        self.color_cache = {}
-        libtcod.console_init_root(width, height, title)
-        libtcod.console_set_default_foreground(self.console, libtcod.grey)
-        libtcod.console_set_default_background(self.console, libtcod.black)
-
-    def is_active(self):
-        """Indicates if the console is still active.
-        Wraps libtcod.console_is_window_closed()."""
-        return not libtcod.console_is_window_closed()
-
-    def clear(self):
-        """Removes all content from the console"""
-        libtcod.console_clear(self.console)
-
-    def flush(self):
-        """Flush the changes to screen."""
-        libtcod.console_flush()
-
-    def _get_tcod_color(self, color):
-        tcod_color = self.color_cache.get(color)
-        if tcod_color is None:
-            tcod_color = libtcod.Color(color.r, color.g, color.b)
-            self.color_cache.update({color: tcod_color})
-        return tcod_color
-
-    def put_char(self, x, y, char, fore_color=None, back_color=None):
-        fore_color = self._get_tcod_color(fore_color)
-        back_color = self._get_tcod_color(back_color)
-        libtcod.console_put_char_ex(
-            self.console, x, y, char.encode('utf-8'), fore_color, back_color)
-
-    def put_text(self, x, y, text, fcolor=None, bcolor=None):
-        for text_index in range(0, len(text)):
-            self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
-
-
 class PygameRenderer:
 
     def __init__(self, console, title, width=80, height=55):
@@ -94,6 +54,12 @@ class PygameRenderer:
             (x * self.tileset.tile_width,
              y * self.tileset.tile_height))
 
+    def fill_background(self, color, rect=None):
+        self.surface.fill((color.r, color.g, color.b),
+                          pygame.Rect(rect.left, rect.top,
+                                      rect.width*self.tileset.tile_width,
+                                      rect.height*self.tileset.tile_height))
+
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
@@ -125,7 +91,7 @@ class TileSet:
         return self.tiles[key]
 
     def _load_tile_table(self, filename):
-        image = pygame.image.load(filename).convert()
+        image = pygame.image.load(filename).convert_alpha()
         image_width, image_height = image.get_size()
         tile_table = []
         for tile_x in range(0, image_width / self.tile_width):
@@ -193,6 +159,9 @@ class Window:
     def put_text(self, x, y, text, fore_color, back_color):
         """Delegates the call to the renderer."""
         self.renderer.put_text(x, y, text, fore_color, back_color)
+
+    def fill_background(self, color, rect):
+        self.renderer.fill_background(color, rect)
 
     def render(self):
         self.renderer.clear()
@@ -289,10 +258,10 @@ class ContentPane:
             self.default_background if back_color is None else back_color)
 
     def print_background(self, color=None):
-        # TODO make it better ^^
-        for x in range(0, self.width):
-            for y in range(0, self.height):
-                self.put_char(x, y, ' ', color, color)
+        if color is None:
+            color = self.default_background
+        self.window.fill_background(color, pygame.Rect(self.pos_x, self.pos_y,
+                                                       self.width, self.height))
 
     def update(self):
         """Updates the internal state of the pane."""
@@ -322,6 +291,7 @@ class MapPane(ContentPane):
             'Renderable').iteritems() if v.visible}
         positions = em.get_all_of_type('Position')
         colors = em.get_all_of_type('Color')
+        self.print_background()
         for entity, renderable in sorted(
                 renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
             self._render_entity(
@@ -384,7 +354,7 @@ class MenuPane(ContentPane):
     def render(self):
         self.default_background = Color(127, 101, 63)
         self.default_foreground = Color(127, 0, 0)
-        # self.print_background()
+        self.print_background(self.default_background)
         self.print_logo()
         self.print_menu()
         self.print_footer()
@@ -437,3 +407,43 @@ class MenuPane(ContentPane):
             self.width - len(version),
             self.height - 1,
             version)
+
+
+class TcodConsoleRenderer:
+
+    def __init__(self, console, title, width=80, height=55):
+        self.console = console
+        self.color_cache = {}
+        libtcod.console_init_root(width, height, title)
+        libtcod.console_set_default_foreground(self.console, libtcod.grey)
+        libtcod.console_set_default_background(self.console, libtcod.black)
+
+    def is_active(self):
+        """Indicates if the console is still active.
+        Wraps libtcod.console_is_window_closed()."""
+        return not libtcod.console_is_window_closed()
+
+    def clear(self):
+        """Removes all content from the console"""
+        libtcod.console_clear(self.console)
+
+    def flush(self):
+        """Flush the changes to screen."""
+        libtcod.console_flush()
+
+    def _get_tcod_color(self, color):
+        tcod_color = self.color_cache.get(color)
+        if tcod_color is None:
+            tcod_color = libtcod.Color(color.r, color.g, color.b)
+            self.color_cache.update({color: tcod_color})
+        return tcod_color
+
+    def put_char(self, x, y, char, fore_color=None, back_color=None):
+        fore_color = self._get_tcod_color(fore_color)
+        back_color = self._get_tcod_color(back_color)
+        libtcod.console_put_char_ex(
+            self.console, x, y, char.encode('utf-8'), fore_color, back_color)
+
+    def put_text(self, x, y, text, fcolor=None, bcolor=None):
+        for text_index in range(0, len(text)):
+            self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
