@@ -1,3 +1,4 @@
+import game
 import importlib
 import input
 
@@ -69,21 +70,28 @@ class EntityComponentBehaviour:
 
 
 class InputBehaviour(EntityComponentBehaviour):
-    """Implements User Input."""
+    """Implements User Input. Controls all entites with an InputComponent."""
 
     def update(self, round, delta_time):
         """Converts input to an appropriate InputAction."""
-        if input.is_pressed(input.K_LEFT):
-            self.move(-1, 0)
-        elif input.is_pressed(input.K_RIGHT):
-            self.move(1, 0)
-        elif input.is_pressed(input.K_DOWN):
-            self.move(0, 1)
-        elif input.is_pressed(input.K_UP):
-            self.move(0, -1)
+        # TODO Implement gamestatus aware behaviour manager to keep the turn
+        # based logic as central as possible and possibly enable switching
+        # between realtime and turn based. (A realtime behaviour would not
+        # check for a state
+        if game.status == game.G_ROUND_WAITING_INPUT:
+            if input.is_pressed(input.K_LEFT):
+                self.move(-1, 0)
+            elif input.is_pressed(input.K_RIGHT):
+                self.move(1, 0)
+            elif input.is_pressed(input.K_DOWN):
+                self.move(0, 1)
+            elif input.is_pressed(input.K_UP):
+                self.move(0, -1)
 
     def move(self, dx, dy):
         """Throws a MoveAction."""
+        # TODO push up the _TURN attribute to EntityComponentBehaviour or
+        # BehaviourManager
         self.event_manager.throw(
-            'MoveAction', {
+            'MoveAction_TURN', {
                 'entity': self.entity, 'dx': dx, 'dy': dy})
