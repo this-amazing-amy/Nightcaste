@@ -9,6 +9,7 @@ from renderer import WindowManager
 from renderer import MenuPane
 from renderer import MapPane
 from renderer import StatusPane
+import game
 import input
 import logging
 import pygame
@@ -35,7 +36,6 @@ def main():
         not realtime, event_manager, entity_manager)
     window_manager = WindowManager(event_manager, entity_manager)
     window = create_window(window_manager)
-    round = 0
     prev_time = None
 
     event_manager.throw("MenuOpen")
@@ -45,7 +45,8 @@ def main():
         current_time = time.time()
         time_delta = current_time - prev_time
 
-        behaviour_manager.update(round, time_delta)
+        if game.status != game.G_PAUSED:
+            behaviour_manager.update(round, time_delta)
         request_close = input_controller.update(round, time_delta)
         if request_close or input.is_pressed(input.K_ESCAPE):
             break
@@ -60,6 +61,7 @@ def main():
 def get_systems_config():
     return {
         'systems': [
+            'TurnProcessor',
             'MenuInputProcessor',
             'GameInputProcessor',
             'WorldInitializer',
