@@ -46,21 +46,21 @@ class PygameRenderer:
     def flush(self):
         """Flush the changes to screen."""
         self.screen.blit(self.surface, (0, 0))
-        pygame.display.flip()
+        pygame.display.update()
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         tile = self.tileset.get_tile(char)
-        self.surface.blit(
+        rects = self.surface.blit(
             tile,
             (x * self.tileset.tile_width,
              y * self.tileset.tile_height))
 
     def fill_background(self, color, rect=None):
-        self.surface.fill((color.r, color.g, color.b),
-                          pygame.Rect(rect.left*self.tileset.tile_width,
-                                      rect.top*self.tileset.tile_height,
-                                      rect.width*self.tileset.tile_width,
-                                      rect.height*self.tileset.tile_height))
+        rects = self.surface.fill((color.r, color.g, color.b),
+                          pygame.Rect(rect[0]*self.tileset.tile_width,
+                                      rect[1]*self.tileset.tile_height,
+                                      rect[2]*self.tileset.tile_width,
+                                      rect[3]*self.tileset.tile_height))
 
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
@@ -259,11 +259,15 @@ class ContentPane:
             self.default_foreground if fore_color is None else fore_color,
             self.default_background if back_color is None else back_color)
 
-    def print_background(self, color=None):
+    def print_background(self, color=None, rect=None):
         if color is None:
             color = self.default_background
-        self.window.fill_background(color, pygame.Rect(self.pos_x, self.pos_y,
-                                                       self.width, self.height))
+        if rect is None:
+            rect = (self.pos_x, self.pos_y, self.width, self.height)
+        else:
+            rect = (self.pos_x+rect[0], self.pos_y+rect[1], rect[2], rect[3])
+
+        self.window.fill_background(color, rect)
 
     def update(self):
         """Updates the internal state of the pane."""
@@ -348,9 +352,8 @@ class MapPane(ContentPane):
 class StatusPane(ContentPane):
 
     def render(self):
-        self.print_background()
         self.put_text(0, 0, 'Health: 100')
-        self.put_text(0, 1, 'Round %s' % (game.round))
+        self.put_text(0, 1, 'Round: %s' % (game.round))
 
 
 class MenuPane(ContentPane):
