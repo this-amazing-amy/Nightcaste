@@ -9,20 +9,121 @@ import tcod as libtcod
 logger = logging.getLogger('mapcreation')
 
 
+class MapManager():
+    """ The Map Manager stores and administrates all maps
+    It holds generators for different types of maps """
+
+    def __init__(self, entity_manager):
+        self.entity_manager = entity_manager
+        self.maps = {}
+        self.generators = {'dungeon': DungeonGenerator(self.entity_manager),
+                           'world': WorldspaceGenerator(self.entity_manager)}
+
+    def get_map(self, type="dungeon", name=None, level=0):
+        if name is None:
+            name = self.random_name()
+        collection = self.get_mapcollection(name)
+        if (len(collection) > level):
+            return collection[level]
+        else:
+            return self.generators[type].generate_map(name, level)
+
+    def get_mapcollection(self, name):
+        if self.maps.get(name, None) is None:
+            self.maps[name] = []
+        return self.maps[name]
+
+    def random_name(self):
+        # TODO: Implement random dungeon name generation
+        return "Random Dungeon"
+
+
 class MapGenerator():
-    """The Map Generator can generate predefined or random maps.
-
-    Args:
-        entity_manager (EntityManager): The entity manager for creating maps.
-        tiles [(int)]: Two-dimensional array of tiles created
-        rooms [(Room)]: Array of all rooms created during traversion
-
-    """
+    """Generates maps and returns the id of the generated map """
 
     def __init__(self, entity_manager):
         self.entity_manager = entity_manager
         self.tiles = []
-        self.rooms = []
+
+    def create_empty_map(self, width, height, tile="stone_wall"):
+        """ Returns a new Tile array with set size filled with walls"""
+
+        logger.debug("Map size: %sx%s", width, height)
+        return [[[self.create_tile(tile, x, y)]
+                 for y in range(0, height)]
+                for x in range(0, width)]
+
+    def create_tile(self, blueprint, x, y):
+        """ Creates a tile from the specified blueprint name """
+        tile_config = EntityConfiguration()
+        tile_config.add_attribute('Position', 'x', x)
+        tile_config.add_attribute('Position', 'y', y)
+        return self.entity_manager.new_from_blueprint_and_config(
+            "tiles." + blueprint, tile_config)
+
+    def create_custom_tile(self, x, y, char, colliding):
+        """Creates a tile with the specified properties."""
+        tile_config = EntityConfiguration()
+        tile_config.add_attribute('Position', 'x', x)
+        tile_config.add_attribute('Position', 'y', y)
+        tile_config.add_attribute('Renderable', 'character', char)
+        tile_config.add_attribute('Colliding', 'active', colliding)
+        return self.entity_manager.new_from_config(tile_config)
+
+    def is_blocked(self, x, y):
+        """ Returns True, if the given position on the map has an enabled
+        Colliding component """
+        colliding = self.entity_manager.get_entity_component(
+            self.get_tile(x, y),
+            "Colliding")
+        return (colliding is not None and colliding.active)
+
+    def get_tile(self, x, y):
+        """ Returns the bottommost entity at the given position """
+        if isinstance(self.tiles[x][y], list) and len(self.tiles[x][y]) > 0:
+            return self.tiles[x][y][0]
+
+    def create_stairs(self, x, y, target_map=None, target_level=None):
+        """ Creates a stair entity at the given position leading to the given
+        map and level """
+        tile = self.create_tile("stairs", x, y)
+        self.entity_manager.set_entity_attribute(tile, "MapTransition",
+                                                 'target_map', target_map)
+        self.entity_manager.set_entity_attribute(tile, "MapTransition",
+                                                 'target_level', target_level)
+        return tile
+
+
+class WorldspaceGenerator(MapGenerator):
+    """ Loads the worldspace or generates it from scratch """
+
+    def generate_map(self, map_name, level):
+        height = 100
+        width = 140
+
+        height = random.randrange(math.floor(height * 0.7), height)
+        width = random.randrange(math.floor(width * 0.7), width)
+
+        self.tiles = self.create_empty_map(width, height, "stone_floor")
+        # TODO: Make Spawn Routine
+        self.tiles[25][25] = self.create_stairs(25, 25)
+
+        map_config = EntityConfiguration()
+        map_config.add_attribute('Map', 'name', map_name)
+        map_config.add_attribute('Map', 'tiles', self.tiles)
+        map_config.add_attribute('Map', 'level', level)
+        map_config.add_attribute('Map', 'entry', (20, 20))
+        return self.entity_manager.new_from_config(map_config)
+
+
+class DungeonGenerator(MapGenerator):
+    """The Map Generator can generate predefined or random maps.
+
+    Args:
+        tiles [(int)]: Two-dimensional array of tiles created
+        rooms [(Room)]: Array of all rooms created during traversion
+
+    """
 
     def generate_map(self, map_name, level):
         """Loads the map configuration based on map name and level and generates
@@ -48,7 +149,8 @@ class MapGenerator():
         map_config.add_attribute('Map', 'name', map_name)
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
-
+        map_config.add_attribute('Map', 'entry',
+                                 random.sample(self.rooms, 1)[0].random_spot())
         return self.entity_manager.new_from_config(map_config)
 
     def process_node(self, node, userData=0):
@@ -82,14 +184,6 @@ class MapGenerator():
             y = random.randrange(node.y, node.y + node.h - 1)
         return (x, y)
 
-    def is_blocked(self, x, y):
-        """ Returns True, if the given position on the map has an enabled
-        Colliding component """
-        colliding = self.entity_manager.get_entity_component(
-            self.get_tile(x, y),
-            "Colliding")
-        return (colliding is not None and colliding.active)
-
     def create_corridor(self, node):
         """ Creates a corridor between random spots in two nodes"""
         (x1, y1) = self.random_spot_in_node(self.left_child(node))
@@ -106,14 +200,6 @@ class MapGenerator():
                 self.tiles[x][y1] = [self.create_tile("stone_floor", x, y1)]
             for y in range(min(y1, y2), max(y1, y2) + 1):
                 self.tiles[x2][y] = [self.create_tile("stone_floor", x2, y)]
-
-    def create_empty_map(self, width, height):
-        """ Returns a new Tile array with set size filled with walls"""
-
-        logger.debug("Map size: %sx%s", width, height)
-        return [[[self.create_tile("stone_wall", x, y)]
-                 for y in range(0, height)]
-                for x in range(0, width)]
 
     def left_child(self, node):
         """ Returns the left child of the given node"""
@@ -133,27 +219,6 @@ class MapGenerator():
         libtcod.bsp_split_recursive(tree, 0, 6, 8, 8, 1.3, 1.3)
         return tree
 
-    def get_tile(self, x, y):
-        """ Returns the bottommost entity at the given position """
-        if isinstance(self.tiles[x][y], list) and len(self.tiles[x][y]) > 0:
-            return self.tiles[x][y][0]
-
-    def create_tile(self, blueprint, x, y):
-        """ Creates a tile from the specified blueprint name """
-        tile_config = EntityConfiguration()
-        tile_config.add_attribute('Position', 'x', x)
-        tile_config.add_attribute('Position', 'y', y)
-        return self.entity_manager.new_from_blueprint_and_config(
-            "tiles." + blueprint, tile_config)
-
-    def create_custom_tile(self, x, y, char, colliding):
-        """Creates a tile with the specified properties."""
-        tile_config = EntityConfiguration()
-        tile_config.add_attribute('Position', 'x', x)
-        tile_config.add_attribute('Position', 'y', y)
-        tile_config.add_attribute('Renderable', 'character', char)
-        tile_config.add_attribute('Colliding', 'active', colliding)
-        return self.entity_manager.new_from_config(tile_config)
 
 
 class Room():
@@ -172,3 +237,7 @@ class Room():
         self.y = y
         self.width = width
         self.height = height
+
+    def random_spot(self):
+        return (random.randint(self.x, self.x+self.width),
+                random.randint(self.y, self.y+self.height))
