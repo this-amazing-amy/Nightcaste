@@ -198,6 +198,7 @@ class ViewController:
                 view.active = True
                 view_changed = True
                 self._active_view = view
+                view._initialize()
             else:
                 view.active = False
         return view_changed
@@ -212,6 +213,10 @@ class View:
     def __init__(self, active=False):
         self._panes = {}
         self.active = active
+
+    def _initialize(self):
+        for pane in sorted(self._panes.itervalues(), key=lambda v: v.z_index):
+            pane.initialize()
 
     def add_pane(self, name, pane):
         # TODO refactor: create pane and let the view manage the panes (also
@@ -243,6 +248,9 @@ class ContentPane:
         self.default_background = Color(0, 0, 0)
         self.default_foreground = Color(175, 175, 175)
 
+    def initialize(self):
+        self.print_background()
+
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.window.put_char(
             self.pos_x + x,
@@ -252,6 +260,9 @@ class ContentPane:
             self.default_background if back_color is None else back_color)
 
     def put_text(self, x, y, text, fore_color=None, back_color=None):
+        # As long as we use tansparant tiles for printing text we have to
+        # print the background to overwrite existing chars
+        self.print_background(rect=(self.pos_x + x, self.pos_y + y, len(text), 1))
         self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
@@ -366,7 +377,6 @@ class MenuPane(ContentPane):
         self.default_foreground = Color(127, 0, 0)
 
     def render(self):
-        self.print_background()
         self.print_logo()
         self.print_menu()
         self.print_footer()
