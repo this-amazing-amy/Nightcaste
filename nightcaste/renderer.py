@@ -4,6 +4,7 @@ from nightcaste import __version__
 from nightcaste.components import Color
 from nightcaste.processors import ViewProcessor
 from os import path
+import game
 import json
 import logging
 import pygame
@@ -56,7 +57,8 @@ class PygameRenderer:
 
     def fill_background(self, color, rect=None):
         self.surface.fill((color.r, color.g, color.b),
-                          pygame.Rect(rect.left, rect.top,
+                          pygame.Rect(rect.left*self.tileset.tile_width,
+                                      rect.top*self.tileset.tile_height,
                                       rect.width*self.tileset.tile_width,
                                       rect.height*self.tileset.tile_height))
 
@@ -346,15 +348,22 @@ class MapPane(ContentPane):
 class StatusPane(ContentPane):
 
     def render(self):
+        self.print_background()
         self.put_text(0, 0, 'Health: 100')
+        self.put_text(0, 1, 'Round %s' % (game.round))
 
 
 class MenuPane(ContentPane):
 
-    def render(self):
+    def __init__(self, window, absolute_x,
+                 absolute_y, width, height, z_index=0):
+        ContentPane.__init__(self, window, absolute_x,
+                             absolute_y, width, height, z_index=0)
         self.default_background = Color(127, 101, 63)
         self.default_foreground = Color(127, 0, 0)
-        self.print_background(self.default_background)
+
+    def render(self):
+        self.print_background()
         self.print_logo()
         self.print_menu()
         self.print_footer()
