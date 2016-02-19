@@ -24,6 +24,7 @@ class PygameRenderer:
     def __init__(self, console, title, width=80, height=55):
         self.console = console
         self.color_cache = {}
+        self.dirty_rects = []
 
         tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
         tiles_config = json.load(tileset_file)
@@ -46,21 +47,27 @@ class PygameRenderer:
     def flush(self):
         """Flush the changes to screen."""
         self.screen.blit(self.surface, (0, 0))
-        pygame.display.update()
+        pygame.display.update(self.dirty_rects)
+        self.dirty_rects = []
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         tile = self.tileset.get_tile(char)
-        rects = self.surface.blit(
+        self.surface.blit(
             tile,
             (x * self.tileset.tile_width,
              y * self.tileset.tile_height))
 
-    def fill_background(self, color, rect=None):
-        rects = self.surface.fill((color.r, color.g, color.b),
-                          pygame.Rect(rect[0]*self.tileset.tile_width,
-                                      rect[1]*self.tileset.tile_height,
-                                      rect[2]*self.tileset.tile_width,
-                                      rect[3]*self.tileset.tile_height))
+    def fill_background(self, color, rect):
+        rects = self.surface.fill(
+            (color.r,
+             color.g,
+             color.b),
+            pygame.Rect(
+                rect[0] * self.tileset.tile_width,
+                rect[1] * self.tileset.tile_height,
+                rect[2] * self.tileset.tile_width,
+                rect[3] * self.tileset.tile_height))
+        self.dirty_rects.append(rects)
 
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
@@ -249,6 +256,7 @@ class ContentPane:
         self.default_foreground = Color(175, 175, 175)
 
     def initialize(self):
+        logger.debug('initialize %s', self)
         self.print_background()
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
@@ -262,7 +270,7 @@ class ContentPane:
     def put_text(self, x, y, text, fore_color=None, back_color=None):
         # As long as we use tansparant tiles for printing text we have to
         # print the background to overwrite existing chars
-        self.print_background(rect=(self.pos_x + x, self.pos_y + y, len(text), 1))
+        self.print_background(rect=(x, y, len(text), 1))
         self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
