@@ -241,7 +241,7 @@ class View:
             pane.render()
 
 
-class ContentPane:
+class ContentPane(object):
     """Can be printed with colored text"""
 
     def __init__(self, window, absolute_x,
@@ -284,7 +284,8 @@ class ContentPane:
         if rect is None:
             rect = (self.pos_x, self.pos_y, self.width, self.height)
         else:
-            rect = (self.pos_x+rect[0], self.pos_y+rect[1], rect[2], rect[3])
+            rect = (self.pos_x + rect[0],
+                    self.pos_y + rect[1], rect[2], rect[3])
 
         self.window.fill_background(color, rect)
 
@@ -294,7 +295,7 @@ class ContentPane:
 
 
 class MapPane(ContentPane):
-    """Renders every visisble component, e.g the map with all its entities"""
+    """Renders every visible component, e.g the map with all its entities"""
 
     def __init__(self, window, absolute_x,
                  absolute_y, width, height, z_index=0):
@@ -303,26 +304,33 @@ class MapPane(ContentPane):
         self.viewport_x = 0
         self.viewport_y = 0
 
+    def initialize(self):
+        super(MapPane, self).initialize()
+        em = self.window.entity_manager
+        if em.current_map is not None:
+            to_render = [x for y in em.get_current_map() for x in y]
+            self._render_entities(to_render)
+
     def update(self):
         """Updates the view port"""
         self._update_view_port()
 
     def render(self):
-        """Renders all entieties with a visable renderable component and with a
+        """Renders all entities with a visible renderable component and with a
         position in the current viewport."""
+        # TODO: Render Dirty Sprites and changed Map Tiles
+        pass
+
+    def _render_entities(self, entities):
+        """ Iterates through a list of entities and renders each """
         em = self.window.entity_manager
-        # TODISCUSS: list comprehension before sort ???
-        renderables = {k: v for k, v in em.get_all_of_type(
-            'Renderable').iteritems() if v.visible}
-        positions = em.get_all_of_type('Position')
-        colors = em.get_all_of_type('Color')
-        self.print_background()
+        renderables = {k: v for k, v in em.get_components_for_entities(
+            entities, 'Renderable').iteritems() if v.visible}
+        positions = em.get_components_for_entities(entities, 'Position')
+        colors = em.get_components_for_entities(entities, 'Color')
         for entity, renderable in sorted(
                 renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
-            self._render_entity(
-                renderable,
-                positions[entity],
-                colors[entity])
+            self._render_entity(renderable, positions[entity], colors[entity])
 
     def _render_entity(self, renderable, position, color):
         """Check if the position of the given entity is in the viewport and
