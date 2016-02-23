@@ -377,9 +377,8 @@ class MapPane(ContentPane):
         em = self.window.entity_manager
         positions = em.get_all_of_type('Position')
         sprites = em.get_all_of_type('Sprite')
-        """for entity, sprite in sorted(
-            sprites.iteritems(), key=lambda (k, v): v.z_index):"""
-        for entity, sprite in sprites.iteritems():
+        for entity, sprite in sorted(
+                sprites.iteritems(), key=lambda (k, v): v.z_index):
             self._render_sprite(entity, sprite, positions[entity])
         pass
 
@@ -397,7 +396,7 @@ class MapPane(ContentPane):
         positions = em.get_components_for_entities(entities, 'Position')
         colors = em.get_components_for_entities(entities, 'Color')
         for entity, renderable in sorted(
-                renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
+                renderables.iteritems(), key=lambda (k, v): v.z_index):
             self._render_entity(renderable, positions[entity], colors[entity])
 
     def _render_entity(self, renderable, position, color):
@@ -422,7 +421,8 @@ class MapPane(ContentPane):
         # TODO update and render old position
         sprite.rect.x = position.x - self.viewport_x
         sprite.rect.y = position.y - self.viewport_y
-        self.put_sprite(sprite)
+        if sprite.visible:
+            self.put_sprite(sprite)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always

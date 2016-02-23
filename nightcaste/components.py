@@ -51,6 +51,7 @@ class Sprite(Renderable, pygame.sprite.Sprite):
 
     def __init__(self, sprite_name=None):
         self.name = sprite_name
+        Renderable.__init__(self)
         pygame.sprite.Sprite.__init__(self)
 
 
