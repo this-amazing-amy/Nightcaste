@@ -216,6 +216,7 @@ class WorldInitializer(EventProcessor):
     def handle_event(self, event, round):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
+        self.event_manager.throw('EntityCreated', {'entity': self.entity_manager.player})
         self.event_manager.throw('MapChange', {'map': 'World', 'level': 0})
 
 
@@ -290,6 +291,26 @@ class CollisionManager():
             self.event_manager.throw("EntitiesCollided", {"entities": active})
             return active
         return None
+
+
+class SpriteProcessor(EventProcessor):
+
+    def __init__(self, event_manager, entity_manager, sprite_manager):
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        self.sprite_manager = sprite_manager
+
+    def register(self):
+        self._register('EntityCreated')
+
+    def unregister(self):
+        self._unregister('EntityCreated')
+
+    def handle_event(self, event, round):
+        entity = event.data['entity']
+        sprite = self.entity_manager.get_entity_component(entity, 'Sprite')
+        if sprite is not None:
+            pos = self.entity_manager.get_entity_component(entity, 'Position')
+            self.sprite_manager.initialize_sprite(sprite, pos)
 
 
 class TurnProcessor(EventProcessor):

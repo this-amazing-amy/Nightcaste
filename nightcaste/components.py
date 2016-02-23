@@ -2,6 +2,7 @@
 specific property or a set of proerties in order to represent certain ability or
 property of an entity. The entity itself is only a composition of its
 components."""
+import pygame
 
 
 class Component:
@@ -44,6 +45,13 @@ class Renderable(Component):
         self.character = character
         self.z_index = z_index
         self.visible = True
+
+
+class Sprite(Renderable, pygame.sprite.Sprite):
+
+    def __init__(self, sprite_name=None):
+        self.name = sprite_name
+        pygame.sprite.Sprite.__init__(self)
 
 
 class Colliding(Component):
