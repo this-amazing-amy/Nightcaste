@@ -3,14 +3,16 @@ subsystems and runs the super loop"""
 from behaviour import BehaviourManager
 from events import EventManager
 from entities import EntityManager
-import input
 from nightcaste import __version__
 from processors import SystemManager
 from renderer import WindowManager
 from renderer import MenuPane
 from renderer import MapPane
 from renderer import StatusPane
+import game
+import input
 import logging
+import pygame
 import time
 
 logger = logging.getLogger('engine')
@@ -19,6 +21,7 @@ logger = logging.getLogger('engine')
 def main():
     logger.info('Nightcaste v%s', __version__)
     realtime = True
+    pygame.init()
     event_manager = EventManager()
     entity_manager = EntityManager()
     behaviour_manager = BehaviourManager(
@@ -33,20 +36,19 @@ def main():
         not realtime, event_manager, entity_manager)
     window_manager = WindowManager(event_manager, entity_manager)
     window = create_window(window_manager)
-    round = 0
     prev_time = None
 
     event_manager.throw("MenuOpen")
-    window.render()
     while window.is_active():
         if (prev_time is None):
             prev_time = time.time()
         current_time = time.time()
         time_delta = current_time - prev_time
 
-        behaviour_manager.update(round, time_delta)
-        input_controller.update_input(round, time_delta)
-        if input.is_key_pressed(input.KEY_ESCAPE):
+        if game.status != game.G_PAUSED:
+            behaviour_manager.update(round, time_delta)
+        request_close = input_controller.update(round, time_delta)
+        if request_close or input.is_pressed(input.K_ESCAPE):
             break
         event_manager.process_events(round)
         system_manager.update(round, time_delta)
@@ -59,6 +61,7 @@ def main():
 def get_systems_config():
     return {
         'systems': [
+            'TurnProcessor',
             'MenuInputProcessor',
             'GameInputProcessor',
             'WorldInitializer',
