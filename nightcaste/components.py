@@ -37,22 +37,29 @@ class Renderable(Component):
     """Represents an entity that can be rendered
 
     Args:
-        character (str): printed character
+        name (str): Identifies the renderable (usually used to reference an
+            image over a config file)
         z_index (int): Order to be printed (lowest first)
+        visible (boolean): Specifies wether this entity should be ignored from
+        the renderer
     """
 
-    def __init__(self, character=None, z_index=0, visible=True):
-        self.character = character
+    def __init__(self, name=None, z_index=0, visible=True):
+        self.name = name
         self.z_index = z_index
         self.visible = True
 
 
 class Sprite(Renderable, pygame.sprite.Sprite):
+    """Represents sprite in a 2D game."""
 
-    def __init__(self, sprite_name=None):
-        self.name = sprite_name
-        Renderable.__init__(self)
+    def __init__(self, sprite_name=None, z_index=0, visible=True):
+        Renderable.__init__(self, sprite_name, z_index, visible)
         pygame.sprite.Sprite.__init__(self)
+
+class Tile(Renderable):
+    """Represents a part of a background image / map in a 2D tile based game."""
+    pass
 
 
 class Colliding(Component):

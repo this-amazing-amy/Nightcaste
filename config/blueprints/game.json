@@ -2,19 +2,18 @@
 	"player": {
 		"components": [
 			"Position",
-			"Renderable",
+			"Sprite",
 			"Color",
                         "Colliding",
                         "InputComponent"
 		],
 		"attributes": {
-			"Renderable.character": "@",
-			"Renderable.z_index": 9,
 			"Color.r": 239,
 			"Color.g": 228,
 			"Color.b": 176,
                         "Colliding.active": true,
-                        "Sprite.name": "human"
+                        "Sprite.name": "human",
+			"Sprite.z_index": 9
 		}
 	}
 }

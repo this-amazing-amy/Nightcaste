@@ -414,7 +414,7 @@ class MapPane(ContentPane):
             self.put_char(
                 position.x - self.viewport_x,
                 position.y - self.viewport_y,
-                renderable.character,
+                renderable.name,
                 color)
 
     def _render_sprite(self, entity, sprite, position):
