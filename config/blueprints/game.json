@@ -13,7 +13,8 @@
 			"Color.r": 239,
 			"Color.g": 228,
 			"Color.b": 176,
-                        "Colliding.active": true
+                        "Colliding.active": true,
+                        "Sprite.name": "human"
 		}
 	}
 }

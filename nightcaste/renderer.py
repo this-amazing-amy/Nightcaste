@@ -2,6 +2,7 @@
 console."""
 from nightcaste import __version__
 from nightcaste.components import Color
+from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
 import game
@@ -17,6 +18,12 @@ TILESET_DIR = path.abspath(
         '..',
         'config',
         'tilesets'))
+SPRITE_DIR = path.abspath(
+    path.join(
+        path.dirname(__file__),
+        '..',
+        'config',
+        'sprites'))
 
 
 class PygameRenderer:
@@ -116,6 +123,33 @@ class TileSet:
         return tile_table
 
 
+class SpriteManager:
+
+    def __init__(self):
+        self.images = {}
+
+    def initialize_sprite(self, sprite, position):
+        image = self.images.get(sprite.name)
+        if image is None:
+            image = self._load_image(sprite.name)
+        sprite.image = image.copy()
+        sprite.rect = image.get_rect()
+        sprite.rect.x = position.x
+        sprite.rect.y = position.y
+        print 'Sprite initialized %s' % (sprite)
+
+    def _load_image(self, name):
+        """Assume the name is a direct path to an image containing exactly the
+        required sprite image.
+        TODO: Support load_by_config which can load a complete sprite set from
+        configuration like with a TileSet."""
+        # TEST
+        filename = path.join(TILESET_DIR, 'terminal.png')
+        image = pygame.image.load(filename).convert_alpha()
+        at = image.subsurface((32, 0, 8, 8))
+        return at
+
+
 class WindowManager:
 
     def __init__(self, event_manager, entity_manager):
@@ -149,11 +183,16 @@ class Window:
         self.event_manager = event_manager
         self.entity_manager = entity_manager
         self.view_controller = ViewController()
+        self.sprite_manager = SpriteManager()
         self.renderer = PygameRenderer(number, title, width, height)
         ViewProcessor(
             event_manager,
             entity_manager,
             self.view_controller).register()
+        SpriteProcessor(
+            event_manager,
+            entity_manager,
+            self.sprite_manager).register()
 
     def add_view(self, name):
         return self.view_controller.add_view(name)
