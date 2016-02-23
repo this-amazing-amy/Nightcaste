@@ -80,6 +80,12 @@ class PygameRenderer:
         for text_index in range(0, len(text)):
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
 
+    def put_sprite(self, sprite):
+        sprite.rect.x *= self.tileset.tile_width
+        sprite.rect.y *= self.tileset.tile_height
+        rects = self.surface.blit(sprite.image, sprite.rect)
+        self.dirty_rects.append(rects)
+
 
 class TileSet:
 
@@ -136,7 +142,7 @@ class SpriteManager:
         sprite.rect = image.get_rect()
         sprite.rect.x = position.x
         sprite.rect.y = position.y
-        print 'Sprite initialized %s' % (sprite)
+        logger.debug('Sprite initialized %s', sprite)
 
     def _load_image(self, name):
         """Assume the name is a direct path to an image containing exactly the
@@ -207,6 +213,10 @@ class Window:
     def put_text(self, x, y, text, fore_color, back_color):
         """Delegates the call to the renderer."""
         self.renderer.put_text(x, y, text, fore_color, back_color)
+
+    def put_sprite(self, sprite):
+        """Delegates the call to renderer."""
+        self.renderer.put_sprite(sprite)
 
     def fill_background(self, color, rect):
         self.renderer.fill_background(color, rect)
@@ -299,6 +309,7 @@ class ContentPane(object):
         self.print_background()
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
+        self.print_background(back_color, rect=(x, y, 1, 1))
         self.window.put_char(
             self.pos_x + x,
             self.pos_y + y,
@@ -306,10 +317,17 @@ class ContentPane(object):
             self.default_foreground if fore_color is None else fore_color,
             self.default_background if back_color is None else back_color)
 
+    def put_sprite(self, sprite):
+        sprite.rect.x += self.pos_x
+        sprite.rect.y += self.pos_y
+        # As long as we use tansparant tiles for printing text we have to
+        # print the background to overwrite existing chars
+        self.window.put_sprite(sprite)
+
     def put_text(self, x, y, text, fore_color=None, back_color=None):
         # As long as we use tansparant tiles for printing text we have to
         # print the background to overwrite existing chars
-        self.print_background(rect=(x, y, len(text), 1))
+        self.print_background(back_color, rect=(x, y, len(text), 1))
         self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
@@ -345,20 +363,31 @@ class MapPane(ContentPane):
 
     def initialize(self):
         super(MapPane, self).initialize()
-        em = self.window.entity_manager
-        if em.current_map is not None:
-            to_render = [x for y in em.get_current_map() for x in y]
-            self._render_entities(to_render)
+        self._render_map
 
     def update(self):
         """Updates the view port"""
         self._update_view_port()
+        self._render_map()
 
     def render(self):
         """Renders all entities with a visible renderable component and with a
         position in the current viewport."""
-        # TODO: Render Dirty Sprites and changed Map Tiles
+        # TODO: Render Dirty Sprites (SpriteGroups)
+        em = self.window.entity_manager
+        positions = em.get_all_of_type('Position')
+        sprites = em.get_all_of_type('Sprite')
+        """for entity, sprite in sorted(
+            sprites.iteritems(), key=lambda (k, v): v.z_index):"""
+        for entity, sprite in sprites.iteritems():
+            self._render_sprite(entity, sprite, positions[entity])
         pass
+
+    def _render_map(self):
+        em = self.window.entity_manager
+        if em.current_map is not None:
+            to_render = [x for y in em.get_current_map() for x in y]
+            self._render_entities(to_render)
 
     def _render_entities(self, entities):
         """ Iterates through a list of entities and renders each """
@@ -388,6 +417,12 @@ class MapPane(ContentPane):
                 position.y - self.viewport_y,
                 renderable.character,
                 color)
+
+    def _render_sprite(self, entity, sprite, position):
+        # TODO update and render old position
+        sprite.rect.x = position.x - self.viewport_x
+        sprite.rect.y = position.y - self.viewport_y
+        self.put_sprite(sprite)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
