@@ -19,7 +19,7 @@ class MapManager():
         self.generators = {'dungeon': DungeonGenerator(self.entity_manager),
                            'world': WorldspaceGenerator(self.entity_manager)}
 
-    def get_map(self, type="dungeon", name=None, level=0):
+    def get_map(self, name=None, level=0, type="dungeon"):
         if name is None:
             name = self.random_name()
         collection = self.get_mapcollection(name)
@@ -85,6 +85,7 @@ class MapGenerator():
         """ Returns the bottommost entity at the given position """
         if len(self.tiles) > x and len(self.tiles[x]) > y:
             return self.tiles[x][y]
+        return None
 
     def create_stairs(self, x, y, target_map=None, target_level=None):
         """ Creates a stair entity at the given position leading to the given
@@ -152,8 +153,8 @@ class DungeonGenerator(MapGenerator):
         map_config.add_attribute('Map', 'name', map_name)
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
-        map_config.add_attribute('Map', 'entry',
-                                 random.sample(self.rooms, 1)[0].random_spot())
+        entry = random.sample(self.rooms, 1)[0].random_spot()
+        map_config.add_attribute('Map', 'entry', entry)
         return self.entity_manager.new_from_config(map_config)
 
     def process_node(self, node, userData=0):

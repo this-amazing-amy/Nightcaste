@@ -77,6 +77,10 @@
 		"key": ":",
 		"position": [3,10]
     	},
+        {
+                "key": "<",
+                "position": [3, 12]
+        },
     	{
 		"key": "@",
 		"position": [4,0]

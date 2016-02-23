@@ -66,6 +66,7 @@ def get_systems_config():
             'GameInputProcessor',
             'WorldInitializer',
             'MapChangeProcessor',
+            'TransitionProcessor',
             'MovementProcessor',
             'UseEntityProcessor']}
 
