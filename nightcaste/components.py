@@ -89,11 +89,12 @@ class Map(Component):
     """
 
     def __init__(self, name=None, level=0, parent=None, tiles=None,
-                 children=[]):
+                 children=[], entry=None):
         self.name = name
         self.level = level
         self.parent = parent
         self.tiles = tiles
+        self.entry = entry
         self.children = children
 
     def width(self):
@@ -113,6 +114,18 @@ class Map(Component):
 
         """
         self.children.append(child)
+
+
+class MapTransition(Component):
+    """ A map piece that can transport entities to other maps
+
+    Args:
+        target_map: The map the transition leads to
+        target_level: The level numver the transition leads to
+    """
+    def __init__(self, target_map, target_level):
+        self.target_map = target_map
+        self.target_level = target_level
 
 
 class Useable(Component):

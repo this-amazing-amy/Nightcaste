@@ -19,16 +19,34 @@
 		"components": [
 			"Position",
 			"Renderable",
-			"Color",
-                        "Useable"
+			"Color"
 		],
 		"attributes": {
 			"Renderable.character": ".",
 			"Renderable.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
-			"Color.b": 195,
-                        "Useable.useEvent": "FloorUsed"
+			"Color.b": 195
 		}
+        },
+        "stairs": {
+            "components": [
+                "Position",
+                "Renderable",
+                "Color",
+                "Useable",
+                "MapTransition"
+            ],
+            "attributes": {
+                "Renderable.character": "<",
+                "Renderable.z_index": 1,
+                "Color.r": 195,
+                "Color.g": 195,
+                "Color.b": 195,
+                "Useable.useEvent": "MapTransition",
+                "MapTransition.target_map": null,
+                "MapTransition.target_level": null
+            }
         }
+
 }
