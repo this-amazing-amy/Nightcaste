@@ -1,8 +1,9 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
 from mapcreation import MapGenerator
+import game
 import importlib
-import tcod as libtcod
+import input
 import logging
 
 logger = logging.getLogger('processors')
@@ -131,7 +132,7 @@ class GameInputProcessor(InputProcessor):
         return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
-        if keycode == libtcod.KEY_ENTER:
+        if keycode == input.K_ENTER:
             # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
             # entities
             return ("UseEntityAction",
@@ -146,7 +147,7 @@ class MenuInputProcessor(InputProcessor):
         return view_name == 'menu'
 
     def _map_key_to_action(self, keycode):
-        if keycode == libtcod.KEY_ENTER:
+        if keycode == input.K_ENTER:
             return ("WorldEnter", None)
         return None
 
@@ -289,6 +290,54 @@ class CollisionManager():
             self.event_manager.throw("EntitiesCollided", {"entities": active})
             return active
         return None
+
+
+class TurnProcessor(EventProcessor):
+    """Emulates the turns for turn based games be modifying the game status. The
+    different component behaviours can react to the game state and performe
+    actions only when they are allowed.
+
+    TODO:
+        This logic treats the player is special entity which determines the
+        round logic. A better approach would be to let the behaviours schedule
+        exactly one action in the COLLECT phase by implementing a logic in the
+        BehaviourManager which checks if the behaviour has scheduled an action.
+        If true, the the update function won't be called again until the next
+        round. This way you could also collect input in multiplayer and start
+        the round if all input is received."""
+
+    def __init__(self, event_manager, entity_manager):
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        # TODO Priority Queue?
+        self.turn_events = []
+
+    def register(self):
+        self._register("MoveAction_TURN")
+
+    def handle_event(self, event, round):
+        self.turn_events.append(event)
+        if game.status == game.G_ROUND_WAITING_INPUT:
+            game.status = game.G_ROUND_INPUT_RECEIVED
+
+    def update(self, round, delta_time):
+        if game.status == game.G_ROUND_INPUT_RECEIVED:
+            game.status = game.G_ROUND_COLLECT_TURNS
+        elif game.status == game.G_ROUND_COLLECT_TURNS:
+            game.status = game.G_ROUND_IN_PROGRESS
+            # order by speed here
+
+        # Throw a scheduled action on each update
+        if game.status == game.G_ROUND_IN_PROGRESS:
+            if len(self.turn_events) > 0:
+                self._next_turn()
+            else:
+                game.status = game.G_ROUND_WAITING_INPUT
+                game.round += 1
+
+    def _next_turn(self):
+        next_turn = self.turn_events.pop(0)
+        next_turn.identifier = next_turn.identifier.rstrip('_TURN')
+        self.event_manager.forward(next_turn)
 
 
 class UseEntityProcessor(EventProcessor):

@@ -40,7 +40,7 @@ class EventManager:
             self.listeners.update({event_type: [event_processor]})
 
     def remove_listener(self, event_type, event_processor):
-        "Unregisters the processor for events of the specified type."
+        """Unregisters the processor for events of the specified type."""
         logger.debug(
             'Unregister processor %s for event type %s',
             event_processor,
@@ -57,6 +57,10 @@ class EventManager:
     def throw(self, eventIdentifier, data=None):
         """ Enqueues an event from an identifier String"""
         self.events.put(Event(eventIdentifier, data))
+
+    def forward(self, event):
+        """Enqueues an existing event."""
+        self.events.put(event)
 
     def process_events(self, round):
         """Process all events in the queue.

@@ -3,50 +3,117 @@ console."""
 from nightcaste import __version__
 from nightcaste.components import Color
 from nightcaste.processors import ViewProcessor
+from os import path
+import game
+import json
 import logging
+import pygame
 import tcod as libtcod
 
 logger = logging.getLogger('renderer')
+TILESET_DIR = path.abspath(
+    path.join(
+        path.dirname(__file__),
+        '..',
+        'config',
+        'tilesets'))
 
 
-class TcodConsoleRenderer:
+class PygameRenderer:
 
     def __init__(self, console, title, width=80, height=55):
         self.console = console
         self.color_cache = {}
-        libtcod.console_init_root(width, height, title)
-        libtcod.console_set_default_foreground(self.console, libtcod.grey)
-        libtcod.console_set_default_background(self.console, libtcod.black)
+        self.dirty_rects = []
 
-    def is_active(self):
-        """Indicates if the console is still active.
-        Wraps libtcod.console_is_window_closed()."""
-        return not libtcod.console_is_window_closed()
+        tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
+        tiles_config = json.load(tileset_file)
+        # Only configures the tile size the tileset image cannot be loaded yet
+        self.tileset = TileSet(tiles_config)
+        screen_width = width * self.tileset.tile_width
+        screen_height = height * self.tileset.tile_height
+        self.screen = pygame.display.set_mode([screen_width, screen_height])
+        self.surface = pygame.Surface((screen_width, screen_height))
+
+        # We cannot load the image before the screen is initialized but we need
+        # the tile size to calculate the screen size so here come the "real"
+        # TileSet __init__ wich create the tiles map (will be changed "soon")
+        self.tileset.configure_tiles(tiles_config)
 
     def clear(self):
         """Removes all content from the console"""
-        libtcod.console_clear(self.console)
+        pass
 
     def flush(self):
         """Flush the changes to screen."""
-        libtcod.console_flush()
-
-    def _get_tcod_color(self, color):
-        tcod_color = self.color_cache.get(color)
-        if tcod_color is None:
-            tcod_color = libtcod.Color(color.r, color.g, color.b)
-            self.color_cache.update({color: tcod_color})
-        return tcod_color
+        self.screen.blit(self.surface, (0, 0))
+        pygame.display.update(self.dirty_rects)
+        self.dirty_rects = []
 
     def put_char(self, x, y, char, fore_color=None, back_color=None):
-        fore_color = self._get_tcod_color(fore_color)
-        back_color = self._get_tcod_color(back_color)
-        libtcod.console_put_char_ex(
-            self.console, x, y, char.encode('utf-8'), fore_color, back_color)
+        tile = self.tileset.get_tile(char)
+        self.surface.blit(
+            tile,
+            (x * self.tileset.tile_width,
+             y * self.tileset.tile_height))
+
+    def fill_background(self, color, rect):
+        rects = self.surface.fill(
+            (color.r,
+             color.g,
+             color.b),
+            pygame.Rect(
+                rect[0] * self.tileset.tile_width,
+                rect[1] * self.tileset.tile_height,
+                rect[2] * self.tileset.tile_width,
+                rect[3] * self.tileset.tile_height))
+        self.dirty_rects.append(rects)
 
     def put_text(self, x, y, text, fcolor=None, bcolor=None):
         for text_index in range(0, len(text)):
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
+
+
+class TileSet:
+
+    def __init__(self, config):
+        self.tiles = {}
+        general_config = config['general']
+        self.tile_width = general_config['tile_width']
+        self.tile_height = general_config['tile_height']
+
+    def configure_tiles(self, config):
+        general_config = config['general']
+        filename = path.join(TILESET_DIR, general_config['filename'])
+        tile_table = self._load_tile_table(filename)
+        tile_definitions = config['tiles']
+        for tile_def in tile_definitions:
+            key = tile_def['key']
+            tableposition = tile_def['position']
+            tile = tile_table[tableposition[0]][tableposition[1]]
+            self.add_tile(key, tile)
+
+    def add_tile(self, key, tile):
+        self.tiles.update({key: tile})
+
+    def get_tile(self, key):
+        return self.tiles[key]
+
+    def _load_tile_table(self, filename):
+        image = pygame.image.load(filename).convert_alpha()
+        image_width, image_height = image.get_size()
+        tile_table = []
+        for tile_x in range(0, image_width / self.tile_width):
+            line = []
+            tile_table.append(line)
+            for tile_y in range(0, image_height / self.tile_height):
+                rect = (
+                    tile_x * self.tile_width,
+                    tile_y * self.tile_height,
+                    self.tile_width,
+                    self.tile_height)
+                line.append(image.subsurface(rect))
+        return tile_table
 
 
 class WindowManager:
@@ -82,7 +149,7 @@ class Window:
         self.event_manager = event_manager
         self.entity_manager = entity_manager
         self.view_controller = ViewController()
-        self.renderer = TcodConsoleRenderer(number, title, width, height)
+        self.renderer = PygameRenderer(number, title, width, height)
         ViewProcessor(
             event_manager,
             entity_manager,
@@ -101,6 +168,9 @@ class Window:
     def put_text(self, x, y, text, fore_color, back_color):
         """Delegates the call to the renderer."""
         self.renderer.put_text(x, y, text, fore_color, back_color)
+
+    def fill_background(self, color, rect):
+        self.renderer.fill_background(color, rect)
 
     def render(self):
         self.renderer.clear()
@@ -135,6 +205,7 @@ class ViewController:
                 view.active = True
                 view_changed = True
                 self._active_view = view
+                view._initialize()
             else:
                 view.active = False
         return view_changed
@@ -149,6 +220,10 @@ class View:
     def __init__(self, active=False):
         self._panes = {}
         self.active = active
+
+    def _initialize(self):
+        for pane in sorted(self._panes.itervalues(), key=lambda v: v.z_index):
+            pane.initialize()
 
     def add_pane(self, name, pane):
         # TODO refactor: create pane and let the view manage the panes (also
@@ -180,6 +255,10 @@ class ContentPane:
         self.default_background = Color(0, 0, 0)
         self.default_foreground = Color(175, 175, 175)
 
+    def initialize(self):
+        logger.debug('initialize %s', self)
+        self.print_background()
+
     def put_char(self, x, y, char, fore_color=None, back_color=None):
         self.window.put_char(
             self.pos_x + x,
@@ -189,6 +268,9 @@ class ContentPane:
             self.default_background if back_color is None else back_color)
 
     def put_text(self, x, y, text, fore_color=None, back_color=None):
+        # As long as we use tansparant tiles for printing text we have to
+        # print the background to overwrite existing chars
+        self.print_background(rect=(x, y, len(text), 1))
         self.window.put_text(
             self.pos_x + x,
             self.pos_y + y,
@@ -196,11 +278,15 @@ class ContentPane:
             self.default_foreground if fore_color is None else fore_color,
             self.default_background if back_color is None else back_color)
 
-    def print_background(self, color=None):
-        # TODO make it better ^^
-        for x in range(0, self.width):
-            for y in range(0, self.height):
-                self.put_char(x, y, ' ', color, color)
+    def print_background(self, color=None, rect=None):
+        if color is None:
+            color = self.default_background
+        if rect is None:
+            rect = (self.pos_x, self.pos_y, self.width, self.height)
+        else:
+            rect = (self.pos_x+rect[0], self.pos_y+rect[1], rect[2], rect[3])
+
+        self.window.fill_background(color, rect)
 
     def update(self):
         """Updates the internal state of the pane."""
@@ -230,6 +316,7 @@ class MapPane(ContentPane):
             'Renderable').iteritems() if v.visible}
         positions = em.get_all_of_type('Position')
         colors = em.get_all_of_type('Color')
+        self.print_background()
         for entity, renderable in sorted(
                 renderables.iteritems(), key=lambda rdict: rdict[1].z_index):
             self._render_entity(
@@ -285,14 +372,19 @@ class StatusPane(ContentPane):
 
     def render(self):
         self.put_text(0, 0, 'Health: 100')
+        self.put_text(0, 1, 'Round: %s' % (game.round))
 
 
 class MenuPane(ContentPane):
 
-    def render(self):
+    def __init__(self, window, absolute_x,
+                 absolute_y, width, height, z_index=0):
+        ContentPane.__init__(self, window, absolute_x,
+                             absolute_y, width, height, z_index=0)
         self.default_background = Color(127, 101, 63)
         self.default_foreground = Color(127, 0, 0)
-        self.print_background()
+
+    def render(self):
         self.print_logo()
         self.print_menu()
         self.print_footer()
@@ -345,3 +437,43 @@ class MenuPane(ContentPane):
             self.width - len(version),
             self.height - 1,
             version)
+
+
+class TcodConsoleRenderer:
+
+    def __init__(self, console, title, width=80, height=55):
+        self.console = console
+        self.color_cache = {}
+        libtcod.console_init_root(width, height, title)
+        libtcod.console_set_default_foreground(self.console, libtcod.grey)
+        libtcod.console_set_default_background(self.console, libtcod.black)
+
+    def is_active(self):
+        """Indicates if the console is still active.
+        Wraps libtcod.console_is_window_closed()."""
+        return not libtcod.console_is_window_closed()
+
+    def clear(self):
+        """Removes all content from the console"""
+        libtcod.console_clear(self.console)
+
+    def flush(self):
+        """Flush the changes to screen."""
+        libtcod.console_flush()
+
+    def _get_tcod_color(self, color):
+        tcod_color = self.color_cache.get(color)
+        if tcod_color is None:
+            tcod_color = libtcod.Color(color.r, color.g, color.b)
+            self.color_cache.update({color: tcod_color})
+        return tcod_color
+
+    def put_char(self, x, y, char, fore_color=None, back_color=None):
+        fore_color = self._get_tcod_color(fore_color)
+        back_color = self._get_tcod_color(back_color)
+        libtcod.console_put_char_ex(
+            self.console, x, y, char.encode('utf-8'), fore_color, back_color)
+
+    def put_text(self, x, y, text, fcolor=None, bcolor=None):
+        for text_index in range(0, len(text)):
+            self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
