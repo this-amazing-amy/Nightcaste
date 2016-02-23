@@ -87,6 +87,11 @@ class InputBehaviour(EntityComponentBehaviour):
                 self.move(0, 1)
             elif input.is_pressed(input.K_UP):
                 self.move(0, -1)
+            elif input.is_pressed(input.K_ENTER):
+                # TODO: Implement Targeting Inputs (combined input or
+                # sequential?)
+                # TODISCUSS: Context actions, autotargeting
+                self.use(0, 0)
 
     def move(self, dx, dy):
         """Throws a MoveAction."""
@@ -95,3 +100,8 @@ class InputBehaviour(EntityComponentBehaviour):
         self.event_manager.throw(
             'MoveAction_TURN', {
                 'entity': self.entity, 'dx': dx, 'dy': dy})
+
+    def use(self, dx, dy):
+        """ Throws a UseEntity Event """
+        self.event_manager.throw("UseEntityAction_TURN", {
+            'user': self.entity, 'direction': (dx, dy)})

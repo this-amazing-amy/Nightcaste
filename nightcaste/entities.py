@@ -214,7 +214,6 @@ class ComponentManager:
             return None
         return component_dict.get(entity_id)
 
-
     def get_all_of_type(self, component_type):
         """Get all components of the given type
 
@@ -308,6 +307,9 @@ class EntityConfiguration:
 
     def __init__(self):
         self.components = {}
+
+    def __str__(self):
+        return str(self.components)
 
     def add_component(self, component):
         if component not in self.components:

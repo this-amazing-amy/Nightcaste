@@ -132,12 +132,6 @@ class GameInputProcessor(InputProcessor):
         return view_name == 'game'
 
     def _map_key_to_action(self, keycode):
-        if keycode == input.K_ENTER:
-            # TODO: Needs Simultaneous/Consecutive Keypresses to use blocking
-            # entities
-            return ("UseEntityAction",
-                    {'entity': self.entity_manager.player,
-                     'dx': 0, 'dy': 0})
         return None
 
 
@@ -179,8 +173,12 @@ class MovementProcessor(EventProcessor):
         position = self.entity_manager.get_entity_component(
             event.data['entity'], 'Position')
 
-        target_x = position.x + event.data['dx']
-        target_y = position.y + event.data['dy']
+        if event.data.get("absolute", 0) == 1:
+            target_x = event.data['dx']
+            target_y = event.data['dy']
+        else:
+            target_x = position.x + event.data['dx']
+            target_y = position.y + event.data['dy']
 
         collision = self.collision_manager.check(
             self.entity_manager.current_map,
@@ -210,7 +208,8 @@ class WorldInitializer(EventProcessor):
     def handle_event(self, event, round):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
-        self.event_manager.throw('MapChange', {'map': 'world', 'level': 0})
+        self.event_manager.throw('MapChange', {'name': 'world', 'level': 0,
+                                               'type': 'world'})
 
 
 class MapChangeProcessor(EventProcessor):
@@ -228,18 +227,21 @@ class MapChangeProcessor(EventProcessor):
         self.map_manager = MapManager(entity_manager)
 
     def handle_event(self, event, round):
+        if event.data["level"] is None:
+            event.data["level"] = 0
         logger.debug(
             'Changing to Map %s - %d',
-            event.data["map"],
+            event.data["name"],
             event.data["level"])
-        new_map = self.map_manager.get_map(
-            name=event.data['map'], level=event.data['level'])
-        # place player at the dungeon entry
+        new_map = self.map_manager.get_map(event.data['name'],
+                                           event.data['level'],
+                                           event.data.get("type", "dungeon"))
         entry_point = self.entity_manager.get_entity_component(new_map,
                                                                'Map').entry
         self.event_manager.throw('MoveAction',
                                  {'entity': self.entity_manager.player,
-                                  'dx': entry_point[0], 'dy': entry_point[1]})
+                                  'dx': entry_point[0], 'dy': entry_point[1],
+                                  'absolute': 1})
         self.change_map(new_map)
 
     def change_map(self, new_map):
@@ -305,6 +307,7 @@ class TurnProcessor(EventProcessor):
 
     def register(self):
         self._register("MoveAction_TURN")
+        self._register("UseEntityAction_TURN")
 
     def handle_event(self, event, round):
         self.turn_events.append(event)
@@ -347,13 +350,10 @@ class UseEntityProcessor(EventProcessor):
                                                         "Position")
         target = (user.x + event.data['direction'][0],
                   user.y + event.data['direction'][1])
-        entities = self.entity_manager.get_current_map()[target[0]][target[1]]
-        useables = {x: self.entity_manager.get_entity_component(x, "Useable")
-                    for x in entities}
-        for i in useables:
-            if (useables[i] is not None):
-                self.event_manager.throw(useables[i].useEvent,
-                                         {'usedEntity': i})
+        entity = self.entity_manager.get_current_map()[target[0]][target[1]]
+        useable = self.entity_manager.get_entity_component(entity, "Useable")
+        if (useable is not None):
+            self.event_manager.throw(useable.useEvent, {'usedEntity': entity})
 
 
 class TransitionProcessor(EventProcessor):
@@ -367,9 +367,9 @@ class TransitionProcessor(EventProcessor):
         self._unregister("MapTransition")
 
     def handle_event(self, event, round):
-        target = self.entity_manager.get_entity_component(event.usedEntity,
-                                                          'MapTransition')
-        self.event_manager.throw("MapChange", {"map": target.target_map,
+        target = self.entity_manager.get_entity_component(
+            event.data['usedEntity'], 'MapTransition')
+        self.event_manager.throw("MapChange", {"name": target.target_map,
                                                "level": target.target_level})
 
 

@@ -123,7 +123,7 @@ class MapTransition(Component):
         target_map: The map the transition leads to
         target_level: The level numver the transition leads to
     """
-    def __init__(self, target_map, target_level):
+    def __init__(self, target_map=None, target_level=None):
         self.target_map = target_map
         self.target_level = target_level
 
