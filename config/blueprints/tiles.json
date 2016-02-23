@@ -2,13 +2,13 @@
 	"stone_wall": {
 		"components": [
 			"Position",
-			"Renderable",
+			"Tile",
 			"Color",
                         "Colliding"
 		],
 		"attributes": {
-			"Renderable.name": "#",
-			"Renderable.z_index": 1,
+			"Tile.name": "#",
+			"Tile.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
@@ -18,12 +18,12 @@
 	"stone_floor": {
 		"components": [
 			"Position",
-			"Renderable",
+			"Tile",
 			"Color"
 		],
 		"attributes": {
-			"Renderable.name": ".",
-			"Renderable.z_index": 1,
+			"Tile.name": ".",
+			"Tile.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195
@@ -32,14 +32,14 @@
         "stairs": {
             "components": [
                 "Position",
-                "Renderable",
+                "Tile",
                 "Color",
                 "Useable",
                 "MapTransition"
             ],
             "attributes": {
-                "Renderable.name": "<",
-                "Renderable.z_index": 1,
+                "Tile.name": "<",
+                "Tile.z_index": 1,
                 "Color.r": 195,
                 "Color.g": 195,
                 "Color.b": 195,

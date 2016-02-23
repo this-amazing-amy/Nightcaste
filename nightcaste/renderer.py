@@ -386,27 +386,27 @@ class MapPane(ContentPane):
         em = self.window.entity_manager
         if em.current_map is not None:
             to_render = [x for y in em.get_current_map() for x in y]
-            self._render_entities(to_render)
+            self._render_tiles(to_render)
 
-    def _render_entities(self, entities):
+    def _render_tiles(self, entities):
         """ Iterates through a list of entities and renders each """
         em = self.window.entity_manager
-        renderables = {k: v for k, v in em.get_components_for_entities(
-            entities, 'Renderable').iteritems() if v.visible}
+        tiles = {k: v for k, v in em.get_components_for_entities(
+            entities, 'Tile').iteritems() if v.visible}
         positions = em.get_components_for_entities(entities, 'Position')
         colors = em.get_components_for_entities(entities, 'Color')
-        for entity, renderable in sorted(
-                renderables.iteritems(), key=lambda (k, v): v.z_index):
-            self._render_entity(renderable, positions[entity], colors[entity])
+        for entity, tile in sorted(
+                tiles.iteritems(), key=lambda (k, v): v.z_index):
+            self._render_tile(tile, positions[entity], colors[entity])
 
-    def _render_entity(self, renderable, position, color):
+    def _render_tile(self, tile, position, color):
         """Check if the position of the given entity is in the viewport and
         render the entety to the window with the recalculated position in the
         pane.
 
         Args:
             entity (object): the entity which should be rendered.
-            renderable (Renderable): The visible renderable component of the
+            tile (Tile): The visible renderable component of the
                 given entity.
 
         """
@@ -414,7 +414,7 @@ class MapPane(ContentPane):
             self.put_char(
                 position.x - self.viewport_x,
                 position.y - self.viewport_y,
-                renderable.name,
+                tile.name,
                 color)
 
     def _render_sprite(self, entity, sprite, position):
