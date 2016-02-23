@@ -49,12 +49,15 @@ class MapGenerator():
         """ Returns a new Tile array with set size filled with walls"""
 
         logger.debug("Map size: %sx%s", width, height)
-        return [[[self.create_tile(tile, x, y)]
+        return [[self.create_tile(tile, x, y)
                  for y in range(0, height)]
                 for x in range(0, width)]
 
     def create_tile(self, blueprint, x, y):
         """ Creates a tile from the specified blueprint name """
+        tile = self.get_tile(x, y)
+        if tile is not None:
+            self.entity_manager.destroy_entity(self.get_tile(x, y))
         tile_config = EntityConfiguration()
         tile_config.add_attribute('Position', 'x', x)
         tile_config.add_attribute('Position', 'y', y)
@@ -80,8 +83,8 @@ class MapGenerator():
 
     def get_tile(self, x, y):
         """ Returns the bottommost entity at the given position """
-        if isinstance(self.tiles[x][y], list) and len(self.tiles[x][y]) > 0:
-            return self.tiles[x][y][0]
+        if len(self.tiles) > x and len(self.tiles[x]) > y:
+            return self.tiles[x][y]
 
     def create_stairs(self, x, y, target_map=None, target_level=None):
         """ Creates a stair entity at the given position leading to the given
@@ -170,8 +173,7 @@ class DungeonGenerator(MapGenerator):
         room = Room(node.x, node.y, width, height)
         for x in range(room.x + 1, room.x + width + 1):
             for y in range(room.y + 1, room.y + height + 1):
-                self.entity_manager.destroy_entity(self.get_tile(x, y))
-                self.tiles[x][y] = [self.create_tile("stone_floor", x, y)]
+                self.tiles[x][y] = self.create_tile("stone_floor", x, y)
         logger.debug("Created room on %s,%s sized %sx%s", node.x, node.y,
                      width, height)
         self.rooms.append(room)
@@ -192,14 +194,14 @@ class DungeonGenerator(MapGenerator):
                     (x1, y1), (x2, y2))
         if (random.randrange(2) == 1):
             for y in range(min(y1, y2), max(y1, y2) + 1):
-                self.tiles[x1][y] = [self.create_tile("stone_floor", x1, y)]
+                self.tiles[x1][y] = self.create_tile("stone_floor", x1, y)
             for x in range(min(x1, x2), max(x1, x2) + 1):
-                self.tiles[x][y2] = [self.create_tile("stone_floor", x, y2)]
+                self.tiles[x][y2] = self.create_tile("stone_floor", x, y2)
         else:
             for x in range(min(x1, x2), max(x1, x2) + 1):
-                self.tiles[x][y1] = [self.create_tile("stone_floor", x, y1)]
+                self.tiles[x][y1] = self.create_tile("stone_floor", x, y1)
             for y in range(min(y1, y2), max(y1, y2) + 1):
-                self.tiles[x2][y] = [self.create_tile("stone_floor", x2, y)]
+                self.tiles[x2][y] = self.create_tile("stone_floor", x2, y)
 
     def left_child(self, node):
         """ Returns the left child of the given node"""

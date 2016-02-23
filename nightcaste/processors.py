@@ -187,17 +187,11 @@ class MovementProcessor(EventProcessor):
             target_x, target_y)
 
         if (collision is None):
-            map = self.entity_manager.get_current_map()
-            try:
-                map[position.x][position.y].remove(event.data['entity'])
-            except ValueError:
-                pass
-            map[target_x][target_y].append(event.data['entity'])
+            # TODO: Change Movement behaviour, when sprites are done
             position.x = target_x
             position.y = target_y
-            logger.debug('Move Entity %s to position %s,%s. There are now: %s',
-                         event.data['entity'], target_x, target_y,
-                         map[target_x][target_y])
+            logger.debug('Move Entity %s to position %s,%s.',
+                         event.data['entity'], target_x, target_y)
             self.event_manager.throw("EntityMoved",
                                      {'entity': event.data['entity'],
                                       'x': target_x, 'y': target_y})
@@ -278,19 +272,15 @@ class CollisionManager():
             component (str): Component identifier which determines collision
             e.g. to test for other collisions (fov)
         """
+        # TODO: Implement Sprite Collision, when Sprites are done
         if self.dummy:
             return None
         map = self.entity_manager.get_entity_component(map, "Map").tiles
-        collidings = {entity: self.entity_manager.get_entity_component(
-            entity,
-            component)
-            for entity in map[x][y]}
-        active = [e for e, v in collidings.iteritems()
-                  if v is not None and v.active]
-        if (len(active) > 0):
+        target = self.entity_manager.get_entity_component(map[x][y], component)
+        if target is not None and target.active:
             # TODO: Throw better collision event
-            self.event_manager.throw("EntitiesCollided", {"entities": active})
-            return active
+            self.event_manager.throw("EntitiesCollided", {"entities": target})
+            return target
         return None
 
 
