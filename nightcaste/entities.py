@@ -140,8 +140,10 @@ class EntityManager:
                 A dictionary in the form of {entity: component}.
 
         """
-        return {k: v for k, v in self.get_all_of_type(
-            component_type).iteritems() if k in entity_list}
+        out = dict()
+        for entity in entity_list:
+            out[entity] = self.get_entity_component(entity, component_type)
+        return out
 
     def get_current_map(self):
         """ Returns the tiles array of the current map """

@@ -47,6 +47,8 @@ class SystemManager:
     def add_system_by_name(self, system_name):
         """Create and initialize a new system. The system has to be class in the
         module processors."""
+        # TODO: Make more flexible, we want to encapsule modules into own
+        # subpackages, so the processors have to be imported somehow else
         module = importlib.import_module('nightcaste.processors')
         system_class = getattr(module, system_name)
         system = system_class(self.event_manager, self.entity_manager)
@@ -382,12 +384,12 @@ class ViewProcessor(EventProcessor):
         self.view_controller = view_controller
 
     def register(self):
-        self._register('WorldEnter')
+        self._register('MapChange')
         self._register('MenuOpen')
         self._register('EntityMoved')
 
     def unregister(self):
-        self._unregister('WorldEnter')
+        self._unregister('MapChange')
         self._unregister('MenuOpen')
         self._unregister('EntityMoved')
 
@@ -395,7 +397,7 @@ class ViewProcessor(EventProcessor):
         player = self.entity_manager.player
         if event.identifier == 'EntityMoved' and event.data['entity'] == player:
             self.view_controller.update_view('game')
-        elif event.identifier == 'WorldEnter':
+        elif event.identifier == 'MapChange':
             if self.view_controller.show('game'):
                 # TODO let view_controller throw the event?
                 self.event_manager.throw(
