@@ -1,7 +1,7 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-from mapcreation import MapGenerator
 import game
+from mapcreation import MapManager
 import importlib
 import input
 import logging
@@ -216,7 +216,7 @@ class WorldInitializer(EventProcessor):
     def handle_event(self, event, round):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
-        self.event_manager.throw('MapChange', {'map': 'World', 'level': 0})
+        self.event_manager.throw('MapChange', {'map': 'world', 'level': 0})
 
 
 class MapChangeProcessor(EventProcessor):
@@ -231,19 +231,21 @@ class MapChangeProcessor(EventProcessor):
 
     def __init__(self, event_manager, entity_manager):
         EventProcessor.__init__(self, event_manager, entity_manager)
-        self.map_generator = MapGenerator(entity_manager)
+        self.map_manager = MapManager(entity_manager)
 
     def handle_event(self, event, round):
         logger.debug(
-            'Generating Map %s on level %d',
+            'Changing to Map %s - %d',
             event.data["map"],
             event.data["level"])
-        new_map = self.map_generator.generate_map(
-            event.data['map'], event.data['level'])
+        new_map = self.map_manager.get_map(
+            name=event.data['map'], level=event.data['level'])
         # place player at the dungeon entry
+        entry_point = self.entity_manager.get_entity_component(new_map,
+                                                               'Map').entry
         self.event_manager.throw('MoveAction',
                                  {'entity': self.entity_manager.player,
-                                  'dx': 20, 'dy': 10})
+                                  'dx': entry_point[0], 'dy': entry_point[1]})
         self.change_map(new_map)
 
     def change_map(self, new_map):
@@ -362,6 +364,23 @@ class UseEntityProcessor(EventProcessor):
             if (useables[i] is not None):
                 self.event_manager.throw(useables[i].useEvent,
                                          {'usedEntity': i})
+
+
+class TransitionProcessor(EventProcessor):
+    """ Converts an Event into MapChange Events with the entity's MapTransition
+    Component """
+
+    def register(self):
+        self._register("MapTransition")
+
+    def unregister(self):
+        self._unregister("MapTransition")
+
+    def handle_event(self, event, round):
+        target = self.entity_manager.get_entity_component(event.usedEntity,
+                                                          'MapTransition')
+        self.event_manager.throw("MapChange", {"map": target.target_map,
+                                               "level": target.target_level})
 
 
 class ViewProcessor(EventProcessor):
