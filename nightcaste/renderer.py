@@ -64,6 +64,14 @@ class PygameRenderer:
             (x * self.tileset.tile_width,
              y * self.tileset.tile_height))
 
+    def put_tile(self, x, y, tile_name):
+        tile = self.tileset.get_tile(tile_name)
+        rects = self.surface.blit(
+            tile,
+            (x * self.tileset.tile_width,
+             y * self.tileset.tile_height))
+        self.dirty_rects.append(rects)
+
     def fill_background(self, color, rect):
         rects = self.surface.fill(
             (color.r,
@@ -113,7 +121,7 @@ class TileSet:
         return self.tiles[key]
 
     def _load_tile_table(self, filename):
-        image = pygame.image.load(filename).convert_alpha()
+        image = pygame.image.load(filename).convert()
         image_width, image_height = image.get_size()
         tile_table = []
         for tile_x in range(0, image_width / self.tile_width):
@@ -217,6 +225,10 @@ class Window:
     def put_sprite(self, sprite):
         """Delegates the call to renderer."""
         self.renderer.put_sprite(sprite)
+
+    def put_tile(self, x, y, tile_name):
+        """Delegates the call to the renderer."""
+        self.renderer.put_tile(x, y, tile_name)
 
     def fill_background(self, color, rect):
         self.renderer.fill_background(color, rect)
@@ -324,6 +336,12 @@ class ContentPane(object):
         # print the background to overwrite existing chars
         self.window.put_sprite(sprite)
 
+    def put_tile(self, x, y, tile_name):
+        self.window.put_tile(
+            self.pos_x + x,
+            self.pos_y + y,
+            tile_name)
+
     def put_text(self, x, y, text, fore_color=None, back_color=None):
         # As long as we use tansparant tiles for printing text we have to
         # print the background to overwrite existing chars
@@ -411,14 +429,21 @@ class MapPane(ContentPane):
 
         """
         if self._in_viewport(position):
-            self.put_char(
+            self.put_tile(
                 position.x - self.viewport_x,
                 position.y - self.viewport_y,
-                tile.name,
-                color)
+                tile.name)
 
     def _render_sprite(self, entity, sprite, position):
-        # TODO update and render old position
+        # restore map tile at old position
+        em = self.window.entity_manager
+        old_tile_entity = em.get_current_map()[position.x_old][position.y_old]
+        old_tile = em.get_entity_component(old_tile_entity, 'Tile')
+        self.put_tile(
+            position.x_old - self.viewport_x,
+            position.y_old - self.viewport_y,
+            old_tile.name)
+        # render sprite at new position
         sprite.rect.x = position.x - self.viewport_x
         sprite.rect.y = position.y - self.viewport_y
         if sprite.visible:
