@@ -29,14 +29,20 @@ class SystemManager:
             self.configure(config)
 
     def configure(self, config):
-        """Configure systems based on their name.
+        """Configure systems based on the given config.
 
         Args:
-            config: {'systems': []}
+            config (dict):
+                {
+                    'systems': [{
+                        'impl': 'systemClass',
+                        'config': {systemparam: args}
+                    }]
+                }
         """
         if 'systems' in config:
-            for system_name in config['systems']:
-                self.add_system_by_name(system_name)
+            for system_config in config['systems']:
+                self.add_system_by_config(system_config)
 
     def add_system(self, system):
         """Adds a system and calls its register function"""
@@ -44,14 +50,16 @@ class SystemManager:
         # TODO rename to more general intialize
         system.register()
 
-    def add_system_by_name(self, system_name):
+    def add_system_by_config(self, system_config):
         """Create and initialize a new system. The system has to be class in the
         module processors."""
         # TODO: Make more flexible, we want to encapsule modules into own
         # subpackages, so the processors have to be imported somehow else
         module = importlib.import_module('nightcaste.processors')
-        system_class = getattr(module, system_name)
+        system_class = getattr(module, system_config['impl'])
         system = system_class(self.event_manager, self.entity_manager)
+        if 'config' in system_config:
+            system.configure(system_config['config'])
         self.add_system(system)
 
     def update(self, round, delta_time):
@@ -74,6 +82,11 @@ class EventProcessor:
     def __init__(self, event_manager, entity_manager):
         self.event_manager = event_manager
         self.entity_manager = entity_manager
+
+    def configure(self, config):
+        """Configure a special system parameters from a configuration or json
+        structure."""
+        pass
 
     def handle_event(self, event, round):
         """Base method which does not do anything which useful for testing.
@@ -338,9 +351,11 @@ class TurnProcessor(EventProcessor):
         EventProcessor.__init__(self, event_manager, entity_manager)
         # TODO Priority Queue?
         self.turn_events = []
-        # TODO configure processors
         self.min_turn_time = 0.2
         self.current_turn_time = 0.0
+
+    def configure(self, config):
+        self.min_turn_time = config['min_turn_time']
 
     def register(self):
         self._register("MoveAction_TURN")
