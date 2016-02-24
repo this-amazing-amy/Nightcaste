@@ -61,14 +61,14 @@ def main():
 def get_systems_config():
     return {
         'systems': [
-            'TurnProcessor',
-            'MenuInputProcessor',
-            'GameInputProcessor',
-            'WorldInitializer',
-            'MapChangeProcessor',
-            'TransitionProcessor',
-            'MovementProcessor',
-            'UseEntityProcessor']}
+            {'impl': 'TurnProcessor', 'config': {'min_turn_time': 0.2}},
+            {'impl': 'MenuInputProcessor'},
+            {'impl': 'GameInputProcessor'},
+            {'impl': 'WorldInitializer'},
+            {'impl': 'MapChangeProcessor'},
+            {'impl': 'TransitionProcessor'},
+            {'impl': 'MovementProcessor'},
+            {'impl': 'UseEntityProcessor'}]}
 
 
 def get_behaviour_config():
