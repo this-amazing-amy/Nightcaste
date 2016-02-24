@@ -2,7 +2,7 @@
 specific property or a set of proerties in order to represent certain ability or
 property of an entity. The entity itself is only a composition of its
 components."""
-import pygame
+from pygame.sprite import DirtySprite
 
 
 class Component:
@@ -52,12 +52,12 @@ class Renderable(Component):
         self.visible = True
 
 
-class Sprite(Renderable, pygame.sprite.Sprite):
+class Sprite(Renderable, DirtySprite):
     """Represents sprite in a 2D game."""
 
     def __init__(self, sprite_name=None, z_index=0, visible=True):
+        DirtySprite.__init__(self)
         Renderable.__init__(self, sprite_name, z_index, visible)
-        pygame.sprite.Sprite.__init__(self)
 
 
 class Tile(Renderable):
