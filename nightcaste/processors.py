@@ -188,6 +188,8 @@ class MovementProcessor(EventProcessor):
 
         if (collision is None):
             # TODO: Change Movement behaviour, when sprites are done
+            position.x_old = position.x
+            position.y_old = position.y
             position.x = target_x
             position.y = target_y
             logger.debug('Move Entity %s to position %s,%s.',

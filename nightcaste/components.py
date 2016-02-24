@@ -31,6 +31,8 @@ class Position(Component):
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
+        self.x_old = x
+        self.y_old = y
 
 
 class Renderable(Component):
@@ -56,6 +58,7 @@ class Sprite(Renderable, pygame.sprite.Sprite):
     def __init__(self, sprite_name=None, z_index=0, visible=True):
         Renderable.__init__(self, sprite_name, z_index, visible)
         pygame.sprite.Sprite.__init__(self)
+
 
 class Tile(Renderable):
     """Represents a part of a background image / map in a 2D tile based game."""
