@@ -79,14 +79,35 @@ class InputBehaviour(EntityComponentBehaviour):
         # between realtime and turn based. (A realtime behaviour would not
         # check for a state
         if game.status == game.G_ROUND_WAITING_INPUT:
-            if input.is_pressed(input.K_LEFT):
-                self.move(-1, 0)
-            elif input.is_pressed(input.K_RIGHT):
-                self.move(1, 0)
-            elif input.is_pressed(input.K_DOWN):
-                self.move(0, 1)
-            elif input.is_pressed(input.K_UP):
-                self.move(0, -1)
+            dx = 0
+            dy = 0
+            if input.is_pressed(
+                input.K_LEFT) or input.is_pressed(
+                input.K_KP1) or input.is_pressed(
+                input.K_KP4) or input.is_pressed(
+                    input.K_KP7):
+                dx = -1
+            if input.is_pressed(
+                input.K_RIGHT) or input.is_pressed(
+                input.K_KP3) or input.is_pressed(
+                input.K_KP6) or input.is_pressed(
+                    input.K_KP9):
+                dx = dx + 1
+            if input.is_pressed(
+                input.K_DOWN) or input.is_pressed(
+                input.K_KP1) or input.is_pressed(
+                input.K_KP2) or input.is_pressed(
+                    input.K_KP3):
+                dy = 1
+            if input.is_pressed(
+                input.K_UP) or input.is_pressed(
+                input.K_KP7) or input.is_pressed(
+                input.K_KP8) or input.is_pressed(
+                    input.K_KP9):
+                dy = dy - 1
+
+            if dy != 0 or dx != 0:
+                self.move(dx, dy)
             elif input.is_pressed(input.K_ENTER):
                 # TODO: Implement Targeting Inputs (combined input or
                 # sequential?)
