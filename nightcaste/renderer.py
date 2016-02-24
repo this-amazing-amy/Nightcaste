@@ -89,10 +89,13 @@ class PygameRenderer:
             self.put_char(x + text_index, y, text[text_index], fcolor, bcolor)
 
     def put_sprite(self, sprite):
-        sprite.rect.x *= self.tileset.tile_width
-        sprite.rect.y *= self.tileset.tile_height
-        rects = self.surface.blit(sprite.image, sprite.rect)
-        self.dirty_rects.append(rects)
+        if sprite.visible:
+            sprite.rect.x *= self.tileset.tile_width
+            sprite.rect.y *= self.tileset.tile_height
+            rects = self.surface.blit(sprite.image, sprite.rect)
+            self.dirty_rects.append(rects)
+            # TODO let handle pygame the dirty flags by using sprite groups
+            sprite.dirty = 0
 
 
 class TileSet:
@@ -142,14 +145,12 @@ class SpriteManager:
     def __init__(self):
         self.images = {}
 
-    def initialize_sprite(self, sprite, position):
+    def initialize_sprite(self, sprite):
         image = self.images.get(sprite.name)
         if image is None:
             image = self._load_image(sprite.name)
         sprite.image = image.copy()
         sprite.rect = image.get_rect()
-        sprite.rect.x = position.x
-        sprite.rect.y = position.y
         logger.debug('Sprite initialized %s', sprite)
 
     def _load_image(self, name):
@@ -378,33 +379,38 @@ class MapPane(ContentPane):
                              absolute_y, width, height, z_index=0)
         self.viewport_x = 0
         self.viewport_y = 0
+        self.viewport_dirty = True
 
     def initialize(self):
         super(MapPane, self).initialize()
-        self._render_map
+        self.viewport_dirty = True
 
     def update(self):
         """Updates the view port"""
         self._update_view_port()
-        self._render_map()
 
     def render(self):
         """Renders all entities with a visible renderable component and with a
         position in the current viewport."""
-        # TODO: Render Dirty Sprites (SpriteGroups)
-        em = self.window.entity_manager
-        positions = em.get_all_of_type('Position')
-        sprites = em.get_all_of_type('Sprite')
-        for entity, sprite in sorted(
-                sprites.iteritems(), key=lambda (k, v): v.z_index):
-            self._render_sprite(entity, sprite, positions[entity])
-        pass
+        if self.viewport_dirty:
+            self._render_map()
+            self.viewport_dirty = False
+        self._render_sprites()
 
     def _render_map(self):
         em = self.window.entity_manager
         if em.current_map is not None:
             to_render = [x for y in em.get_current_map() for x in y]
             self._render_tiles(to_render)
+
+    def _render_sprites(self):
+        # TODO: Render SpriteGroups instead of individual sprites
+        em = self.window.entity_manager
+        positions = em.get_all_of_type('Position')
+        sprites = em.get_all_of_type('Sprite')
+        for entity, sprite in sorted(
+                sprites.iteritems(), key=lambda k_v: k_v[1].z_index):
+            self._render_sprite(entity, sprite, positions[entity])
 
     def _render_tiles(self, entities):
         """ Iterates through a list of entities and renders each """
@@ -414,7 +420,7 @@ class MapPane(ContentPane):
         positions = em.get_components_for_entities(entities, 'Position')
         colors = em.get_components_for_entities(entities, 'Color')
         for entity, tile in sorted(
-                tiles.iteritems(), key=lambda (k, v): v.z_index):
+                tiles.iteritems(), key=lambda k_v1: k_v1[1].z_index):
             self._render_tile(tile, positions[entity], colors[entity])
 
     def _render_tile(self, tile, position, color):
@@ -436,17 +442,18 @@ class MapPane(ContentPane):
 
     def _render_sprite(self, entity, sprite, position):
         # restore map tile at old position
-        em = self.window.entity_manager
-        old_tile_entity = em.get_current_map()[position.x_old][position.y_old]
-        old_tile = em.get_entity_component(old_tile_entity, 'Tile')
-        self.put_tile(
-            position.x_old - self.viewport_x,
-            position.y_old - self.viewport_y,
-            old_tile.name)
-        # render sprite at new position
-        sprite.rect.x = position.x - self.viewport_x
-        sprite.rect.y = position.y - self.viewport_y
-        if sprite.visible:
+        if sprite.dirty > 0:
+            em = self.window.entity_manager
+            old_tile_entity = em.get_current_map()[position.x_old][
+                position.y_old]
+            old_tile = em.get_entity_component(old_tile_entity, 'Tile')
+            self.put_tile(
+                position.x_old - self.viewport_x,
+                position.y_old - self.viewport_y,
+                old_tile.name)
+            # render sprite at new position
+            sprite.rect.x = position.x - self.viewport_x
+            sprite.rect.y = position.y - self.viewport_y
             self.put_sprite(sprite)
 
     def _update_view_port(self):
@@ -456,11 +463,15 @@ class MapPane(ContentPane):
         em = self.window.entity_manager
         map = em.get_entity_component(em.current_map, 'Map')
         player_pos = em.get_entity_component(em.player, 'Position')
+        vp_x_old = self.viewport_x
+        vp_y_old = self.viewport_y
         self.viewport_x = max(player_pos.x - int(self.width / 2), 0)
         self.viewport_y = max(player_pos.y - int(self.height / 2), 0)
         self.viewport_x += min(map.width() - (self.viewport_x + self.width), 0)
         self.viewport_y += min(map.height() -
                                (self.viewport_y + self.height), 0)
+        if self.viewport_x != vp_x_old or self.viewport_y != vp_y_old:
+            self.viewport_dirty = True
 
     def _in_viewport(self, position):
         """Checks if the given position is in the current viewport.

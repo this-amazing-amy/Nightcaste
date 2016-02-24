@@ -303,16 +303,21 @@ class SpriteProcessor(EventProcessor):
 
     def register(self):
         self._register('EntityCreated')
+        self._register('EntityMoved')
 
     def unregister(self):
         self._unregister('EntityCreated')
+        self._unregister('EntityMoved')
 
     def handle_event(self, event, round):
         entity = event.data['entity']
         sprite = self.entity_manager.get_entity_component(entity, 'Sprite')
         if sprite is not None:
-            pos = self.entity_manager.get_entity_component(entity, 'Position')
-            self.sprite_manager.initialize_sprite(sprite, pos)
+            if event.identifier == 'EntityMoved':
+                logger.debug('Set sprite dirty %s', sprite)
+                sprite.dirty = 1
+            else:
+                self.sprite_manager.initialize_sprite(sprite)
 
 
 class TurnProcessor(EventProcessor):
