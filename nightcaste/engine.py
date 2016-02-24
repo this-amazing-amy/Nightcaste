@@ -11,6 +11,7 @@ from renderer import MapPane
 from renderer import StatusPane
 import game
 import input
+import json
 import logging
 import pygame
 import time
@@ -20,6 +21,10 @@ logger = logging.getLogger('engine')
 
 def main():
     logger.info('Nightcaste v%s', __version__)
+
+    config_path = 'config/nightcaste.json'
+    game_config = load_game_config(config_path)
+
     realtime = True
     pygame.init()
     event_manager = EventManager()
@@ -31,7 +36,7 @@ def main():
     system_manager = SystemManager(
         event_manager,
         entity_manager,
-        get_systems_config())
+        game_config)
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
     window_manager = WindowManager(event_manager, entity_manager)
@@ -58,22 +63,16 @@ def main():
     return 0
 
 
-def get_systems_config():
-    return {
-        'systems': [
-            {'impl': 'TurnProcessor', 'config': {'min_turn_time': 0.2}},
-            {'impl': 'MenuInputProcessor'},
-            {'impl': 'GameInputProcessor'},
-            {'impl': 'WorldInitializer'},
-            {'impl': 'MapChangeProcessor'},
-            {'impl': 'TransitionProcessor'},
-            {'impl': 'MovementProcessor'},
-            {'impl': 'UseEntityProcessor'}]}
-
-
 def get_behaviour_config():
     return {'component_behaviours': [
         {'component_type': 'InputComponent', 'name': 'InputBehaviour'}]}
+
+
+def load_game_config(config_path):
+    config_file = open(config_path)
+    game_config = json.load(config_file)
+    config_file.close()
+    return game_config
 
 
 def create_window(window_manager):
