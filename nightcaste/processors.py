@@ -372,6 +372,7 @@ class TurnProcessor(EventProcessor):
             game.status = game.G_ROUND_COLLECT_TURNS
         elif game.status == game.G_ROUND_COLLECT_TURNS:
             game.status = game.G_ROUND_IN_PROGRESS
+            self.current_turn_time = 0
             # order by speed here
 
         # Throw a scheduled action on each update
@@ -381,7 +382,6 @@ class TurnProcessor(EventProcessor):
             elif (self.current_turn_time >= self.min_turn_time):
                 game.status = game.G_ROUND_WAITING_INPUT
                 game.round += 1
-                self.current_turn_time = 0
 
     def _next_turn(self):
         next_turn = self.turn_events.pop(0)
