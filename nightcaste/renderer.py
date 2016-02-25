@@ -6,10 +6,10 @@ from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
 import game
-import json
 import logging
 import pygame
 import tcod as libtcod
+import utils
 
 logger = logging.getLogger('renderer')
 TILESET_DIR = path.abspath(
@@ -33,8 +33,7 @@ class PygameRenderer:
         self.color_cache = {}
         self.dirty_rects = []
 
-        tileset_file = open(path.join(TILESET_DIR, 'ascii.json'))
-        tiles_config = json.load(tileset_file)
+        tiles_config = utils.load_config(path.join(TILESET_DIR, 'ascii.json'))
         # Only configures the tile size the tileset image cannot be loaded yet
         self.tileset = TileSet(tiles_config)
         screen_width = width * self.tileset.tile_width
