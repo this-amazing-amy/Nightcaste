@@ -11,5 +11,13 @@
         {"impl": "TransitionProcessor"},
         {"impl": "MovementProcessor"},
         {"impl": "UseEntityProcessor"}
-    ]
+    ],
+    "behaviours": {
+        "component_behaviours": [
+            {
+                "component_type": "InputComponent",
+                "name": "InputBehaviour"
+            }
+        ]
+    }
 }

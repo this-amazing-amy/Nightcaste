@@ -32,7 +32,7 @@ def main():
     behaviour_manager = BehaviourManager(
         event_manager,
         entity_manager,
-        get_behaviour_config())
+        game_config['behaviours'])
     system_manager = SystemManager(
         event_manager,
         entity_manager,
@@ -61,11 +61,6 @@ def main():
 
         prev_time = current_time
     return 0
-
-
-def get_behaviour_config():
-    return {'component_behaviours': [
-        {'component_type': 'InputComponent', 'name': 'InputBehaviour'}]}
 
 
 def load_game_config(config_path):
