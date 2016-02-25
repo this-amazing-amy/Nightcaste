@@ -1,22 +1,22 @@
 {
     "systems": [
         {
-            "impl": "TurnProcessor",
+            "impl": [ "nightcaste.processors", "TurnProcessor" ],
             "config": {"min_turn_time": 0.2}
         },
-        {"impl": "MenuInputProcessor"},
-        {"impl": "GameInputProcessor"},
-        {"impl": "WorldInitializer"},
-        {"impl": "MapChangeProcessor"},
-        {"impl": "TransitionProcessor"},
-        {"impl": "MovementProcessor"},
-        {"impl": "UseEntityProcessor"}
+        {"impl": [ "nightcaste.processors", "MenuInputProcessor" ]},
+        {"impl": [ "nightcaste.processors", "GameInputProcessor" ]},
+        {"impl": [ "nightcaste.processors", "WorldInitializer" ]},
+        {"impl": [ "nightcaste.processors", "MapChangeProcessor" ]},
+        {"impl": [ "nightcaste.processors", "TransitionProcessor" ]},
+        {"impl": [ "nightcaste.processors", "MovementProcessor" ]},
+        {"impl": [ "nightcaste.processors", "UseEntityProcessor" ]}
     ],
     "behaviours": {
         "component_behaviours": [
             {
                 "component_type": "InputComponent",
-                "name": "InputBehaviour"
+                "impl": [ "nightcaste.behaviour", "InputBehaviour" ]
             }
         ]
     }

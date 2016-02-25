@@ -2,9 +2,9 @@
 itself in the EventManager in order to retrieve the events to process"""
 import game
 from mapcreation import MapManager
-import importlib
 import input
 import logging
+import utils
 
 logger = logging.getLogger('processors')
 
@@ -53,10 +53,8 @@ class SystemManager:
     def add_system_by_config(self, system_config):
         """Create and initialize a new system. The system has to be class in the
         module processors."""
-        # TODO: Make more flexible, we want to encapsule modules into own
-        # subpackages, so the processors have to be imported somehow else
-        module = importlib.import_module('nightcaste.processors')
-        system_class = getattr(module, system_config['impl'])
+        impl = system_config['impl']
+        system_class = utils.class_for_name(impl[0], impl[1])
         system = system_class(self.event_manager, self.entity_manager)
         if 'config' in system_config:
             system.configure(system_config['config'])
