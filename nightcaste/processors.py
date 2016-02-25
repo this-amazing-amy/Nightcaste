@@ -185,8 +185,7 @@ class MovementProcessor(EventProcessor):
 
         """
 
-        position = self.entity_manager.get_entity_component(
-            event.data['entity'], 'Position')
+        position = self.entity_manager.get(event.data['entity'], 'Position')
 
         if event.data.get("absolute", 0) == 1:
             target_x = event.data['dx']
@@ -258,8 +257,7 @@ class MapChangeProcessor(EventProcessor):
         new_map = self.map_manager.get_map(event.data['name'],
                                            event.data['level'],
                                            event.data.get("type", "dungeon"))
-        entry_point = self.entity_manager.get_entity_component(new_map,
-                                                               'Map').entry
+        entry_point = self.entity_manager.get(new_map, 'Map').entry
         self.event_manager.throw('MoveAction',
                                  {'entity': self.entity_manager.player,
                                   'dx': entry_point[0], 'dy': entry_point[1],
@@ -269,8 +267,8 @@ class MapChangeProcessor(EventProcessor):
     def change_map(self, new_map):
         """Changes the current map with the specified map."""
         if self.entity_manager.current_map is not None:
-            new_mc = self.entity_manager.get_entity_component(new_map, 'Map')
-            cur_mc = self.entity_manager.get_entity_component(
+            new_mc = self.entity_manager.get(new_map, 'Map')
+            cur_mc = self.entity_manager.get(
                 self.entity_manager.current_map, 'Map')
             new_mc.parent = self.entity_manager.current_map
             cur_mc.add_child(new_map)
@@ -299,8 +297,8 @@ class CollisionManager():
         # TODO: Implement Sprite Collision, when Sprites are done
         if self.dummy:
             return None
-        map = self.entity_manager.get_entity_component(map, "Map").tiles
-        target = self.entity_manager.get_entity_component(map[x][y], component)
+        map = self.entity_manager.get(map, "Map").tiles
+        target = self.entity_manager.get(map[x][y], component)
         if target is not None and target.active:
             # TODO: Throw better collision event
             self.event_manager.throw("EntitiesCollided", {"entities": target})
@@ -324,7 +322,7 @@ class SpriteProcessor(EventProcessor):
 
     def handle_event(self, event, round):
         entity = event.data['entity']
-        sprite = self.entity_manager.get_entity_component(entity, 'Sprite')
+        sprite = self.entity_manager.get(entity, 'Sprite')
         if sprite is not None:
             if event.identifier == 'EntityMoved':
                 logger.debug('Set sprite dirty %s', sprite)
@@ -400,12 +398,11 @@ class UseEntityProcessor(EventProcessor):
         self._unregister("UseEntityAction")
 
     def handle_event(self, event, round):
-        user = self.entity_manager.get_entity_component(event.data['user'],
-                                                        "Position")
+        user = self.entity_manager.get(event.data['user'], 'Position')
         target = (user.x + event.data['direction'][0],
                   user.y + event.data['direction'][1])
         entity = self.entity_manager.get_current_map()[target[0]][target[1]]
-        useable = self.entity_manager.get_entity_component(entity, "Useable")
+        useable = self.entity_manager.get(entity, 'Useable')
         if (useable is not None):
             self.event_manager.throw(useable.useEvent, {'usedEntity': entity})
 
@@ -421,7 +418,7 @@ class TransitionProcessor(EventProcessor):
         self._unregister("MapTransition")
 
     def handle_event(self, event, round):
-        target = self.entity_manager.get_entity_component(
+        target = self.entity_manager.get(
             event.data['usedEntity'], 'MapTransition')
         self.event_manager.throw("MapChange", {"name": target.target_map,
                                                "level": target.target_level})

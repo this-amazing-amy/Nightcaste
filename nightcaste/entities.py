@@ -95,7 +95,7 @@ class EntityManager:
         """
         self.component_manager.remove_components(entity)
 
-    def get_entity_component(self, entity, component_type):
+    def get(self, entity, component_type):
         """Searches the specified component type for the given entity.
 
             Args:
@@ -112,7 +112,7 @@ class EntityManager:
     def set_entity_attribute(self, entity_id, component, attribute, value):
         """ Set an attribute of component of entity """
 
-        component = self.get_entity_component(entity_id, component)
+        component = self.get(entity_id, component)
         if component is not None:
             component.attribute = value
 
@@ -142,12 +142,12 @@ class EntityManager:
         """
         out = dict()
         for entity in entity_list:
-            out[entity] = self.get_entity_component(entity, component_type)
+            out[entity] = self.get(entity, component_type)
         return out
 
     def get_current_map(self):
         """ Returns the tiles array of the current map """
-        return self.get_entity_component(self.current_map, "Map").tiles
+        return self.get(self.current_map, "Map").tiles
 
 
 class ComponentManager:

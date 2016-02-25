@@ -61,7 +61,7 @@ class TestMovementProcessor:
         entity_manager.current_map = mg.generate_map("map", 0)
 
         processor.handle_event(event, 1)
-        position = entity_manager.get_entity_component(entity, 'Position')
+        position = entity_manager.get(entity, 'Position')
         assert position.x == 43
         assert position.y == 22
 
