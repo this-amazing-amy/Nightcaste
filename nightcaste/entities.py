@@ -1,8 +1,8 @@
 """The model represents backing storage for entities."""
 import components
-import json
 import logging
 import os
+import utils
 
 logger = logging.getLogger('entites')
 
@@ -262,19 +262,12 @@ class BlueprintManager:
     def _load_blueprints_from_file(self, blueprint_path):
         basename = os.path.splitext(os.path.basename(blueprint_path))[0]
         logger.info('Loading %s', basename)
-        blueprint_config = self._load_json(blueprint_path)
+        blueprint_config = utils.load_config(blueprint_path)
         for name, blueprint in blueprint_config.iteritems():
             logger.info("Adding Blueprint: %s", name)
             blue_print_name = basename + '.' + name
             entity_config = self._create_entity_config(blueprint)
             self.blue_prints.update({blue_print_name: entity_config})
-
-    def _load_json(self, path):
-        json_file = open(path)
-        try:
-            return json.load(json_file, 'utf-8')
-        finally:
-            json_file.close()
 
     def _create_entity_config(self, blueprint):
         entity_config = EntityConfiguration()

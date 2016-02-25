@@ -10,7 +10,6 @@ from renderer import MapPane
 from renderer import StatusPane
 import game
 import input
-import json
 import logging
 import pygame
 import time
@@ -22,8 +21,7 @@ logger = logging.getLogger('engine')
 def main():
     logger.info('Nightcaste v%s', __version__)
 
-    config_path = 'config/nightcaste.json'
-    game_config = load_game_config(config_path)
+    game_config = utils.load_config('config/nightcaste.json')
 
     realtime = True
     pygame.init()
@@ -62,15 +60,8 @@ def main():
     return 0
 
 
-def load_game_config(config_path):
-    config_file = open(config_path)
-    game_config = json.load(config_file)
-    config_file.close()
-    return game_config
-
-
 def create_window(event_manager, entity_manager):
-    gui_config = load_game_config('config/gui.json')
+    gui_config = utils.load_config('config/gui.json')
     mngr_config = gui_config['window_manager']
     window_manager_class = utils.class_for_name(mngr_config[0], mngr_config[1])
     window_manager = window_manager_class(event_manager, entity_manager)
