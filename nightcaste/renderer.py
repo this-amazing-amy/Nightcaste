@@ -446,7 +446,7 @@ class MapPane(ContentPane):
             em = self.window.entity_manager
             old_tile_entity = em.get_current_map()[position.x_old][
                 position.y_old]
-            old_tile = em.get_entity_component(old_tile_entity, 'Tile')
+            old_tile = em.get(old_tile_entity, 'Tile')
             self.put_tile(
                 position.x_old - self.viewport_x,
                 position.y_old - self.viewport_y,
@@ -461,8 +461,8 @@ class MapPane(ContentPane):
         centered on the player until it hits the edges of the map. The viewport
         is represented by a start point + width and high of the pane."""
         em = self.window.entity_manager
-        map = em.get_entity_component(em.current_map, 'Map')
-        player_pos = em.get_entity_component(em.player, 'Position')
+        map = em.get(em.current_map, 'Map')
+        player_pos = em.get(em.player, 'Position')
         vp_x_old = self.viewport_x
         vp_y_old = self.viewport_y
         self.viewport_x = max(player_pos.x - int(self.width / 2), 0)

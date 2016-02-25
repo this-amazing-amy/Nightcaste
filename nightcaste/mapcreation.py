@@ -76,9 +76,7 @@ class MapGenerator():
     def is_blocked(self, x, y):
         """ Returns True, if the given position on the map has an enabled
         Colliding component """
-        colliding = self.entity_manager.get_entity_component(
-            self.get_tile(x, y),
-            "Colliding")
+        colliding = self.entity_manager.get(self.get_tile(x, y), 'Colliding')
         return (colliding is not None and colliding.active)
 
     def get_tile(self, x, y):
