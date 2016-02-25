@@ -406,8 +406,8 @@ class MapPane(ContentPane):
     def _render_sprites(self):
         # TODO: Render SpriteGroups instead of individual sprites
         em = self.window.entity_manager
-        positions = em.get_all_of_type('Position')
-        sprites = em.get_all_of_type('Sprite')
+        positions = em.get_all('Position')
+        sprites = em.get_all('Sprite')
         for entity, sprite in sorted(
                 sprites.iteritems(), key=lambda k_v: k_v[1].z_index):
             self._render_sprite(entity, sprite, positions[entity])
