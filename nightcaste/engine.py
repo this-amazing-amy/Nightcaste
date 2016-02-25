@@ -5,7 +5,6 @@ from events import EventManager
 from entities import EntityManager
 from nightcaste import __version__
 from processors import SystemManager
-from renderer import WindowManager
 from renderer import MenuPane
 from renderer import MapPane
 from renderer import StatusPane
@@ -15,6 +14,7 @@ import json
 import logging
 import pygame
 import time
+import utils
 
 logger = logging.getLogger('engine')
 
@@ -39,8 +39,7 @@ def main():
         game_config)
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
-    window_manager = WindowManager(event_manager, entity_manager)
-    window = create_window(window_manager)
+    window = create_window(event_manager, entity_manager)
     prev_time = None
 
     event_manager.throw("MenuOpen")
@@ -70,7 +69,11 @@ def load_game_config(config_path):
     return game_config
 
 
-def create_window(window_manager):
+def create_window(event_manager, entity_manager):
+    gui_config = load_game_config('config/gui.json')
+    mngr_config = gui_config['window_manager']
+    window_manager_class = utils.class_for_name(mngr_config[0], mngr_config[1])
+    window_manager = window_manager_class(event_manager, entity_manager)
     width = 80
     height = 55
     window = window_manager.create_empty_window(
