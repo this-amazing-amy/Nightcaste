@@ -116,7 +116,7 @@ class EntityManager:
         if component is not None:
             component.attribute = value
 
-    def get_all_of_type(self, component_type):
+    def get_all(self, component_type):
         """Get all components of the specified type.
 
             Args:

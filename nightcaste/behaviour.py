@@ -49,7 +49,7 @@ class BehaviourManager:
         """Updates all behaviours for all entitites with a associated
         components."""
         for component_type, behaviour in self.behaviours.iteritems():
-            components = self.entity_manager.get_all_of_type(component_type)
+            components = self.entity_manager.get_all(component_type)
             for entity, component in components.iteritems():
                 behaviour.entity = entity
                 behaviour.component = component

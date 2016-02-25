@@ -83,11 +83,11 @@ class TestEntityManager:
         assert position is not None
         assert renderable is not None
 
-    def test_get_all_of_type(self, entity_manager, simple_config):
+    def test_get_all(self, entity_manager, simple_config):
         entity_manager.new_from_config(simple_config)
         entity_manager.new_from_config(simple_config)
-        positions = entity_manager.get_all_of_type('Position')
-        renderables = entity_manager.get_all_of_type('Renderable')
+        positions = entity_manager.get_all('Position')
+        renderables = entity_manager.get_all('Renderable')
         assert len(positions) > 1
         assert len(renderables) > 1
         for position in positions.itervalues():
@@ -98,7 +98,7 @@ class TestEntityManager:
     def test_get_components_for_entites(
             self, entity_manager, simple_config):
         entity = entity_manager.new_from_config(simple_config)
-        positions = entity_manager.get_all_of_type('Position')
+        positions = entity_manager.get_all('Position')
         renderables = entity_manager.get_components_for_entities(
             positions, 'Renderable')
         assert renderables[entity].character == '@'
