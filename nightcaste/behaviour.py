@@ -1,6 +1,6 @@
 import game
-import importlib
 import input
+import utils
 
 
 class BehaviourManager:
@@ -21,25 +21,23 @@ class BehaviourManager:
 
         """
         if 'component_behaviours' in config:
-            for behaviour in config['component_behaviours']:
-                self.add_comp_behaviour_from_name(
-                    behaviour['component_type'],
-                    behaviour['name'])
+            for comp_behaviour_config in config['component_behaviours']:
+                self.add_comp_behaviour_from_config(comp_behaviour_config)
 
-    def add_comp_behaviour_from_name(self, component_type, behaviour_name):
+    def add_comp_behaviour_from_config(self, config):
         """Associates the behaviour specified be the name with the specified
         compoenent_type.
 
         Args:
             component_type (str): The component type associated with the
                 behaviour
-            behaviour_name (str): The name of the behaviour.
+            behaviour_impl (str): The implementation of the behaviour.
 
         """
-        module = importlib.import_module('nightcaste.behaviour')
-        behaviour_class = getattr(module, behaviour_name)
+        impl = config['impl']
+        behaviour_class = utils.class_for_name(impl[0], impl[1])
         behaviour = behaviour_class(self.event_manager, self.entity_manager)
-        self.add_component_behaviour(component_type, behaviour)
+        self.add_component_behaviour(config['component_type'], behaviour)
 
     def add_component_behaviour(self, component_type, behaviour):
         """Register the given behaviour with the specified component type."""
