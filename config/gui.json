@@ -5,35 +5,31 @@
         "nightcaste": {
             "impl": [ "nightcaste.renderer", "Window" ],
             "title": "Nightcaste",
-            "size": [ 1024, 768 ]
+            "size": [ 1024, 768 ],
+            "views#": "Describes of which panes several views consists.",
+            "views": {
+                "main_menu": ["menu_pane"],
+                "game_view": ["map_pane", "status_pane"]
+            },
+            "default_view": "main_menu",
+            "panes#": "A Pane is a unit in a window which contains content.",
+            "panes": {
+                "menu_pane": {
+                    "impl": ["nightcaste.renderer", "MenuPane"],
+                    "position": [ 0, 0 ],
+                    "size": [ 1024, 768 ]
+                },
+                "map_pane": {
+                    "impl": ["nightcaste.renderer", "MapPane"],
+                    "position": [ 0, 0 ],
+                    "size": [ 1024, 640 ]
+                },
+                "status_pane": {
+                    "impl": ["nightcaste.renderer", "StatusPane"],
+                    "position": [ 0, 640 ],
+                    "size": [ 1024, 128 ]
+                }
+            }
         }
-    },
-    "views#": "Describes of which panes several views consists.",
-    "views": {
-        "main_menu": ["menu_pane"],
-        "game_view": ["map_pane", "status_pane"]
-    },
-    "panes#": "A Pane is a unit in a window which contains content.",
-    "panes": {
-        "menu_pane": {
-            "impl": "nightcaste.renderer.MenuPane",
-            "position": [ 0, 0 ],
-            "size": [ 1024, 768 ]
-        },
-        "map_pane": {
-            "impl": "nightcaste.renderer.MapPane",
-            "position": [ 0, 0 ],
-            "size": [ 1024, 640 ]
-        },
-        "status_pane": {
-            "impl": "nightcaste.renderer.StatusPane",
-            "position": [ 0, 640 ],
-            "size": [ 1024, 128 ]
-        }
-    },
-    "dialogs#": "Dialogs overlay the normal content in a pane.",
-    "dialogs": {
-        "invetory": {},
-        "pause_menu": {}
     }
 }
