@@ -77,6 +77,12 @@ class Window:
                 self.add_pane(pane)
         return result
 
+    def update_view(self, name):
+        view = self.views.get(name, None)
+        if view is not None:
+            for pane in view:
+                self.panes[pane].update()
+
     def show(self, name):
         """Shows the specified view."""
         changed = False
@@ -170,10 +176,8 @@ class ContentPane(object):
 class MapPane(ContentPane):
     """Renders every visible component, e.g the map with all its entities"""
 
-    def __init__(self, window, absolute_x,
-                 absolute_y, width, height, z_index=0):
-        ContentPane.__init__(self, window, absolute_x,
-                             absolute_y, width, height, z_index=0)
+    def __init__(self, window, x, y, width, height, z_index=0):
+        ContentPane.__init__(self, window, x, y, width, height, z_index=0)
         self.viewport_x = 0
         self.viewport_y = 0
         self.viewport_dirty = True

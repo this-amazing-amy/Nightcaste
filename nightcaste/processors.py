@@ -444,13 +444,13 @@ class ViewProcessor(EventProcessor):
         player = self.entity_manager.player
         if event.identifier == 'EntityMoved' and event.data[
                 'entity'] == player:
-            self.window.update_view('game')
+            self.window.update_view('game_view')
         elif event.identifier == 'MapChange':
-            if self.window.show('game'):
+            if self.window.show('game_view'):
                 # TODO let view_controller throw the event?
                 self.event_manager.throw(
-                    'ViewChanged', {'active_view': 'game'})
+                    'ViewChanged', {'active_view': 'game_view'})
         elif event.identifier == 'MenuOpen':
             if self.window.show('main_menu'):
                 self.event_manager.throw(
-                    'ViewChanged', {'active_view': 'menu'})
+                    'ViewChanged', {'active_view': 'main_menu'})
