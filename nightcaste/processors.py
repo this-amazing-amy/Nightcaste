@@ -426,9 +426,9 @@ class ViewProcessor(EventProcessor):
     """Listen on events which requires the view to react in some way. Therefore,
     the view has to provide methods to change its state."""
 
-    def __init__(self, event_manager, entity_manager, view_controller):
+    def __init__(self, event_manager, entity_manager, window):
         EventProcessor.__init__(self, event_manager, entity_manager)
-        self.view_controller = view_controller
+        self.window = window
 
     def register(self):
         self._register('MapChange')
@@ -444,13 +444,13 @@ class ViewProcessor(EventProcessor):
         player = self.entity_manager.player
         if event.identifier == 'EntityMoved' and event.data[
                 'entity'] == player:
-            self.view_controller.update_view('game')
+            self.window.update_view('game')
         elif event.identifier == 'MapChange':
-            if self.view_controller.show('game'):
+            if self.window.show('game'):
                 # TODO let view_controller throw the event?
                 self.event_manager.throw(
                     'ViewChanged', {'active_view': 'game'})
         elif event.identifier == 'MenuOpen':
-            if self.view_controller.show('menu'):
+            if self.window.show('main_menu'):
                 self.event_manager.throw(
                     'ViewChanged', {'active_view': 'menu'})

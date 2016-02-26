@@ -64,15 +64,13 @@ def create_window(event_manager, entity_manager):
     gui_config = utils.load_config('config/gui.json')
     mngr_config = gui_config['window_manager']
     window_manager_class = utils.class_for_name(mngr_config[0], mngr_config[1])
-    window_manager = window_manager_class(event_manager, entity_manager)
-    width = 80
-    height = 55
-    window = window_manager.create_empty_window(
-        'Nightcaste ' + __version__, width, height)
+    window_manager = window_manager_class(event_manager, entity_manager,
+                                          gui_config)
+    window = window_manager.create("nightcaste")
 
-    menu_view = window.add_view('menu')
-    menu_view.add_pane('main_menu', MenuPane(window, 0, 0, width, height))
-    game_view = window.add_view('game')
-    game_view.add_pane('map', MapPane(window, 0, 0, width, height - 5))
-    game_view.add_pane('status', StatusPane(window, 0, height - 5, width, 5))
+    # menu_view = window.add_view('menu')
+    # menu_view.add_pane('main_menu', MenuPane(window, 0, 0, width, height))
+    # game_view = window.add_view('game')
+    # game_view.add_pane('map', MapPane(window, 0, 0, width, height - 5))
+    # game_view.add_pane('status', StatusPane(window, 0, height - 5, width, 5))
     return window
