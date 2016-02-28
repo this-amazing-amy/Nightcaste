@@ -84,6 +84,7 @@ class Window:
                 self.panes[pane].update()
 
     def show(self, name):
+        print 'show %s' % (name)
         """Shows the specified view."""
         changed = False
         if self.active_view == name:
@@ -181,6 +182,10 @@ class MapPane(ContentPane):
         self.viewport_x = 0
         self.viewport_y = 0
         self.viewport_dirty = True
+        # put to pane configuration
+        tileset_config = utils.load_config('config/tilesets/ascii.json')
+        self.tileset = TileSet(tileset_config)
+        self.tileset.configure_tiles(tileset_config)
 
     def initialize(self):
         super(MapPane, self).initialize()

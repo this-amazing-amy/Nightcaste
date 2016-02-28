@@ -151,7 +151,7 @@ class GameInputProcessor(InputProcessor):
 class MenuInputProcessor(InputProcessor):
 
     def _is_responsible_for(self, view_name):
-        return view_name == 'menu'
+        return view_name == 'main_menu'
 
     def _map_key_to_action(self, keycode):
         if keycode == input.K_ENTER:
