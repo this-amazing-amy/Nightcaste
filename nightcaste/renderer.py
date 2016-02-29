@@ -56,7 +56,8 @@ class Window:
                                                config["size"][1]))
         self.panes = {}
         self.views = self.initialize_views(self.config["views"])
-        self.active_view = self.config["default_view"]
+        # self.active_view = self.config["default_view"]
+        self.active_view = ''
 
         ViewProcessor(
             event_manager,
@@ -84,13 +85,18 @@ class Window:
                 self.panes[pane].update()
 
     def show(self, name):
-        print 'show %s' % (name)
+        logger.debug('show %s', name)
         """Shows the specified view."""
         changed = False
-        if self.active_view == name:
+        if name in self.views:
             changed = True
-        self.active_view = name
+            self._activate_view(name)
         return changed
+
+    def _activate_view(self, name):
+        self.active_view = name
+        for pane_name in self.views[self.active_view]:
+            self.panes[pane_name].initialize()
 
     def add_pane(self, pane):
         conf = self.config['panes'][pane]
@@ -100,6 +106,7 @@ class Window:
                                       conf['size'][0],
                                       conf['size'][1],
                                       conf.get('layer', 0))
+        logger.debug('Added Pane: %s', self.panes[pane])
 
     def is_active(self):
         return True
@@ -110,7 +117,7 @@ class Window:
             pane = self.panes[pane_name]
             pane.render()
             self.screen.blit(pane.surface, (pane.x, pane.y))
-            dirty += pane.dirty_rects
+            dirty.extend(pane.dirty_rects)
             pane.dirty_rects = []
         pygame.display.update(dirty)
 
@@ -174,22 +181,150 @@ class ContentPane(object):
         pass
 
 
-class MapPane(ContentPane):
-    """Renders every visible component, e.g the map with all its entities"""
+class ScrollablePane(ContentPane):
 
     def __init__(self, window, x, y, width, height, z_index=0):
-        ContentPane.__init__(self, window, x, y, width, height, z_index=0)
-        self.viewport_x = 0
-        self.viewport_y = 0
-        self.viewport_dirty = True
+        super(ScrollablePane, self).__init__(window, x, y, width, height, z_index=0)
+        self.image = None
+        self.viewport = ViewPort(width, height)
+
+    def initialize(self):
+        self.viewport.rect.x = 0
+        self.viewport.rect.y = 0
+
+    def update_viewport(self, target_x, target_y):
+        dx, dy = self.viewport.calculate_scroll(target_x, target_y)
+        self.scroll(dx, dy)
+
+    def scroll(self, dx, dy):
+        if (dx, dy) == (0, 0):
+            return
+
+        view_rect = self.surface.get_rect()
+        port_rect = self.viewport.rect
+        self.surface.scroll(dx, 0)
+        if dx < 0:
+            # sroll right (image moves left)
+            self.viewport.rect.move_ip((-dx, 0))
+            src_rect = port_rect.copy()
+            src_rect.w = -dx
+            src_rect.right = port_rect.right
+            dst_rect = view_rect.copy()
+            dst_rect.w = -dx
+            dst_rect.right = view_rect.right
+            self._blit_scroll(src_rect, dst_rect)
+        elif dx > 0:
+            # scroll left (image moves right)
+            self.viewport.rect.move_ip((-dx, 0))
+            src_rect = port_rect.copy()
+            src_rect.w = dx
+            dst_rect = view_rect.copy()
+            dst_rect.w = dx
+            self._blit_scroll(src_rect, dst_rect)
+
+        self.surface.scroll(0, dy)
+        port_rect = self.viewport.rect
+        if dy < 0:
+            # scroll down (image moves up)
+            self.viewport.rect.move_ip((0, -dy))
+            src_rect = port_rect.copy()
+            src_rect.h = -dy
+            src_rect.bottom = port_rect.bottom
+            dst_rect = view_rect.copy()
+            dst_rect.h = -dy
+            dst_rect.bottom = view_rect.bottom
+            self._blit_scroll(src_rect, dst_rect)
+        elif dy > 0:
+            # scroll up (image moves down)
+            self.viewport.rect.move_ip((0, -dy))
+            src_rect = port_rect.copy()
+            src_rect.h = dy
+            dst_rect = view_rect.copy()
+            dst_rect.h = dy
+            self._blit_scroll(src_rect, dst_rect)
+
+    def _blit_scroll(self, src_rect, dst_rect):
+        """Clips src_rect with image and blits the remaining image to the
+        adjusted destionation.
+        If the src_rect does not overlay the image, the destionation will be
+        filled with the default background color.
+        If the src_rect completly fits into the image, the subimage will be
+        blitted to the unaltered destination.
+        If the src_rect only overlays parts of the image, the source and
+        destination will be adjusted."""
+        image_rect = self.image.get_rect()
+        sub_rect = src_rect.clip(image_rect)
+        if sub_rect.w == 0 and sub_rect.h == 0:
+            # src does not overlap image
+            self.print_background(rect=dst_rect)
+            self.dirty_rects.append(self.surface.get_rect())
+            return
+
+        if src_rect.left < sub_rect.left or src_rect.right > sub_rect.right:
+            # src overlaps to the left and/or right
+            dst_rect.left = sub_rect.left - src_rect.left
+            dst_rect.w = sub_rect.w
+        if src_rect.top < sub_rect.top or src_rect.bottom < sub_rect.bottom:
+            # src overlaps to the top and/or buttom
+            dst_rect.top = sub_rect.top - src_rect.top
+            dst_rect.h = sub_rect.h
+        self.surface.blit(self.image.subsurface(sub_rect), dst_rect)
+        self.dirty_rects.append(self.surface.get_rect())
+
+    def put_bg_image(self, image, x, y):
+        """Blits an image to the background. If the position is in the current
+        viewport, the image will also be blitted to the current surface."""
+        self.image.blit(image, (x, y))
+        if self.viewport.contains(x, y):
+            x_off, y_off = self.viewport.offset(x, y)
+            rects = self.surface.blit(image, (x_off, y_off))
+            self.dirty_rects.append(rects)
+
+    def put_sprite(self, sprite):
+        sprite.rect = self.viewport.apply(sprite.rect)
+        super(ScrollablePane, self).put_sprite(sprite)
+
+
+class TiledPane(ScrollablePane):
+
+    def __init__(self, window, x, y, width, height, z_index=0):
+        super(TiledPane, self).__init__(window, x, y, width, height, z_index=0)
         # put to pane configuration
         tileset_config = utils.load_config('config/tilesets/ascii.json')
         self.tileset = TileSet(tileset_config)
         self.tileset.configure_tiles(tileset_config)
 
+    def put_tile(self, x, y, tile_name):
+        tile = self.tileset.get_tile(tile_name)
+        super(TiledPane, self).put_bg_image(
+            tile,
+            x * self.tileset.tile_width,
+            y * self.tileset.tile_height)
+
+    def put_sprite(self, sprite):
+        sprite.rect.x = sprite.rect.x * self.tileset.tile_width
+        sprite.rect.y = sprite.rect.y * self.tileset.tile_height
+        super(TiledPane, self).put_sprite(sprite)
+
+    def update_viewport(self, target_x, target_y):
+        super(TiledPane, self).update_viewport(
+            target_x * self.tileset.tile_width,
+            target_y * self.tileset.tile_height)
+
+    def create_bg(self, width, height):
+        self.image = pygame.Surface((
+            width * self.tileset.tile_width,
+            height * self.tileset.tile_height))
+
+class MapPane(TiledPane):
+    """Renders every visible component, e.g the map with all its entities"""
+
+    def __init__(self, window, x, y, width, height, z_index=0):
+        TiledPane.__init__(self, window, x, y, width, height, z_index=0)
+
     def initialize(self):
         super(MapPane, self).initialize()
-        self.viewport_dirty = True
+        self._render_map()
 
     def update(self):
         """Updates the view port"""
@@ -198,23 +333,15 @@ class MapPane(ContentPane):
     def render(self):
         """Renders all entities with a visible renderable component and with a
         position in the current viewport."""
-        if self.viewport_dirty:
-            self._render_map()
-            self.viewport_dirty = False
         self._render_sprites()
         return self.dirty_rects
 
-    def put_tile(self, x, y, tile_name):
-        tile = self.tileset.get_tile(tile_name)
-        rects = self.surface.blit(
-            tile,
-            (x * self.tileset.tile_width,
-             y * self.tileset.tile_height))
-        self.dirty_rects.append(rects)
-
     def _render_map(self):
+        self.print_background()
         em = self.window.entity_manager
         if em.current_map is not None:
+            map = em.get(em.current_map, 'Map')
+            self.create_bg(map.width(), map.height())
             to_render = [x for y in em.get_current_map() for x in y]
             self._render_tiles(to_render)
 
@@ -226,6 +353,22 @@ class MapPane(ContentPane):
         for entity, sprite in sorted(
                 sprites.iteritems(), key=lambda k_v: k_v[1].z_index):
             self._render_sprite(entity, sprite, positions[entity])
+
+    def _render_sprite(self, entity, sprite, position):
+        # restore map tile at old position
+        if sprite.dirty > 0:
+            em = self.window.entity_manager
+            old_tile_entity = em.get_current_map()[position.x_old][
+                position.y_old]
+            old_tile = em.get(old_tile_entity, 'Tile')
+            self.put_tile(
+                position.x_old,
+                position.y_old,
+                old_tile.name)
+            # render sprite at new position
+            sprite.rect.x = position.x
+            sprite.rect.y = position.y
+            self.put_sprite(sprite)
 
     def _render_tiles(self, entities):
         """ Iterates through a list of entities and renders each """
@@ -249,56 +392,62 @@ class MapPane(ContentPane):
                 given entity.
 
         """
-        if self._in_viewport(position):
-            self.put_tile(
-                position.x - self.viewport_x,
-                position.y - self.viewport_y,
-                tile.name)
-
-    def _render_sprite(self, entity, sprite, position):
-        # restore map tile at old position
-        if sprite.dirty > 0:
-            em = self.window.entity_manager
-            old_tile_entity = em.get_current_map()[position.x_old][
-                position.y_old]
-            old_tile = em.get(old_tile_entity, 'Tile')
-            self.put_tile(
-                position.x_old - self.viewport_x,
-                position.y_old - self.viewport_y,
-                old_tile.name)
-            # render sprite at new position
-            sprite.rect.x = position.x - self.viewport_x
-            sprite.rect.y = position.y - self.viewport_y
-            self.put_sprite(sprite)
+        self.put_tile(position.x, position.y, tile.name)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
         centered on the player until it hits the edges of the map. The viewport
         is represented by a start point + width and high of the pane."""
         em = self.window.entity_manager
-        map = em.get(em.current_map, 'Map')
+        # map = em.get(em.current_map, 'Map')
         player_pos = em.get(em.player, 'Position')
-        vp_x_old = self.viewport_x
-        vp_y_old = self.viewport_y
-        self.viewport_x = max(player_pos.x - int(self.width / 2), 0)
-        self.viewport_y = max(player_pos.y - int(self.height / 2), 0)
-        self.viewport_x += min(map.width() - (self.viewport_x + self.width), 0)
-        self.viewport_y += min(map.height() -
-                               (self.viewport_y + self.height), 0)
-        if self.viewport_x != vp_x_old or self.viewport_y != vp_y_old:
-            self.viewport_dirty = True
+        self.update_viewport(player_pos.x, player_pos.y)
 
-    def _in_viewport(self, position):
-        """Checks if the given position is in the current viewport.
 
-        Returns:
-            viewport_start <= position < viewport_start + width
+class ViewPort:
 
-        """
-        if self.viewport_x <= position.x < self.viewport_x + self.width:
-            if self.viewport_y <= position.y < self.viewport_y + self.height:
-                return True
-        return False
+    def __init__(self, width, height):
+        self.rect = pygame.Rect(0, 0, width, height)
+
+    def contains(self, x, y):
+        """Return wether the point is in the current viewport."""
+        return self.rect.collidepoint(x, y)
+
+    def apply(self, rect):
+        """Apply the viewport offset to a rect."""
+        rect.x -= self.rect.x
+        rect.y -= self.rect.y
+        return rect
+
+    def offset(self, x, y):
+        """Add the viewport offset to a point."""
+        return (x - self.rect.x, y - self.rect.y)
+
+    def calculate_scroll(self, target_x, target_y):
+        """Calcualtes the scroll needed to center the target."""
+        l_old = self.rect.x
+        t_old = self.rect.y
+        l = target_x - int(self.rect.w / 2)
+        t = target_y - int(self.rect.h / 2)
+        return (l_old - l, t_old - t)
+
+    def calculate_scroll_compl(self, player_pos, map):
+        """UNTESTED."""
+        x_old = self.rect.x
+        y_old = self.rect.y
+        if map.width() > self.rect.w:
+            self.rect.x = max(player_pos.x - int(self.rect.w / 2), 0)
+            self.rect.x += min(map.width() - (self.rect.x + self.rect.w), 0)
+        else:
+            self.rect.x = int((self.rect.w - map.width()) / 2)
+
+        if map.height() > self.rect.h:
+            self.rect.y = max(player_pos.y - int(self.rect.h / 2), 0)
+            self.rect.y += min(map.height() - (self.rect.y + self.rect.h), 0)
+        else:
+            self.rect.y = int((self.rect.h - map.height()) / 2)
+
+        return (self.rect.x - x_old, self.rect.y - y_old)
 
 
 class StatusPane(ContentPane):
