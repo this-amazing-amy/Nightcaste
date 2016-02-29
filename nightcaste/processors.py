@@ -142,7 +142,7 @@ class GameInputProcessor(InputProcessor):
     menu."""
 
     def _is_responsible_for(self, view_name):
-        return view_name == 'game'
+        return view_name == 'game_view'
 
     def _map_key_to_action(self, keycode):
         return None
