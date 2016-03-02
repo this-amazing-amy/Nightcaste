@@ -60,6 +60,12 @@ class Sprite(Renderable, DirtySprite):
         Renderable.__init__(self, sprite_name, z_index, visible)
 
 
+class Animation(Component):
+
+    def __init__(self, animations):
+        self.animations = animations
+
+
 class Tile(Renderable):
     """Represents a part of a background image / map in a 2D tile based game."""
     pass
