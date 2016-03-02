@@ -9,6 +9,7 @@ import game
 import logging
 import pygame
 import utils
+import random
 
 logger = logging.getLogger('renderer')
 TILESET_DIR = path.abspath(
@@ -184,7 +185,8 @@ class ContentPane(object):
 class ScrollablePane(ContentPane):
 
     def __init__(self, window, x, y, width, height, z_index=0):
-        super(ScrollablePane, self).__init__(window, x, y, width, height, z_index=0)
+        super(ScrollablePane, self).__init__(window, x, y,
+                                             width, height, z_index=0)
         self.image = None
         self.viewport = ViewPort(width, height)
 
@@ -290,7 +292,7 @@ class TiledPane(ScrollablePane):
     def __init__(self, window, x, y, width, height, z_index=0):
         super(TiledPane, self).__init__(window, x, y, width, height, z_index=0)
         # put to pane configuration
-        tileset_config = utils.load_config('config/tilesets/ascii.json')
+        tileset_config = utils.load_config('config/tilesets/tiles.json')
         self.tileset = TileSet(tileset_config)
         self.tileset.configure_tiles(tileset_config)
 
@@ -315,6 +317,7 @@ class TiledPane(ScrollablePane):
         self.image = pygame.Surface((
             width * self.tileset.tile_width,
             height * self.tileset.tile_height))
+
 
 class MapPane(TiledPane):
     """Renders every visible component, e.g the map with all its entities"""
@@ -513,10 +516,13 @@ class TileSet:
             self.add_tile(key, tile)
 
     def add_tile(self, key, tile):
-        self.tiles.update({key: tile})
+        if key in self.tiles:
+            self.tiles[key] = self.tiles[key] + [tile]
+        else:
+            self.tiles[key] = [tile]
 
     def get_tile(self, key):
-        return self.tiles[key]
+        return random.sample(self.tiles[key], 1)[0]
 
     def _load_tile_table(self, filename):
         image = pygame.image.load(filename).convert()
@@ -554,7 +560,7 @@ class SpriteManager:
         TODO: Support load_by_config which can load a complete sprite set from
         configuration like with a TileSet."""
         # TEST
-        filename = path.join(TILESET_DIR, 'terminal.png')
+        filename = path.join(TILESET_DIR, 'tiles.png')
         image = pygame.image.load(filename).convert_alpha()
-        at = image.subsurface((32, 0, 8, 8))
+        at = image.subsurface((0, 32, 32, 32))
         return at

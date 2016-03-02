@@ -7,7 +7,7 @@
                         "Colliding"
 		],
 		"attributes": {
-			"Tile.name": "#",
+			"Tile.name": "stone_wall",
 			"Tile.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
@@ -22,7 +22,7 @@
 			"Color"
 		],
 		"attributes": {
-			"Tile.name": ".",
+			"Tile.name": "stone_floor",
 			"Tile.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
@@ -38,7 +38,7 @@
                 "MapTransition"
             ],
             "attributes": {
-                "Tile.name": "<",
+                "Tile.name": "stone_stairs",
                 "Tile.z_index": 1,
                 "Color.r": 195,
                 "Color.g": 195,
