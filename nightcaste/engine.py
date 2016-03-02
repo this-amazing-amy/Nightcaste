@@ -5,9 +5,6 @@ from events import EventManager
 from entities import EntityManager
 from nightcaste import __version__
 from processors import SystemManager
-from renderer import MenuPane
-from renderer import MapPane
-from renderer import StatusPane
 import game
 import input
 import logging
@@ -38,25 +35,28 @@ def main():
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
     window = create_window(event_manager, entity_manager)
-    prev_time = None
+    prev_time = time.time()
+    lag = 0.0
+    SEC_PER_UPDATE = 0.01
 
     event_manager.throw("MenuOpen")
     while window.is_active():
-        if (prev_time is None):
-            prev_time = time.time()
         current_time = time.time()
         time_delta = current_time - prev_time
-
-        if game.status != game.G_PAUSED:
-            behaviour_manager.update(round, time_delta)
-        request_close = input_controller.update(round, time_delta)
-        if request_close or input.is_pressed(input.K_ESCAPE):
-            break
-        event_manager.process_events(round)
-        system_manager.update(round, time_delta)
-        window.render()
-
         prev_time = current_time
+        lag += time_delta
+
+        while (lag >= SEC_PER_UPDATE):
+            if game.status != game.G_PAUSED:
+                behaviour_manager.update(round, SEC_PER_UPDATE)
+            request_close = input_controller.update(round, SEC_PER_UPDATE)
+            if request_close or input.is_pressed(input.K_ESCAPE):
+                break
+            event_manager.process_events(round)
+            system_manager.update(round, SEC_PER_UPDATE)
+
+            lag -= SEC_PER_UPDATE
+        window.render()
     return 0
 
 
@@ -68,9 +68,4 @@ def create_window(event_manager, entity_manager):
                                           gui_config)
     window = window_manager.create("nightcaste")
 
-    # menu_view = window.add_view('menu')
-    # menu_view.add_pane('main_menu', MenuPane(window, 0, 0, width, height))
-    # game_view = window.add_view('game')
-    # game_view.add_pane('map', MapPane(window, 0, 0, width, height - 5))
-    # game_view.add_pane('status', StatusPane(window, 0, height - 5, width, 5))
     return window
