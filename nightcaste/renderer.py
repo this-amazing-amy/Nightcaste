@@ -57,8 +57,8 @@ class Window:
                                                config["size"][1]))
         self.panes = {}
         self.views = self.initialize_views(self.config["views"])
-        # self.active_view = self.config["default_view"]
-        self.active_view = ''
+        self.active_view = self.config["default_view"]
+        # self.active_view = ''
 
         ViewProcessor(
             event_manager,

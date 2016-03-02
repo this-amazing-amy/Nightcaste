@@ -5,7 +5,8 @@
 			"Sprite",
 			"Color",
                         "Colliding",
-                        "InputComponent"
+                        "InputComponent",
+                        "Animation"
 		],
 		"attributes": {
 			"Color.r": 239,
@@ -13,7 +14,11 @@
 			"Color.b": 176,
                         "Colliding.active": true,
                         "Sprite.name": "human",
-			"Sprite.z_index": 9
+			"Sprite.z_index": 9,
+                        "Animation.animations": {
+                            "idle": "player_idle",
+                            "walk": "player_walk"
+                        }
 		}
 	}
 }
