@@ -328,6 +328,10 @@ class SpriteProcessor(EventProcessor):
             else:
                 self.sprite_manager.initialize_sprite(sprite)
 
+    def update(self, round, delta_time):
+        for entity, sprite in self.entity_manager.get_all('Sprite').iteritems():
+            sprite.update(round, delta_time)
+
 
 class TurnProcessor(EventProcessor):
     """Emulates the turns for turn based games be modifying the game status. The
