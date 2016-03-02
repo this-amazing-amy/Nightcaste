@@ -12,18 +12,17 @@ import utils
 import random
 
 logger = logging.getLogger('renderer')
+ASSET_DIR = path.abspath(
+    path.join(
+        path.dirname(__file__),
+        '..',
+        'assets'))
 TILESET_DIR = path.abspath(
-    path.join(
-        path.dirname(__file__),
-        '..',
-        'config',
-        'tilesets'))
+    path.join(ASSET_DIR,
+              'tilesets'))
 SPRITE_DIR = path.abspath(
-    path.join(
-        path.dirname(__file__),
-        '..',
-        'config',
-        'sprites'))
+    path.join(ASSET_DIR,
+              'sprites'))
 
 
 class WindowManager:
@@ -52,6 +51,7 @@ class Window:
         self.event_manager = event_manager
         self.entity_manager = entity_manager
         self.sprite_manager = SpriteManager()
+        self.image_manager = ImageManager()
         # TODO: Make percentage-widths possible
         self.screen = pygame.display.set_mode((config["size"][0],
                                                config["size"][1]))
@@ -174,6 +174,13 @@ class ContentPane(object):
             self.dirty_rects.append(rects)
             # TODO let handle pygame the dirty flags by using sprite groups
             sprite.dirty = 0
+
+    def put_image(self, x, y, name, fit=False):
+        image = self.window.image_manager.load_image(name)
+        if fit:
+            image = pygame.transform.scale(image, (self.surface.get_width(),
+                                                   self.surface.get_height()))
+        self.surface.blit(image, (x, y))
 
     def render(self):
         pass
@@ -475,11 +482,7 @@ class MenuPane(ContentPane):
         return self.dirty_rects
 
     def print_logo(self):
-        # TODO Use an image
-        self.put_text(
-            400,
-            300,
-            'NIGHTCASTE')
+        self.put_image(0, 0, "gui/main_menu.png", True)
 
     def print_menu(self):
         self.put_text(
@@ -491,7 +494,7 @@ class MenuPane(ContentPane):
     def print_footer(self):
         version = 'Nightcaste v' + __version__
         self.put_text(
-            self.width - len(version)*5,
+            self.width - len(version) * 5,
             self.height - 50,
             version)
 
@@ -539,6 +542,16 @@ class TileSet:
                     self.tile_height)
                 line.append(image.subsurface(rect))
         return tile_table
+
+
+class ImageManager:
+
+    def load_image(self, name):
+        dir = name.split("/")
+        filename = ASSET_DIR
+        for d in dir:
+            filename = path.join(filename, d)
+        return pygame.image.load(filename).convert_alpha()
 
 
 class SpriteManager:
