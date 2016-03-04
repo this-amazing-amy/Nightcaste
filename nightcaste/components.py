@@ -62,7 +62,7 @@ class Sprite(Renderable, DirtySprite):
 
 class Animation(Component):
 
-    def __init__(self, animations):
+    def __init__(self, animations=[]):
         self.animations = animations
 
 
