@@ -169,7 +169,7 @@ class ContentPane(object):
         self.dirty_rects.append(dirty_text)
 
     def put_sprite(self, sprite):
-        sprite_img = self.window.image_manager.get(sprite.name)
+        #sprite_img = self.window.image_manager.get(sprite.name)
         if sprite.visible:
             rects = self.surface.blit(sprite.image, sprite.rect)
             self.dirty_rects.append(rects)
@@ -482,7 +482,8 @@ class MenuPane(ContentPane):
         return self.dirty_rects
 
     def print_logo(self):
-        self.put_image(0, 0, "gui/main_menu.png", True)
+        pass
+        # self.put_image(0, 0, "gui/main_menu.png", True)
 
     def print_menu(self):
         self.put_text(
