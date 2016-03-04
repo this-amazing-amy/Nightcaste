@@ -50,11 +50,11 @@ class Window:
         self.config = config
         self.event_manager = event_manager
         self.entity_manager = entity_manager
-        self.sprite_manager = SpriteManager()
-        self.image_manager = ImageManager()
         # TODO: Make percentage-widths possible
         self.screen = pygame.display.set_mode((config["size"][0],
                                                config["size"][1]))
+        self.sprite_manager = SpriteManager()
+        self.image_manager = ImageManager()
         self.panes = {}
         self.views = self.initialize_views(self.config["views"])
         self.active_view = self.config["default_view"]
@@ -169,6 +169,7 @@ class ContentPane(object):
         self.dirty_rects.append(dirty_text)
 
     def put_sprite(self, sprite):
+        sprite_img = self.window.image_manager.get(sprite.name)
         if sprite.visible:
             rects = self.surface.blit(sprite.image, sprite.rect)
             self.dirty_rects.append(rects)
@@ -176,7 +177,7 @@ class ContentPane(object):
             sprite.dirty = 0
 
     def put_image(self, x, y, name, fit=False):
-        image = self.window.image_manager.load_image(name)
+        image = self.window.image_manager._load_image(name)
         if fit:
             image = pygame.transform.scale(image, (self.surface.get_width(),
                                                    self.surface.get_height()))
@@ -301,7 +302,6 @@ class TiledPane(ScrollablePane):
         # put to pane configuration
         tileset_config = utils.load_config('config/tilesets/tiles.json')
         self.tileset = TileSet(tileset_config)
-        self.tileset.configure_tiles(tileset_config)
 
     def put_tile(self, x, y, tile_name):
         tile = self.tileset.get_tile(tile_name)
@@ -506,9 +506,6 @@ class TileSet:
         general_config = config['general']
         self.tile_width = general_config['tile_width']
         self.tile_height = general_config['tile_height']
-
-    def configure_tiles(self, config):
-        general_config = config['general']
         filename = path.join(TILESET_DIR, general_config['filename'])
         tile_table = self._load_tile_table(filename)
         tile_definitions = config['tiles']
@@ -546,12 +543,31 @@ class TileSet:
 
 class ImageManager:
 
-    def load_image(self, name):
+    def __init__(self):
+        self.images = {}
+        # TODO search all jsons in asset dir
+        image_config = utils.load_config('config/tilesets/tiles.json')
+        general_config = image_config['general']
+        if 'tile_width' in general_config:
+            # load tiled image
+            tiles = TileSet(image_config)
+            self.images.update(tiles.tiles)
+        else:
+            # load complete image
+            self._load_image(image_config)
+
+    def _load_image(self, config):
+        name = config['filename']
+        key = config['key']
         dir = name.split("/")
         filename = ASSET_DIR
         for d in dir:
             filename = path.join(filename, d)
-        return pygame.image.load(filename).convert_alpha()
+        image = pygame.image.load(filename).convert_alpha()
+        self.images[key] = image
+
+    def get(self, key):
+        return self.images[key]
 
 
 class SpriteManager:
