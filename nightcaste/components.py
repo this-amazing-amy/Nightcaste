@@ -58,13 +58,40 @@ class Sprite(Renderable, DirtySprite):
     def __init__(self, sprite_name=None, z_index=0, visible=True):
         DirtySprite.__init__(self)
         Renderable.__init__(self, sprite_name, z_index, visible)
+        self.animations = {}
+        self.animation = None
+
+    def add_animation(self, name, animation):
+        self.animations[name] = animation
+
+    def animate(self, animation_name):
+        self.animation = self.animations[animation_name]
+
+    def update(self, *args):
+        if self.animation is not None:
+            frame = self.animation.next_frame()
+            if frame is not None:
+                self.image = frame
+                self.dirty = 1
 
 
-class Animation(Component):
+class Animation:
 
-    def __init__(self, animations=[]):
-        self.animations = animations
+    def __init__(self):
+        self.frames = []
+        self.current_frame = 0
 
+    def add_frame(self, frame, ticks):
+        for i in range(0, ticks):
+            if i == 0:
+                self.frames.append(frame)
+            else:
+                self.frames.append(None)
+
+    def next_frame(self):
+        frame = self.frames[self.current_frame]
+        self.current_frame = (self.current_frame + 1) % len(self.frames)
+        return frame
 
 class Tile(Renderable):
     """Represents a part of a background image / map in a 2D tile based game."""

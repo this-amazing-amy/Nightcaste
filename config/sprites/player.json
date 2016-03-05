@@ -1,0 +1,21 @@
+{
+    "player": {
+        "image": {
+            "filename": "sprites/player.png",
+            "tile_width": 32,
+            "tile_height": 32
+        },
+        "animations": {
+            "idle": [
+                {
+                    "frame": [0,0],
+                    "ticks": 60
+                },
+                {
+                    "frame": [1,0],
+                    "ticks": 60
+                }
+            ]
+        }
+    }
+}
