@@ -538,13 +538,15 @@ class ImageManager:
         self.image_cache = {}
 
     def load_image(self, name, cache=True):
-        dir = name.split("/")
-        filename = ASSET_DIR
-        for d in dir:
-            filename = path.join(filename, d)
-        image = pygame.image.load(filename).convert_alpha()
-        if cache:
-            self.image_cache[name] = image
+        image = self.image_cache.get(name)
+        if image is None:
+            dir = name.split("/")
+            filename = ASSET_DIR
+            for d in dir:
+                filename = path.join(filename, d)
+            image = pygame.image.load(filename).convert_alpha()
+            if cache:
+                self.image_cache[name] = image
         return image
 
     def load_image_sheet(self, file_name, tile_width, tile_height, cache=True):
