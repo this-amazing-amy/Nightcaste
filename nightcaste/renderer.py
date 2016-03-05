@@ -179,7 +179,7 @@ class ContentPane(object):
             sprite.dirty = 0
 
     def put_image(self, x, y, name, fit=False):
-        image = self.window.image_manager._load_image(name)
+        image = self.window.image_manager.load_image(name)
         if fit:
             image = pygame.transform.scale(image, (self.surface.get_width(),
                                                    self.surface.get_height()))
@@ -484,8 +484,7 @@ class MenuPane(ContentPane):
         return self.dirty_rects
 
     def print_logo(self):
-        pass
-        # self.put_image(0, 0, "gui/main_menu.png", True)
+        self.put_image(0, 0, "gui/main_menu.png", True)
 
     def print_menu(self):
         self.put_text(
