@@ -53,12 +53,11 @@ class Window:
         # TODO: Make percentage-widths possible
         self.screen = pygame.display.set_mode((config["size"][0],
                                                config["size"][1]))
-        self.sprite_manager = SpriteManager()
-        self.image_manager = ImageManager()
+        self.image_manager = ImageManager(ASSET_DIR)
+        self.sprite_manager = SpriteManager(self.image_manager)
         self.panes = {}
         self.views = self.initialize_views(self.config["views"])
         self.active_view = self.config["default_view"]
-        # self.active_view = ''
 
         ViewProcessor(
             event_manager,
@@ -169,7 +168,6 @@ class ContentPane(object):
         self.dirty_rects.append(dirty_text)
 
     def put_sprite(self, sprite):
-        #sprite_img = self.window.image_manager.get(sprite.name)
         if sprite.visible:
             rects = self.surface.blit(sprite.image, sprite.rect)
             self.dirty_rects.append(rects)
@@ -300,31 +298,30 @@ class TiledPane(ScrollablePane):
     def __init__(self, window, x, y, width, height, z_index=0):
         super(TiledPane, self).__init__(window, x, y, width, height, z_index=0)
         # put to pane configuration
-        self.tile_width = 32
-        self.tile_height = 32
+        tile_config = utils.load_config('config/tilesets/tiles.json')
+        self.tileset = TileSet(window.image_manager, tile_config)
 
     def put_tile(self, x, y, tile_name):
-        tile_variants = self.window.image_manager.get(tile_name)
-        tile = random.sample(tile_variants, 1)[0]
+        tile = self.tileset.get_tile(tile_name)
         super(TiledPane, self).put_bg_image(
             tile,
-            x * self.tile_width,
-            y * self.tile_height)
+            x * self.tileset.tile_width,
+            y * self.tileset.tile_height)
 
     def put_sprite(self, sprite):
-        sprite.rect.x = sprite.rect.x * self.tile_width
-        sprite.rect.y = sprite.rect.y * self.tile_height
+        sprite.rect.x = sprite.rect.x * self.tileset.tile_width
+        sprite.rect.y = sprite.rect.y * self.tileset.tile_height
         super(TiledPane, self).put_sprite(sprite)
 
     def update_viewport(self, target_x, target_y):
         super(TiledPane, self).update_viewport(
-            target_x * self.tile_width,
-            target_y * self.tile_height)
+            target_x * self.tileset.tile_width,
+            target_y * self.tileset.tile_height)
 
     def create_bg(self, width, height):
         self.image = pygame.Surface((
-            width * self.tile_width,
-            height * self.tile_height))
+            width * self.tileset.tile_width,
+            height * self.tileset.tile_height))
 
 
 class MapPane(TiledPane):
@@ -503,13 +500,14 @@ class MenuPane(ContentPane):
 
 class TileSet:
 
-    def __init__(self, config):
+    def __init__(self, image_manager, config):
         self.tiles = {}
         general_config = config['general']
         self.tile_width = general_config['tile_width']
         self.tile_height = general_config['tile_height']
-        filename = path.join(TILESET_DIR, general_config['filename'])
-        tile_table = self._load_tile_table(filename)
+        image_path = general_config['image']
+        tile_table = image_manager.load_image_sheet(
+            image_path, self.tile_width, self.tile_height)
         tile_definitions = config['tiles']
         for tile_def in tile_definitions:
             key = tile_def['key']
@@ -526,51 +524,38 @@ class TileSet:
     def get_tile(self, key):
         return random.sample(self.tiles[key], 1)[0]
 
-    def _load_tile_table(self, filename):
-        image = pygame.image.load(filename).convert()
-        image_width, image_height = image.get_size()
-        tile_table = []
-        for tile_x in range(0, image_width / self.tile_width):
-            line = []
-            tile_table.append(line)
-            for tile_y in range(0, image_height / self.tile_height):
-                rect = (
-                    tile_x * self.tile_width,
-                    tile_y * self.tile_height,
-                    self.tile_width,
-                    self.tile_height)
-                line.append(image.subsurface(rect))
-        return tile_table
-
 
 class ImageManager:
 
-    def __init__(self):
-        self.images = {}
-        # TODO search all jsons in asset dir
-        config_files = ['config/tilesets/tiles.json']
-        for config in config_files:
-            logger.debug('Fetch images from config %s', config)
-            image_config = utils.load_config(config)
-            general_config = image_config['general']
-            if 'tile_width' in general_config:
-                # load tiled image
-                image_sheet = TileSet(image_config)
-                logger.debug('Add image sheet: %s', image_sheet.tiles)
-                self.images.update(image_sheet.tiles)
-            else:
-                # load complete image
-                self._load_image(general_config)
+    def __init__(self, asset_dir=ASSET_DIR):
+        self.asset_dir = asset_dir
+        self.image_cache = {}
 
-    def _load_image(self, config):
-        name = config['filename']
-        key = config['key']
+    def load_image(self, name, cache=True):
         dir = name.split("/")
         filename = ASSET_DIR
         for d in dir:
             filename = path.join(filename, d)
         image = pygame.image.load(filename).convert_alpha()
-        self.images[key] = image
+        if cache:
+            self.image_cache[name] = image
+        return image
+
+    def load_image_sheet(self, file_name, tile_width, tile_height, cache=True):
+        sheet = self.load_image(file_name, cache)
+        image_width, image_height = sheet.get_size()
+        tile_table = []
+        for tile_x in range(0, image_width / tile_width):
+            line = []
+            tile_table.append(line)
+            for tile_y in range(0, image_height / tile_height):
+                rect = (
+                    tile_x * tile_width,
+                    tile_y * tile_height,
+                    tile_width,
+                    tile_height)
+                line.append(sheet.subsurface(rect))
+        return tile_table
 
     def get(self, key):
         return self.images[key]
@@ -578,24 +563,23 @@ class ImageManager:
 
 class SpriteManager:
 
-    def __init__(self):
+    def __init__(self, image_manager):
         self.images = {}
+        self.image_manager = image_manager
 
     def initialize_sprite(self, sprite):
         image = self.images.get(sprite.name)
         if image is None:
-            image = self._load_image(sprite.name)
+            image = self._load_sprite(sprite.name)
         sprite.image = image.copy()
         sprite.rect = image.get_rect()
         logger.debug('Sprite initialized %s', sprite)
 
-    def _load_image(self, name):
+    def _load_sprite(self, name):
         """Assume the name is a direct path to an image containing exactly the
         required sprite image.
         TODO: Support load_by_config which can load a complete sprite set from
         configuration like with a TileSet."""
         # TEST
-        filename = path.join(TILESET_DIR, 'tiles.png')
-        image = pygame.image.load(filename).convert_alpha()
-        at = image.subsurface((0, 32, 32, 32))
-        return at
+        sprite_sheet = self.image_manager.load_image_sheet('sprites/player.png', 32, 32)
+        return sprite_sheet[0][0]
