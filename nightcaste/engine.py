@@ -34,7 +34,7 @@ def main():
         game_config)
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
-    window = create_window(event_manager, entity_manager)
+    window = create_window(event_manager, entity_manager, system_manager)
     prev_time = time.time()
     lag = 0.0
     SEC_PER_UPDATE = 0.01
@@ -60,11 +60,12 @@ def main():
     return 0
 
 
-def create_window(event_manager, entity_manager):
+def create_window(event_manager, entity_manager, system_manager):
     gui_config = utils.load_config('config/gui.json')
     mngr_config = gui_config['window_manager']
     window_manager_class = utils.class_for_name(mngr_config[0], mngr_config[1])
     window_manager = window_manager_class(event_manager, entity_manager,
+                                          system_manager,
                                           gui_config)
     window = window_manager.create("nightcaste")
 

@@ -2,9 +2,11 @@
 console."""
 from nightcaste import __version__
 from nightcaste.components import Color
+from nightcaste.components import Animation
 from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
+from os import listdir
 import game
 import logging
 import pygame
@@ -28,16 +30,18 @@ SPRITE_DIR = path.abspath(
 class WindowManager:
     """ Creates and administrates Window instances """
 
-    def __init__(self, event_manager, entity_manager, config):
+    def __init__(self, event_manager, entity_manager, system_manager, config):
         self.windows = []
         self.event_manager = event_manager
         self.entity_manager = entity_manager
+        self.system_manager = system_manager
         self.config = config
 
     def create(self, name):
         conf = self.config["windows"][name]
         window_class = utils.class_for_name(conf['impl'][0], conf['impl'][1])
-        window = window_class(conf, self.event_manager, self.entity_manager)
+        window = window_class(
+            conf, self.event_manager, self.entity_manager, self.system_manager)
         self.windows.append(window)
         return window
 
@@ -46,7 +50,7 @@ class Window:
     """A window an which something can be rendered. Supports multiple views with
     content panes in them."""
 
-    def __init__(self, config, event_manager, entity_manager):
+    def __init__(self, config, event_manager, entity_manager, system_manager):
         self.config = config
         self.event_manager = event_manager
         self.entity_manager = entity_manager
@@ -59,15 +63,15 @@ class Window:
         self.views = self.initialize_views(self.config["views"])
         self.active_view = self.config["default_view"]
 
-        ViewProcessor(
-            event_manager,
-            entity_manager,
-            self).register()
+        system_manager.add_system(ViewProcessor(
+                event_manager,
+                entity_manager,
+                self))
 
-        SpriteProcessor(
-            event_manager,
-            entity_manager,
-            self.sprite_manager).register()
+        system_manager.add_system(SpriteProcessor(
+                event_manager,
+                entity_manager,
+                self.sprite_manager))
 
     def initialize_views(self, views):
         result = {}
@@ -564,22 +568,46 @@ class ImageManager:
 class SpriteManager:
 
     def __init__(self, image_manager):
+        self.sprite_path = path.join('config', 'sprites')
         self.images = {}
+        self.animations = {}
         self.image_manager = image_manager
+
+        for sf in listdir(self.sprite_path):
+            sprite_file = path.join(self.sprite_path, sf)
+            if path.isfile(sprite_file):
+                sprite_config = utils.load_config(sprite_file)
+                for sprite_name, config in sprite_config.iteritems():
+                    self.configure_sprite(sprite_name, config)
+
+    def configure_sprite(self, sprite_name, config):
+        sprite_sheet = self._load_sprite_sheet(config['image'])
+        sprite_animations = {}
+        for animation, frames in config['animations'].iteritems():
+            a = Animation()
+            for frame_config in frames:
+                image_config = frame_config['frame']
+                frame = sprite_sheet[image_config[0]][image_config[1]]
+                a.add_frame(frame, frame_config['ticks'])
+            sprite_animations[animation] = a
+        self.animations[sprite_name] = sprite_animations
+        self.images[sprite_name] = sprite_sheet[0][0]
 
     def initialize_sprite(self, sprite):
         image = self.images.get(sprite.name)
-        if image is None:
-            image = self._load_sprite(sprite.name)
         sprite.image = image.copy()
         sprite.rect = image.get_rect()
+        sprite.animations = self.animations[sprite.name]
+        sprite.animate('idle')
         logger.debug('Sprite initialized %s', sprite)
 
-    def _load_sprite(self, name):
+    def _load_sprite_sheet(self, image_config):
         """Assume the name is a direct path to an image containing exactly the
         required sprite image.
         TODO: Support load_by_config which can load a complete sprite set from
         configuration like with a TileSet."""
-        # TEST
-        sprite_sheet = self.image_manager.load_image_sheet('sprites/player.png', 32, 32)
-        return sprite_sheet[0][0]
+        sprite_sheet = self.image_manager.load_image_sheet(
+            image_config['filename'],
+            image_config['tile_width'],
+            image_config['tile_height'])
+        return sprite_sheet
