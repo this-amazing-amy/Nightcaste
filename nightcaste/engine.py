@@ -37,7 +37,10 @@ def main():
     window = create_window(event_manager, entity_manager, system_manager)
     prev_time = time.time()
     lag = 0.0
+    fps_time = 0.0
+    fps_frames = 0
     SEC_PER_UPDATE = 0.01
+    MIN_FRAME_TIME = 1.0 / 60
 
     event_manager.throw("MenuOpen")
     while window.is_active():
@@ -56,7 +59,17 @@ def main():
             system_manager.update(round, SEC_PER_UPDATE)
 
             lag -= SEC_PER_UPDATE
+
         window.render()
+        render_time = time.time() - current_time
+        time.sleep(max(MIN_FRAME_TIME - render_time, 0))
+        """
+        fps_time += time_delta
+        fps_frames += 1
+        if fps_time >= 1.0:
+            print 'FPS: %d' % (fps_frames)
+            fps_time, fps_frames = (0.0, 0)
+        """
     return 0
 
 
