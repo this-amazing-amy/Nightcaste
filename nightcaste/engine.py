@@ -35,6 +35,7 @@ def main():
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
     window = create_window(event_manager, entity_manager, system_manager)
+    request_close = False
     prev_time = time.time()
     lag = 0.0
     fps_time = 0.0
@@ -43,7 +44,7 @@ def main():
     MIN_FRAME_TIME = 1.0 / 60
 
     event_manager.throw("MenuOpen")
-    while window.is_active():
+    while window.is_active() and not request_close:
         current_time = time.time()
         time_delta = current_time - prev_time
         prev_time = current_time
@@ -53,8 +54,6 @@ def main():
             if game.status != game.G_PAUSED:
                 behaviour_manager.update(round, SEC_PER_UPDATE)
             request_close = input_controller.update(round, SEC_PER_UPDATE)
-            if request_close or input.is_pressed(input.K_ESCAPE):
-                break
             event_manager.process_events(round)
             system_manager.update(round, SEC_PER_UPDATE)
 
@@ -70,6 +69,7 @@ def main():
             print 'FPS: %d' % (fps_frames)
             fps_time, fps_frames = (0.0, 0)
         """
+    pygame.quit()
     return 0
 
 

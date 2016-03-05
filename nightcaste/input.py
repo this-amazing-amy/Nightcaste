@@ -54,9 +54,10 @@ class InputController:
         pressed."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
                 self.request_close = True
             elif event.type == pygame.KEYDOWN:
+                if event.key == K_ESCAPE:
+                    self.request_close = True
                 self.event_manager.throw('KeyPressed', {'keycode': event.key})
 
     def wait_for_input(self, flush):
