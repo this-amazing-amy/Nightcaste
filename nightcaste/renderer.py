@@ -119,9 +119,11 @@ class Window:
         dirty = []
         for pane_name in self.views[self.active_view]:
             pane = self.panes[pane_name]
-            pane.render()
-            self.screen.blit(pane.surface, (pane.x, pane.y))
-            dirty.extend(pane.dirty_rects)
+            for area in pane.render():
+                dirty.append(self.screen.blit(
+                    pane.surface,
+                    (pane.x + area.x, pane.y + area.y),
+                    area))
             pane.dirty_rects = []
         pygame.display.update(dirty)
 
@@ -465,8 +467,9 @@ class ViewPort:
 class StatusPane(ContentPane):
 
     def render(self):
-        self.put_text(0, 0, 'Health: 100')
-        self.put_text(0, 1, 'Round: %s' % (game.round))
+        self.put_text(5, 5, 'Health: 100')
+        self.put_text(5, 20, 'Round: %s' % (game.round))
+        return self.dirty_rects
 
 
 class MenuPane(ContentPane):
