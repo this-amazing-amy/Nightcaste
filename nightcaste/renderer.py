@@ -300,30 +300,31 @@ class TiledPane(ScrollablePane):
     def __init__(self, window, x, y, width, height, z_index=0):
         super(TiledPane, self).__init__(window, x, y, width, height, z_index=0)
         # put to pane configuration
-        tileset_config = utils.load_config('config/tilesets/tiles.json')
-        self.tileset = TileSet(tileset_config)
+        self.tile_width = 32
+        self.tile_height = 32
 
     def put_tile(self, x, y, tile_name):
-        tile = self.tileset.get_tile(tile_name)
+        tile_variants = self.window.image_manager.get(tile_name)
+        tile = random.sample(tile_variants, 1)[0]
         super(TiledPane, self).put_bg_image(
             tile,
-            x * self.tileset.tile_width,
-            y * self.tileset.tile_height)
+            x * self.tile_width,
+            y * self.tile_height)
 
     def put_sprite(self, sprite):
-        sprite.rect.x = sprite.rect.x * self.tileset.tile_width
-        sprite.rect.y = sprite.rect.y * self.tileset.tile_height
+        sprite.rect.x = sprite.rect.x * self.tile_width
+        sprite.rect.y = sprite.rect.y * self.tile_height
         super(TiledPane, self).put_sprite(sprite)
 
     def update_viewport(self, target_x, target_y):
         super(TiledPane, self).update_viewport(
-            target_x * self.tileset.tile_width,
-            target_y * self.tileset.tile_height)
+            target_x * self.tile_width,
+            target_y * self.tile_height)
 
     def create_bg(self, width, height):
         self.image = pygame.Surface((
-            width * self.tileset.tile_width,
-            height * self.tileset.tile_height))
+            width * self.tile_width,
+            height * self.tile_height))
 
 
 class MapPane(TiledPane):
@@ -547,15 +548,19 @@ class ImageManager:
     def __init__(self):
         self.images = {}
         # TODO search all jsons in asset dir
-        image_config = utils.load_config('config/tilesets/tiles.json')
-        general_config = image_config['general']
-        if 'tile_width' in general_config:
-            # load tiled image
-            tiles = TileSet(image_config)
-            self.images.update(tiles.tiles)
-        else:
-            # load complete image
-            self._load_image(image_config)
+        config_files = ['config/tilesets/tiles.json']
+        for config in config_files:
+            logger.debug('Fetch images from config %s', config)
+            image_config = utils.load_config(config)
+            general_config = image_config['general']
+            if 'tile_width' in general_config:
+                # load tiled image
+                image_sheet = TileSet(image_config)
+                logger.debug('Add image sheet: %s', image_sheet.tiles)
+                self.images.update(image_sheet.tiles)
+            else:
+                # load complete image
+                self._load_image(general_config)
 
     def _load_image(self, config):
         name = config['filename']
