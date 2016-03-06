@@ -8,6 +8,7 @@ from nightcaste.processors import CollisionManager
 from nightcaste.processors import MovementProcessor
 from nightcaste.processors import WorldInitializer
 from nightcaste.processors import SystemManager
+from nightcaste.processors import TurnProcessor
 from nightcaste.mapcreation import MapGenerator
 
 
@@ -36,13 +37,19 @@ class TestSystemManager:
         instance = SystemManager(event_manager, entity_manager)
         config = {
             'systems': [
-                'WorldInitializer',
-                'MovementProcessor']}
+                {
+                    'impl': ['nightcaste.processors', 'TurnProcessor'],
+                    'config': {'min_turn_time': 0.2}
+                },
+                {'impl': ['nightcaste.processors', 'WorldInitializer']},
+                {'impl': ['nightcaste.processors', 'MovementProcessor']}]}
 
         assert len(instance.systems) == 0
         instance.configure(config)
-        assert isinstance(instance.systems[0], WorldInitializer)
-        assert isinstance(instance.systems[1], MovementProcessor)
+        assert isinstance(instance.systems[0], TurnProcessor)
+        assert isinstance(instance.systems[1], WorldInitializer)
+        assert isinstance(instance.systems[2], MovementProcessor)
+        assert instance.systems[0].min_turn_time == 0.2
 
 
 class TestEventProcessor:
@@ -58,9 +65,9 @@ class TestMovementProcessor:
         event = Event("MoveAction", {"entity": entity, "dx": 1, "dy": -1})
         # RIGHT-UP
         mg = MapGenerator(entity_manager)
-        entity_manager.current_map = mg.generate_map("map", 0)
+        entity_manager.current_map = mg.create_empty_map(50, 30)
 
-        processor.handle_event(event, 1)
+        processor.on_move(event)
         position = entity_manager.get(entity, 'Position')
         assert position.x == 43
         assert position.y == 22
