@@ -38,8 +38,8 @@ def main():
     request_close = False
     prev_time = time.time()
     lag = 0.0
-    fps_time = 0.0
-    fps_frames = 0
+    # fps_time = 0.0
+    # fps_frames = 0
     SEC_PER_UPDATE = 0.01
     MIN_FRAME_TIME = 1.0 / 60
 
@@ -54,7 +54,7 @@ def main():
             if game.status != game.G_PAUSED:
                 behaviour_manager.update(round, SEC_PER_UPDATE)
             request_close = input_controller.update(round, SEC_PER_UPDATE)
-            event_manager.process_events(round)
+            event_manager.process_events()
             system_manager.update(round, SEC_PER_UPDATE)
 
             lag -= SEC_PER_UPDATE

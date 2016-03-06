@@ -27,31 +27,31 @@ class EventManager:
         # {'event_type': EventProcessor}
         self.listeners = {}
 
-    def register_listener(self, event_type, event_processor):
+    def register_listener(self, event_type, process_function):
         """Register a processor to delegate the processing of a certain event
         type."""
         logger.debug(
-            'Register processor %s for event type %s',
-            event_processor,
+            'Register processor function %s for event type %s',
+            process_function,
             event_type)
         if event_type in self.listeners:
-            self.listeners[event_type].append(event_processor)
+            self.listeners[event_type].append(process_function)
         else:
-            self.listeners.update({event_type: [event_processor]})
+            self.listeners.update({event_type: [process_function]})
 
-    def remove_listener(self, event_type, event_processor):
+    def remove_listener(self, event_type, process_function):
         """Unregisters the processor for events of the specified type."""
         logger.debug(
-            'Unregister processor %s for event type %s',
-            event_processor,
+            'Unregister processor function %s for event type %s',
+            process_function,
             event_type)
         if event_type in self.listeners:
             try:
-                self.listeners[event_type].remove(event_processor)
+                self.listeners[event_type].remove(process_function)
             except ValueError:
                 logger.debug(
                     '%s is already unregistered from %s!',
-                    event_processor,
+                    process_function,
                     event_type)
 
     def throw(self, eventIdentifier, data=None):
@@ -62,7 +62,7 @@ class EventManager:
         """Enqueues an existing event."""
         self.events.put(event)
 
-    def process_events(self, round):
+    def process_events(self):
         """Process all events in the queue.
 
             Args:
@@ -88,11 +88,11 @@ class EventManager:
         """
         logger.debug('Process event %s', event)
         if event.identifier in self.listeners:
-            for processor in self.listeners[event.identifier]:
-                processor.handle_event(event, round)
+            for process_function in self.listeners[event.identifier]:
+                process_function(event)
 
 
-class Event(object):
+class Event:
     """Base class for all events. An Event contains the necessary information
     for a System to react accordingly."""
 
