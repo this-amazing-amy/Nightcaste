@@ -86,16 +86,6 @@ class EventProcessor:
         structure."""
         pass
 
-    def handle_event(self, event, round):
-        """Base method which does not do anything which useful for testing.
-
-            Args:
-                event: The event to process.
-                round: The current round and the game
-
-        """
-        pass
-
     def update(self, round, delta_time):
         pass
 
@@ -105,11 +95,11 @@ class EventProcessor:
     def unregister(self):
         pass
 
-    def _register(self, event_type):
-        self.event_manager.register_listener(event_type, self)
+    def _register(self, event_type, process_function):
+        self.event_manager.register_listener(event_type, process_function)
 
-    def _unregister(self, event_type):
-        self.event_manager.remove_listener(event_type, self)
+    def _unregister(self, event_type, process_function):
+        self.event_manager.remove_listener(event_type, process_function)
 
     def __str__(self):
         return self.__class__.__name__
@@ -118,23 +108,22 @@ class EventProcessor:
 class InputProcessor(EventProcessor):
 
     def register(self):
-        self._register('ViewChanged')
+        self._register('ViewChanged', self.on_view_changed)
 
     def unregister(self):
-        self._unregister('ViewChanged')
+        self._unregister('ViewChanged', self.on_view_changed)
 
-    def handle_event(self, event, round):
-        if event.identifier == 'KeyPressed':
-            action = self._map_key_to_action(event.data["keycode"])
-            logger.debug('Mapped key %s to action %s', event.data["keycode"],
-                         action)
-            if action is not None:
-                self.event_manager.throw(action[0], action[1])
+    def on_view_changed(self, event):
+        if self._is_responsible_for(event.data["active_view"]):
+            self._register('KeyPressed', self.on_key_pressed)
         else:
-            if self._is_responsible_for(event.data["active_view"]):
-                self._register('KeyPressed')
-            else:
-                self._unregister('KeyPressed')
+            self._unregister('KeyPressed', self.on_key_pressed)
+
+    def on_key_pressed(self, event):
+        action = self._map_key_to_action(event.data["keycode"])
+        logger.debug('Mapped key %s to %s', event.data["keycode"], action)
+        if action is not None:
+            self.event_manager.throw(action[0], action[1])
 
 
 class GameInputProcessor(InputProcessor):
@@ -168,12 +157,12 @@ class MovementProcessor(EventProcessor):
                                                   no_collision)
 
     def register(self):
-        self._register('MoveAction')
+        self._register('MoveAction', self.on_move)
 
     def unregister(self):
-        self._unregister('MoveAction')
+        self._unregister('MoveAction', self.on_move)
 
-    def handle_event(self, event, round):
+    def on_move(self, event):
         """Checks for collision and moves the entity the specified amount. If a
         collision is detected an appropriate event will be created.
 
@@ -182,7 +171,6 @@ class MovementProcessor(EventProcessor):
                 round: The current round and the game
 
         """
-
         position = self.entity_manager.get(event.data['entity'], 'Position')
 
         if event.data.get("absolute", 0) == 1:
@@ -214,15 +202,15 @@ class WorldInitializer(EventProcessor):
     initialization."""
 
     def register(self):
-        self._register('WorldEnter')
+        self._register('WorldEnter', self.on_world_enter)
 
     def unregister(self):
-        self._unregister('WorldEnter')
+        self._unregister('WorldEnter', self.on_world_enter)
 
-    def handle_event(self, event, round):
+    def on_world_enter(self, event):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
-        # TODO let the event manager throw the event
+        # TODO let the entity manager throw the event
         self.event_manager.throw(
             'EntityCreated', {
                 'entity': self.entity_manager.player})
@@ -236,16 +224,16 @@ class MapChangeProcessor(EventProcessor):
     accordingly."""
 
     def register(self):
-        self._register('MapChange')
+        self._register('MapChange', self.on_map_change)
 
     def unregister(self):
-        self._unregister('MapChange')
+        self._unregister('MapChange', self.on_map_change)
 
     def __init__(self, event_manager, entity_manager):
         EventProcessor.__init__(self, event_manager, entity_manager)
         self.map_manager = MapManager(entity_manager)
 
-    def handle_event(self, event, round):
+    def on_map_change(self, event):
         if event.data["level"] is None:
             event.data["level"] = 0
         logger.debug(
@@ -305,28 +293,33 @@ class CollisionManager():
 
 
 class SpriteProcessor(EventProcessor):
+    """Initializes sprites of created entites with sprite components. Detects
+    moved Sprites and updates their dirty flag."""
 
     def __init__(self, event_manager, entity_manager, sprite_manager):
         EventProcessor.__init__(self, event_manager, entity_manager)
         self.sprite_manager = sprite_manager
 
     def register(self):
-        self._register('EntityCreated')
-        self._register('EntityMoved')
+        self._register('EntityCreated', self.on_entity_created)
+        self._register('EntityMoved', self.on_entity_moved)
 
     def unregister(self):
-        self._unregister('EntityCreated')
-        self._unregister('EntityMoved')
+        self._unregister('EntityCreated', self.on_entity_created)
+        self._unregister('EntityMoved', self.on_entity_moved)
 
-    def handle_event(self, event, round):
+    def on_entity_created(self, event):
         entity = event.data['entity']
         sprite = self.entity_manager.get(entity, 'Sprite')
         if sprite is not None:
-            if event.identifier == 'EntityMoved':
-                logger.debug('Set sprite dirty %s', sprite)
-                sprite.dirty = 1
-            else:
-                self.sprite_manager.initialize_sprite(sprite)
+            self.sprite_manager.initialize_sprite(sprite)
+
+    def on_entity_moved(self, event):
+        entity = event.data['entity']
+        sprite = self.entity_manager.get(entity, 'Sprite')
+        if sprite is not None:
+            logger.debug('Set sprite dirty %s', sprite)
+            sprite.dirty = 1
 
     def update(self, round, delta_time):
         for entity, sprite in self.entity_manager.get_all('Sprite').iteritems():
@@ -335,7 +328,7 @@ class SpriteProcessor(EventProcessor):
 
 class TurnProcessor(EventProcessor):
     """Emulates the turns for turn based games be modifying the game status. The
-    different component behaviours can react to the game state and performe
+    different component behaviours can react to the game state and perform
     actions only when they are allowed.
 
     TODO:
@@ -358,10 +351,14 @@ class TurnProcessor(EventProcessor):
         self.min_turn_time = config['min_turn_time']
 
     def register(self):
-        self._register("MoveAction_TURN")
-        self._register("UseEntityAction_TURN")
+        self._register("MoveAction_TURN", self.on_turn)
+        self._register("UseEntityAction_TURN", self.on_turn)
 
-    def handle_event(self, event, round):
+    def unregister(self):
+        self._unregister("MoveAction_TURN", self.on_turn)
+        self._unregister("UseEntityAction_TURN", self.on_turn)
+
+    def on_turn(self, event):
         self.turn_events.append(event)
         if game.status == game.G_ROUND_WAITING_INPUT:
             game.status = game.G_ROUND_INPUT_RECEIVED
@@ -384,6 +381,7 @@ class TurnProcessor(EventProcessor):
                 game.round += 1
 
     def _next_turn(self):
+        """Transform the turn to the actual event and throws it."""
         next_turn = self.turn_events.pop(0)
         next_turn.identifier = next_turn.identifier.rstrip('_TURN')
         self.event_manager.forward(next_turn)
@@ -394,12 +392,12 @@ class UseEntityProcessor(EventProcessor):
     Use-Event """
 
     def register(self):
-        self._register("UseEntityAction")
+        self._register("UseEntityAction", self.on_use_entity)
 
     def unregister(self):
-        self._unregister("UseEntityAction")
+        self._unregister("UseEntityAction", self.on_use_entity)
 
-    def handle_event(self, event, round):
+    def on_use_entity(self, event):
         user = self.entity_manager.get(event.data['user'], 'Position')
         target = (user.x + event.data['direction'][0],
                   user.y + event.data['direction'][1])
@@ -414,12 +412,12 @@ class TransitionProcessor(EventProcessor):
     Component """
 
     def register(self):
-        self._register("MapTransition")
+        self._register("MapTransition", self.on_map_transition)
 
     def unregister(self):
-        self._unregister("MapTransition")
+        self._unregister("MapTransition", self.on_map_transition)
 
-    def handle_event(self, event, round):
+    def on_map_transition(self, event):
         target = self.entity_manager.get(
             event.data['usedEntity'], 'MapTransition')
         self.event_manager.throw("MapChange", {"name": target.target_map,
@@ -435,26 +433,29 @@ class ViewProcessor(EventProcessor):
         self.window = window
 
     def register(self):
-        self._register('MapChange')
-        self._register('MenuOpen')
-        self._register('EntityMoved')
+        self._register('MapChange', self.on_map_change)
+        self._register('MenuOpen', self.on_menu_open)
+        self._register('EntityMoved', self.on_entity_moved)
 
     def unregister(self):
-        self._unregister('MapChange')
-        self._unregister('MenuOpen')
-        self._unregister('EntityMoved')
+        self._unregister('MapChange', self.on_map_change)
+        self._unregister('MenuOpen', self.on_menu_open)
+        self._unregister('EntityMoved', self.on_entity_moved)
 
-    def handle_event(self, event, round):
-        player = self.entity_manager.player
-        if event.identifier == 'EntityMoved' and event.data[
-                'entity'] == player:
+    def on_map_change(self, event):
+        # TODO: make view active on world enter and handle map updating with a
+        # simple map.dirty flag
+        if self.window.show('game_view'):
+            # TODO let view_controller throw the event?
+            self.event_manager.throw(
+                'ViewChanged', {'active_view': 'game_view'})
+
+    def on_menu_open(self, event):
+        if self.window.show('main_menu'):
+            self.event_manager.throw(
+                'ViewChanged', {'active_view': 'main_menu'})
+
+    def on_entity_moved(self, event):
+        # Update the game view (calculates viewport) if the player has moved
+        if event.data['entity'] == self.entity_manager.player:
             self.window.update_view('game_view')
-        elif event.identifier == 'MapChange':
-            if self.window.show('game_view'):
-                # TODO let view_controller throw the event?
-                self.event_manager.throw(
-                    'ViewChanged', {'active_view': 'game_view'})
-        elif event.identifier == 'MenuOpen':
-            if self.window.show('main_menu'):
-                self.event_manager.throw(
-                    'ViewChanged', {'active_view': 'main_menu'})

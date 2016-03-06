@@ -40,21 +40,30 @@ class TestEventManager:
         """Test the enlistment of one or more processors for a specific event
         type."""
         event_type = "TestRegister"
-        processor = EventProcessor(event_manager, entity_manager)
-        processor2 = EventProcessor(event_manager, entity_manager)
-        event_manager.register_listener(event_type, processor)
+        processor_function = self.on_test_event
+        processor_function2 = self.on_test_event2
+        event_manager.register_listener(event_type, processor_function)
         assert event_type in event_manager.listeners
-        assert event_manager.listeners[event_type] == [processor]
-        event_manager.register_listener(event_type, processor2)
+        assert event_manager.listeners[event_type] == [processor_function]
+        event_manager.register_listener(event_type, processor_function2)
         assert event_type in event_manager.listeners
-        assert event_manager.listeners[event_type] == [processor, processor2]
+        assert event_manager.listeners[event_type] == [
+            processor_function, processor_function2]
+
+    def on_test_event(self, event):
+        pass
+
+    def on_test_event2(self, event):
+        pass
 
     def test_remove_listener(self, event_manager, entity_manager):
         """Checks if a processor can be unregistered."""
         event_type = "TestUnregister"
-        processor = EventProcessor(event_manager, entity_manager)
-        processor2 = EventProcessor(event_manager, entity_manager)
-        event_manager.listeners.update({event_type: [processor, processor2]})
+        processor = self.on_test_event
+        processor2 = self.on_test_event2
+        event_manager.register_listener(event_type, processor)
+        event_manager.register_listener(event_type, processor2)
+        assert event_manager.listeners[event_type] == [processor, processor2]
         event_manager.remove_listener(event_type, processor)
         assert event_manager.listeners[event_type] == [processor2]
         event_manager.remove_listener(event_type, processor2)
@@ -62,12 +71,9 @@ class TestEventManager:
 
     def test_process_events(self, event_manager, entity_manager):
         """Checks if the events in the queue are processed"""
-        event = Event("id")
-        event2 = Event("id2")
-        event_type = event.identifier
-        processor = EventProcessor(event_manager, entity_manager)
-        event_manager.listeners.update({event_type: [processor]})
-        event_manager.events.put(event)
-        event_manager.events.put(event2)
-        assert event_manager.process_events(1) > 0
+        event_type = "TestProcess"
+        event_manager.register_listener(event_type, self.on_test_event)
+        event_manager.throw(event_type)
+        event_manager.throw(event_type)
+        assert event_manager.process_events() > 0
         assert event_manager.events.empty()
