@@ -5,12 +5,18 @@ class TestBehaviourManager:
 
     def test_configure(self):
         instance = behaviour.BehaviourManager(None, None)
-        config = {'component_behaviours': [
-            {'component_type': 'InputComponent', 'name': 'InputBehaviour'}]}
+        config = {
+            'component_behaviours': [
+                {
+                    'component_type': 'InputComponent',
+                    'impl': ['nightcaste.behaviour', 'InputBehaviour']
+                }
+            ]
+        }
 
-        assert 'InputComponent' not in instance.behaviors
+        assert 'InputComponent' not in instance.behaviours
         instance.configure(config)
-        assert 'InputComponent' in instance.behaviors
+        assert 'InputComponent' in instance.behaviours
         assert isinstance(
-            instance.behaviors['InputComponent'],
+            instance.behaviours['InputComponent'],
             behaviour.InputBehaviour)

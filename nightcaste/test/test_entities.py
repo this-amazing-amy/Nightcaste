@@ -20,7 +20,7 @@ def simple_config():
     config = EntityConfiguration()
     config.add_attribute('Position', 'x', 42)
     config.add_attribute('Position', 'y', 23)
-    config.add_attribute('Renderable', 'character', '@')
+    config.add_attribute('Sprite', 'name', 'player')
     return config
 
 
@@ -38,20 +38,20 @@ class TestEntityManager:
             self, entity_manager, simple_config):
         entity = entity_manager.new_from_config(simple_config)
         position = entity_manager.get(entity, 'Position')
-        renderable = entity_manager.get(entity, 'Renderable')
+        sprite = entity_manager.get(entity, 'Sprite')
         assert entity is not None
         assert position is not None
-        assert renderable is not None
+        assert sprite is not None
         assert position.x == 42
         assert position.y == 23
-        assert renderable.character == '@'
+        assert sprite.name == 'player'
 
     def test_new_from_blueprint(self, entity_manager):
         player = entity_manager.new_from_blueprint('game.player')
         assert player is not None
-        renderable = entity_manager.get(player, 'Renderable')
+        renderable = entity_manager.get(player, 'Sprite')
         assert renderable is not None
-        assert renderable.character == '@'
+        assert renderable.name == 'player'
         assert renderable.z_index == 9
 
     def test_create_from_blueprint_and_config(self, entity_manager):
@@ -61,14 +61,14 @@ class TestEntityManager:
         player = entity_manager.new_from_blueprint_and_config(
             'game.player', config)
         assert player is not None
-        renderable = entity_manager.get(player, 'Renderable')
+        sprite = entity_manager.get(player, 'Sprite')
         position = entity_manager.get(player, 'Position')
         assert position is not None
-        assert renderable is not None
+        assert sprite is not None
         assert position.x == 42
         assert position.y == 27
-        assert renderable.character == '@'
-        assert renderable.z_index == 9
+        assert sprite.name == 'player'
+        assert sprite.z_index == 9
 
     def test_destroy_entity(self, entity_manager, simple_config):
         entity = entity_manager.new_from_config(simple_config)
@@ -79,7 +79,7 @@ class TestEntityManager:
     def test_get_entity_component(self, entity_manager, simple_config):
         entity = entity_manager.new_from_config(simple_config)
         position = entity_manager.get(entity, 'Position')
-        renderable = entity_manager.get(entity, 'Renderable')
+        renderable = entity_manager.get(entity, 'Sprite')
         assert position is not None
         assert renderable is not None
 
@@ -87,21 +87,21 @@ class TestEntityManager:
         entity_manager.new_from_config(simple_config)
         entity_manager.new_from_config(simple_config)
         positions = entity_manager.get_all('Position')
-        renderables = entity_manager.get_all('Renderable')
+        renderables = entity_manager.get_all('Sprite')
         assert len(positions) > 1
         assert len(renderables) > 1
         for position in positions.itervalues():
             assert position.type() == 'Position'
         for renderable in renderables.itervalues():
-            assert renderable.type() == 'Renderable'
+            assert renderable.type() == 'Sprite'
 
     def test_get_components_for_entites(
             self, entity_manager, simple_config):
         entity = entity_manager.new_from_config(simple_config)
         positions = entity_manager.get_all('Position')
         renderables = entity_manager.get_components_for_entities(
-            positions, 'Renderable')
-        assert renderables[entity].character == '@'
+            positions, 'Sprite')
+        assert renderables[entity].name == 'player'
 
 
 class TestComponentManager:
@@ -182,7 +182,7 @@ class TestEntityConfiguration:
         assert config.get_attributes('Position') == {'x': 42, 'y': 27}
 
     def test_get_attribute(self, simple_config):
-        assert simple_config.get_attributes('Renderable') == {'character': '@'}
+        assert simple_config.get_attributes('Sprite') == {'name': 'player'}
         assert simple_config.get_attributes('Position') == {'x': 42, 'y': 23}
 
     def test_update(self):
