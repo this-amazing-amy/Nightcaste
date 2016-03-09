@@ -8,8 +8,5 @@ def class_for_name(module_name, class_name):
 
 
 def load_config(config_path):
-    config_file = open(config_path)
-    try:
+    with open(config_path) as config_file:
         return json.load(config_file)
-    finally:
-        config_file.close()
