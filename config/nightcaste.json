@@ -10,6 +10,10 @@
         {"impl": [ "nightcaste.processors", "MapChangeProcessor" ]},
         {"impl": [ "nightcaste.processors", "TransitionProcessor" ]},
         {"impl": [ "nightcaste.processors", "MovementProcessor" ]},
+        {
+            "impl": [ "nightcaste.processors", "PocSoundSystem" ],
+            "config": {"sound_path": "assets/sound/poc"}
+        },
         {"impl": [ "nightcaste.processors", "UseEntityProcessor" ]}
     ],
     "behaviours": {

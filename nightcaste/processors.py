@@ -5,6 +5,7 @@ from mapcreation import MapManager
 import input
 import logging
 import utils
+from sound import SoundBank
 
 logger = logging.getLogger('processors')
 
@@ -459,3 +460,27 @@ class ViewProcessor(EventProcessor):
         # Update the game view (calculates viewport) if the player has moved
         if event.data['entity'] == self.entity_manager.player:
             self.window.update_view('game_view')
+
+
+class SoundSystem(EventProcessor):
+
+    logger = logging.getLogger('processors.SoundSystem')
+
+    def configure(self, config):
+        self.sound_bank = SoundBank(config['sound_path'])
+
+    def play(self, key):
+        sound = self.sound_bank.get(key)
+        if sound is not None:
+            sound.play()
+        else:
+            self.logger.error('Sound %s does not exits in sound bank.', key)
+
+
+class PocSoundSystem(SoundSystem):
+
+    def register(self):
+        self._register('MenuOpen', self.on_menu_open)
+
+    def on_menu_open(self, event):
+        self.play('smb_stage_clear.wav')
