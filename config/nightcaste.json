@@ -1,6 +1,10 @@
 {
     "systems": [
         {
+            "impl": [ "nightcaste.processors", "GameTimeSystem" ],
+            "config": {"time_multi": 24}
+        },
+        {
             "impl": [ "nightcaste.processors", "TurnProcessor" ],
             "config": {"min_turn_time": 0.2}
         },
