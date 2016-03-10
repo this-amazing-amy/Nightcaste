@@ -11,7 +11,6 @@ import game
 import logging
 import pygame
 import utils
-import random
 
 ASSET_DIR = path.abspath(
     path.join(
@@ -524,13 +523,10 @@ class TileSet:
             self.add_tile(key, tile)
 
     def add_tile(self, key, tile):
-        if key in self.tiles:
-            self.tiles[key] = self.tiles[key] + [tile]
-        else:
-            self.tiles[key] = [tile]
+        self.tiles[key] = tile
 
     def get_tile(self, key):
-        return random.sample(self.tiles[key], 1)[0]
+        return self.tiles[key]
 
 
 class ImageManager:

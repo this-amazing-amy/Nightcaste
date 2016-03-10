@@ -23,6 +23,7 @@
 		],
 		"attributes": {
 			"Tile.name": "stone_floor",
+                        "Tile.variant": [0, 1],
 			"Tile.z_index": 1,
 			"Color.r": 195,
 			"Color.g": 195,
