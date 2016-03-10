@@ -93,9 +93,13 @@ class Animation:
         self.current_frame = (self.current_frame + 1) % len(self.frames)
         return frame
 
+
 class Tile(Renderable):
     """Represents a part of a background image / map in a 2D tile based game."""
-    pass
+
+    def __init__(self, name=None, z_index=0, visible=True, variant=False):
+        Renderable.__init__(self, name, z_index, visible)
+        self.variant = variant
 
 
 class Colliding(Component):

@@ -11,7 +11,6 @@ import game
 import logging
 import pygame
 import utils
-import random
 
 ASSET_DIR = path.abspath(
     path.join(
@@ -380,6 +379,11 @@ class MapPane(TiledPane):
                 position.x_old,
                 position.y_old,
                 old_tile.name)
+            # restore map tile at current position, to prevent
+            # overlapping sprite animation stages
+            tile = em.get_current_map()[position.x][position.y]
+            tile = em.get(tile, 'Tile')
+            self.put_tile(position.x, position.y, tile.name)
             # render sprite at new position
             sprite.rect.x = position.x
             sprite.rect.y = position.y
@@ -524,13 +528,10 @@ class TileSet:
             self.add_tile(key, tile)
 
     def add_tile(self, key, tile):
-        if key in self.tiles:
-            self.tiles[key] = self.tiles[key] + [tile]
-        else:
-            self.tiles[key] = [tile]
+        self.tiles[key] = tile
 
     def get_tile(self, key):
-        return random.sample(self.tiles[key], 1)[0]
+        return self.tiles[key]
 
 
 class ImageManager:
