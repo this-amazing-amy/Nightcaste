@@ -1,6 +1,7 @@
 """The Rendering Framework, wrapping around the libtcod
 console."""
 from nightcaste import __version__
+from nightcaste.calendar import ExaltedCalendar
 from nightcaste.components import Color
 from nightcaste.components import Animation
 from nightcaste.processors import SpriteProcessor
@@ -472,9 +473,8 @@ class ViewPort:
 class StatusPane(ContentPane):
 
     def render(self):
-        self.put_text(5, 5, 'Health: 100')
+        self.put_text(5, 5, 'Time: %s' % ExaltedCalendar(game.time))
         self.put_text(5, 20, 'Round: %s' % (game.round))
-        self.put_text(5, 35, 'Time: %s' % (game.time))
         return self.dirty_rects
 
 
