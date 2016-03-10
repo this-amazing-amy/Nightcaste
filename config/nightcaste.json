@@ -2,7 +2,7 @@
     "systems": [
         {
             "impl": [ "nightcaste.processors", "GameTimeSystem" ],
-            "config": {"time_multi": 24}
+            "config": {"time_multi": 48}
         },
         {
             "impl": [ "nightcaste.processors", "TurnProcessor" ],
@@ -10,7 +10,10 @@
         },
         {"impl": [ "nightcaste.processors", "MenuInputProcessor" ]},
         {"impl": [ "nightcaste.processors", "GameInputProcessor" ]},
-        {"impl": [ "nightcaste.processors", "WorldInitializer" ]},
+        {
+            "impl": [ "nightcaste.processors", "WorldInitializer" ],
+            "config": { "start_time": 18360000000 }
+        },
         {"impl": [ "nightcaste.processors", "MapChangeProcessor" ]},
         {"impl": [ "nightcaste.processors", "TransitionProcessor" ]},
         {"impl": [ "nightcaste.processors", "MovementProcessor" ]},

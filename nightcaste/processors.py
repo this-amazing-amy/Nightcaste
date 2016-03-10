@@ -1,6 +1,7 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
 import game
+from calendar import ExaltedCalendar
 from mapcreation import MapManager
 import input
 import logging
@@ -212,7 +213,11 @@ class WorldInitializer(EventProcessor):
     def unregister(self):
         self._unregister('WorldEnter', self.on_world_enter)
 
+    def configure(self, config):
+        self.start_time = config.get('start_time', 0)
+
     def on_world_enter(self, event):
+        game.time = self.start_time
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
         # TODO let the entity manager throw the event
