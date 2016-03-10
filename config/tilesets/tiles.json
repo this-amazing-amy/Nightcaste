@@ -6,20 +6,16 @@
     },
     "tiles": [
     	{
-		"key": "stone_floor",
+		"key": "stone_floor_0",
 		"position": [0,0]
     	},
     	{
-		"key": "stone_floor",
+		"key": "stone_floor_1",
 		"position": [1,0]
     	},
     	{
 		"key": "stone_wall",
 		"position": [2,0]
-    	},
-    	{
-		"key": "@",
-		"position": [0,1]
     	},
     	{
 		"key": "stone_stairs",

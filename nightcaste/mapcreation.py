@@ -60,8 +60,12 @@ class MapGenerator():
         tile_config = EntityConfiguration()
         tile_config.add_attribute('Position', 'x', x)
         tile_config.add_attribute('Position', 'y', y)
-        return self.entity_manager.new_from_blueprint_and_config(
+        tile = self.entity_manager.new_from_blueprint_and_config(
             "tiles." + blueprint, tile_config)
+        tileComp = (self.entity_manager.get(tile, "Tile"))
+        if (tileComp.variant):
+            tileComp.name += "_" + str(random.sample(tileComp.variant, 1)[0])
+        return tile
 
     def create_custom_tile(self, x, y, char, colliding):
         """Creates a tile with the specified properties."""
