@@ -6,3 +6,4 @@ G_ROUND_IN_PROGRESS = 4
 
 status = G_ROUND_WAITING_INPUT
 round = 0
+time = 0

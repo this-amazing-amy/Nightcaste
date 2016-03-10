@@ -8,7 +8,6 @@ import utils
 from sound import SoundBank
 
 
-
 class SystemManager:
     """Creates, configures and manages all GameSystems.
 
@@ -66,7 +65,7 @@ class SystemManager:
             system.update(round, delta_time)
 
 
-class EventProcessor:
+class EventProcessor(object):
     """Base class for all processors.
 
         Args:
@@ -194,11 +193,13 @@ class MovementProcessor(EventProcessor):
             position.y_old = position.y
             position.x = target_x
             position.y = target_y
-            self.logger.debug('Move Entity %s to position %s,%s.',
-                         event.data['entity'], target_x, target_y)
-            self.event_manager.throw("EntityMoved",
-                                     {'entity': event.data['entity'],
-                                      'x': target_x, 'y': target_y})
+            self.logger.debug(
+                'Move Entity %s to position %s,%s.',
+                event.data['entity'],
+                target_x,
+                target_y)
+            self.event_manager.throw('EntityMoved', {'entity': event.data[
+                'entity'], 'x': target_x, 'y': target_y})
 
 
 class WorldInitializer(EventProcessor):
@@ -328,7 +329,8 @@ class SpriteProcessor(EventProcessor):
             sprite.dirty = 1
 
     def update(self, round, delta_time):
-        for entity, sprite in self.entity_manager.get_all('Sprite').iteritems():
+        for entity, sprite in self.entity_manager.get_all(
+                'Sprite').iteritems():
             sprite.update(round, delta_time)
 
 
@@ -489,3 +491,16 @@ class PocSoundSystem(SoundSystem):
 
     def on_menu_open(self, event):
         self.play('smb_stage_clear.wav')
+
+
+class GameTimeSystem(EventProcessor):
+
+    def __init__(self, event_manager, entity_manager):
+        super(GameTimeSystem, self).__init__(event_manager, entity_manager)
+        self.time_multi = 1.0
+
+    def configure(self, config):
+        self.time_multi = config['time_multi']
+
+    def update(self, round, delta_time):
+        game.time += delta_time * self.time_multi
