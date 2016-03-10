@@ -4,8 +4,6 @@ import logging
 import os
 import utils
 
-logger = logging.getLogger('entites')
-
 
 class EntityManager:
     """The EntityManager is the interface for all systems to create and retrieve
@@ -233,6 +231,7 @@ class ComponentManager:
 class BlueprintManager:
     """Stores blueprints which can be used as templates for entity creation. The
     blueprints are stored on disk in JSON format."""
+    logger = logging.getLogger('entites.BlueprintManager')
 
     def __init__(self):
         self.blue_prints = {}
@@ -253,7 +252,9 @@ class BlueprintManager:
                 blueprint files.
 
         """
-        logger.info('Initializing Blueprints from: %s', blueprint_base_path)
+        self.logger.info(
+            'Initializing Blueprints from: %s',
+            blueprint_base_path)
         for f in os.listdir(blueprint_base_path):
             blueprint_path = os.path.join(blueprint_base_path, f)
             if os.path.isfile(blueprint_path):
@@ -261,10 +262,10 @@ class BlueprintManager:
 
     def _load_blueprints_from_file(self, blueprint_path):
         basename = os.path.splitext(os.path.basename(blueprint_path))[0]
-        logger.info('Loading %s', basename)
+        self.logger.info('Loading %s', basename)
         blueprint_config = utils.load_config(blueprint_path)
         for name, blueprint in blueprint_config.iteritems():
-            logger.info("Adding Blueprint: %s", name)
+            self.logger.info("Adding Blueprint: %s", name)
             blue_print_name = basename + '.' + name
             entity_config = self._create_entity_config(blueprint)
             self.blue_prints.update({blue_print_name: entity_config})
@@ -272,7 +273,7 @@ class BlueprintManager:
     def _create_entity_config(self, blueprint):
         entity_config = EntityConfiguration()
         for component in blueprint['components']:
-            logger.debug('Adding blueprint component %s', component)
+            self.logger.debug('Adding blueprint component %s', component)
             entity_config.add_component(component)
         self._configure_entity_attributes(blueprint, entity_config)
         return entity_config

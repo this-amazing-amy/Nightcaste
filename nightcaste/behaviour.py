@@ -1,10 +1,12 @@
 import game
 import input
+import logging
 import utils
 
 
 class BehaviourManager:
     """The Bahavoiur manager stores component behevoiurs."""
+    logger = logging.getLogger('behaviour.BehaviourManager')
 
     def __init__(self, event_manager, entitiy_manager, config=None):
         self.event_manager = event_manager
@@ -41,6 +43,7 @@ class BehaviourManager:
 
     def add_component_behaviour(self, component_type, behaviour):
         """Register the given behaviour with the specified component type."""
+        self.logger.debug("Register %s for component type %s", component_type, behaviour)
         self.behaviours.update({component_type: behaviour})
 
     def update(self, round, delta_time):

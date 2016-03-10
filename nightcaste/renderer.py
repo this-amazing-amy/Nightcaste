@@ -13,7 +13,6 @@ import pygame
 import utils
 import random
 
-logger = logging.getLogger('renderer')
 ASSET_DIR = path.abspath(
     path.join(
         path.dirname(__file__),
@@ -49,6 +48,7 @@ class WindowManager:
 class Window:
     """A window an which something can be rendered. Supports multiple views with
     content panes in them."""
+    logger = logging.getLogger('renderer.Window')
 
     def __init__(self, config, event_manager, entity_manager, system_manager):
         self.config = config
@@ -89,7 +89,7 @@ class Window:
                 self.panes[pane].update()
 
     def show(self, name):
-        logger.debug('show %s', name)
+        self.logger.debug('show %s', name)
         """Shows the specified view."""
         changed = False
         if name in self.views:
@@ -110,7 +110,7 @@ class Window:
                                       conf['size'][0],
                                       conf['size'][1],
                                       conf.get('layer', 0))
-        logger.debug('Added Pane: %s', self.panes[pane])
+        self.logger.debug('Added Pane: %s', self.panes[pane])
 
     def is_active(self):
         return True
@@ -130,6 +130,7 @@ class Window:
 
 class ContentPane(object):
     """Can be printed with colored text"""
+    logger = logging.getLogger('renderer.ContentPane')
 
     def __init__(self, window, x,
                  y, width, height, z_index=0):
@@ -148,7 +149,7 @@ class ContentPane(object):
         self.dirty_rects = []
 
     def initialize(self):
-        logger.debug('initialize %s', self)
+        self.logger.debug('initialize %s', self)
         self.print_background()
 
     def print_background(self, color=None, rect=None):
@@ -302,7 +303,7 @@ class ScrollablePane(ContentPane):
 class TiledPane(ScrollablePane):
 
     def __init__(self, window, x, y, width, height, z_index=0):
-        super(TiledPane, self).__init__(window, x, y, width, height, z_index=0)
+        super(TiledPane, self).__init__(window, x, y, width, height, z_index)
         # put to pane configuration
         tile_config = utils.load_config('config/tilesets/tiles.json')
         self.tileset = TileSet(window.image_manager, tile_config)
@@ -334,7 +335,7 @@ class MapPane(TiledPane):
     """Renders every visible component, e.g the map with all its entities"""
 
     def __init__(self, window, x, y, width, height, z_index=0):
-        TiledPane.__init__(self, window, x, y, width, height, z_index=0)
+        super(MapPane, self).__init__(window, x, y, width, height, z_index)
 
     def initialize(self):
         super(MapPane, self).initialize()
@@ -571,6 +572,8 @@ class ImageManager:
 
 class SpriteManager:
 
+    logger = logging.getLogger('renderer.SpriteManager')
+
     def __init__(self, image_manager):
         self.sprite_path = path.join('config', 'sprites')
         self.images = {}
@@ -603,7 +606,7 @@ class SpriteManager:
         sprite.rect = image.get_rect()
         sprite.animations = self.animations[sprite.name]
         sprite.animate('idle')
-        logger.debug('Sprite initialized %s', sprite)
+        self.logger.debug('Sprite initialized %s', sprite)
 
     def _load_sprite_sheet(self, image_config):
         """Assume the name is a direct path to an image containing exactly the

@@ -7,7 +7,6 @@ import logging
 import utils
 from sound import SoundBank
 
-logger = logging.getLogger('processors')
 
 
 class SystemManager:
@@ -108,6 +107,8 @@ class EventProcessor:
 
 class InputProcessor(EventProcessor):
 
+    logger = logging.getLogger('processors.InputProcessor')
+
     def register(self):
         self._register('ViewChanged', self.on_view_changed)
 
@@ -122,7 +123,7 @@ class InputProcessor(EventProcessor):
 
     def on_key_pressed(self, event):
         action = self._map_key_to_action(event.data["keycode"])
-        logger.debug('Mapped key %s to %s', event.data["keycode"], action)
+        self.logger.debug('Mapped key %s to %s', event.data["keycode"], action)
         if action is not None:
             self.event_manager.throw(action[0], action[1])
 
@@ -150,6 +151,8 @@ class MenuInputProcessor(InputProcessor):
 
 
 class MovementProcessor(EventProcessor):
+
+    logger = logging.getLogger('processors.MovementProcessor')
 
     def __init__(self, event_manager, entity_manager, no_collision=False):
         EventProcessor.__init__(self, event_manager, entity_manager)
@@ -191,7 +194,7 @@ class MovementProcessor(EventProcessor):
             position.y_old = position.y
             position.x = target_x
             position.y = target_y
-            logger.debug('Move Entity %s to position %s,%s.',
+            self.logger.debug('Move Entity %s to position %s,%s.',
                          event.data['entity'], target_x, target_y)
             self.event_manager.throw("EntityMoved",
                                      {'entity': event.data['entity'],
@@ -223,6 +226,7 @@ class WorldInitializer(EventProcessor):
 class MapChangeProcessor(EventProcessor):
     """Listens on MapChange Events and uses chnages or generates the maps
     accordingly."""
+    logger = logging.getLogger('processors.MapChangeProcessor')
 
     def register(self):
         self._register('MapChange', self.on_map_change)
@@ -237,7 +241,7 @@ class MapChangeProcessor(EventProcessor):
     def on_map_change(self, event):
         if event.data["level"] is None:
             event.data["level"] = 0
-        logger.debug(
+        self.logger.debug(
             'Changing to Map %s - %d',
             event.data["name"],
             event.data["level"])
@@ -296,6 +300,7 @@ class CollisionManager():
 class SpriteProcessor(EventProcessor):
     """Initializes sprites of created entites with sprite components. Detects
     moved Sprites and updates their dirty flag."""
+    logger = logging.getLogger('processors.SpriteProcessor')
 
     def __init__(self, event_manager, entity_manager, sprite_manager):
         EventProcessor.__init__(self, event_manager, entity_manager)
@@ -319,7 +324,7 @@ class SpriteProcessor(EventProcessor):
         entity = event.data['entity']
         sprite = self.entity_manager.get(entity, 'Sprite')
         if sprite is not None:
-            logger.debug('Set sprite dirty %s', sprite)
+            self.logger.debug('Set sprite dirty %s', sprite)
             sprite.dirty = 1
 
     def update(self, round, delta_time):
