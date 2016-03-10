@@ -6,8 +6,6 @@ import math
 import logging
 import tcod as libtcod
 
-logger = logging.getLogger('mapcreation')
-
 
 class MapManager():
     """ The Map Manager stores and administrates all maps
@@ -40,6 +38,7 @@ class MapManager():
 
 class MapGenerator():
     """Generates maps and returns the id of the generated map """
+    logger = logging.getLogger('mapcreation.MapGenerator')
 
     def __init__(self, entity_manager):
         self.entity_manager = entity_manager
@@ -48,7 +47,7 @@ class MapGenerator():
     def create_empty_map(self, width, height, tile="stone_wall"):
         """ Returns a new Tile array with set size filled with walls"""
 
-        logger.debug("Map size: %sx%s", width, height)
+        self.logger.debug("Map size: %sx%s", width, height)
         return [[self.create_tile(tile, x, y)
                  for y in range(0, height)]
                 for x in range(0, width)]
@@ -126,6 +125,7 @@ class DungeonGenerator(MapGenerator):
         rooms [(Room)]: Array of all rooms created during traversion
 
     """
+    logger = logging.getLogger('mapcreation.DungeonGenerator')
 
     def generate_map(self, map_name, level):
         """Loads the map configuration based on map name and level and generates
@@ -173,8 +173,12 @@ class DungeonGenerator(MapGenerator):
         for x in range(room.x + 1, room.x + width + 1):
             for y in range(room.y + 1, room.y + height + 1):
                 self.tiles[x][y] = self.create_tile("stone_floor", x, y)
-        logger.debug("Created room on %s,%s sized %sx%s", node.x, node.y,
-                     width, height)
+        self.logger.debug(
+            "Created room on %s,%s sized %sx%s",
+            node.x,
+            node.y,
+            width,
+            height)
         self.rooms.append(room)
 
     def random_spot_in_node(self, node):
@@ -189,8 +193,8 @@ class DungeonGenerator(MapGenerator):
         """ Creates a corridor between random spots in two nodes"""
         (x1, y1) = self.random_spot_in_node(self.left_child(node))
         (x2, y2) = self.random_spot_in_node(self.right_child(node))
-        logger.info("Generating Corridor between %s and %s",
-                    (x1, y1), (x2, y2))
+        self.logger.info(
+            "Generating Corridor between %s and %s", (x1, y1), (x2, y2))
         if (random.randrange(2) == 1):
             for y in range(min(y1, y2), max(y1, y2) + 1):
                 self.tiles[x1][y] = self.create_tile("stone_floor", x1, y)
@@ -239,5 +243,5 @@ class Room():
         self.height = height
 
     def random_spot(self):
-        return (random.randint(self.x, self.x+self.width),
-                random.randint(self.y, self.y+self.height))
+        return (random.randint(self.x, self.x + self.width),
+                random.randint(self.y, self.y + self.height))

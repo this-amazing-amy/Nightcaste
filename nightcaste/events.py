@@ -10,11 +10,10 @@
 import logging
 import Queue
 
-logger = logging.getLogger('events')
-
 
 class EventManager:
     """The central event manager which stores all events to be executed."""
+    logger = logging.getLogger('events.EventManager')
 
     def __init__(self):
         # Event queue, which is continuuously processed by process_events
@@ -30,7 +29,7 @@ class EventManager:
     def register_listener(self, event_type, process_function):
         """Register a processor to delegate the processing of a certain event
         type."""
-        logger.debug(
+        self.logger.debug(
             'Register processor function %s for event type %s',
             process_function,
             event_type)
@@ -41,7 +40,7 @@ class EventManager:
 
     def remove_listener(self, event_type, process_function):
         """Unregisters the processor for events of the specified type."""
-        logger.debug(
+        self.logger.debug(
             'Unregister processor function %s for event type %s',
             process_function,
             event_type)
@@ -49,7 +48,7 @@ class EventManager:
             try:
                 self.listeners[event_type].remove(process_function)
             except ValueError:
-                logger.debug(
+                self.logger.debug(
                     '%s is already unregistered from %s!',
                     process_function,
                     event_type)
@@ -86,7 +85,7 @@ class EventManager:
                 round (long): The current round in the game.
 
         """
-        logger.debug('Process event %s', event)
+        self.logger.debug('Process event %s', event)
         if event.identifier in self.listeners:
             for process_function in self.listeners[event.identifier]:
                 process_function(event)
