@@ -503,4 +503,5 @@ class GameTimeSystem(EventProcessor):
         self.time_multi = config['time_multi']
 
     def update(self, round, delta_time):
-        game.time += delta_time * self.time_multi
+        if game.status != game.G_PAUSED:
+            game.time += delta_time * self.time_multi
