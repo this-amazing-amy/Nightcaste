@@ -1,4 +1,3 @@
-import game
 import input
 import logging
 import utils
@@ -25,6 +24,8 @@ class BehaviourManager:
         if 'component_behaviours' in config:
             for comp_behaviour_config in config['component_behaviours']:
                 self.add_comp_behaviour_from_config(comp_behaviour_config)
+        if 'min_turn_time' in config:
+            self.min_turn_time = config['min_turn_time']
 
     def add_comp_behaviour_from_config(self, config):
         """Associates the behaviour specified be the name with the specified
@@ -43,7 +44,8 @@ class BehaviourManager:
 
     def add_component_behaviour(self, component_type, behaviour):
         """Register the given behaviour with the specified component type."""
-        self.logger.debug("Register %s for component type %s", component_type, behaviour)
+        self.logger.debug("Register %s for component type %s",
+                          component_type, behaviour)
         self.behaviours.update({component_type: behaviour})
 
     def update(self, round, delta_time):
@@ -55,6 +57,69 @@ class BehaviourManager:
                 behaviour.entity = entity
                 behaviour.component = component
                 behaviour.update(round, delta_time)
+
+
+class TurnBehaviourManager(BehaviourManager):
+
+    def __init__(self, event_manager, entitiy_manager, config=None):
+        BehaviourManager.__init__(self, event_manager,
+                                  entitiy_manager, config)
+        self.locked_entities = []
+
+    def update(self, round, delta_time):
+        """Updates all behaviours for all entitites with a associated
+        component, but only if there are no locked entities."""
+
+        # TODO: Make the method prettier ^^
+        for component_type, behaviour in self.behaviours.iteritems():
+            components = self.entity_manager.get_all(component_type)
+
+            for entity, component in components.iteritems():
+                s = self.locked_entities
+                turn = self.entity_manager.get(entity, "Turn")
+                if (turn.ticks == 0 and turn.delta >= turn.min_turn_time):
+                    # It's the entity's Turn!
+                    if (turn.locking and entity not in s):
+                        # Lock it
+                        self.locked_entities.append(entity)
+                    if (entity in s or len(s) == 0):
+                        behaviour.entity = entity
+                        behaviour.component = component
+                        ticks = behaviour.update(round, delta_time)
+                        if (ticks is not None):
+                            # The behaviour has made an action
+                            if (entity in s):
+                                self.locked_entities.remove(entity)
+                            self._add_ticks(entity, ticks)
+                else:
+                    turn.delta += delta_time
+        self._normalize()
+
+    def _add_ticks(self, entity, ticks):
+        """ Count up the Tick Counter of entity, and reset its delta time """
+        turn_comp = self.entity_manager.get(entity, "Turn")
+        turn_comp.ticks += ticks
+        turn_comp.delta = 0
+
+    def _normalize(self):
+        """ Reduce the Tick counter of all turn components by the minimum
+        Tick count, to prevent tick counters from increasing indefinitely.
+        This assures an only relative tick count """
+        min_ticks = None
+        for component_type, behaviour in self.behaviours.iteritems():
+            components = self.entity_manager.get_all(component_type)
+            ticks = [self.entity_manager.get(entity, "Turn").ticks
+                     for entity in components.keys()]
+            if (len(ticks) > 0):
+                minimum_of_type = min(ticks)
+                if (min_ticks is None or min_ticks > minimum_of_type):
+                    min_ticks = minimum_of_type
+        if min_ticks is not None:
+            for component_type, behaviour in self.behaviours.iteritems():
+                components = self.entity_manager.get_all(component_type)
+                for turn_comp in [self.entity_manager.get(entity, "Turn")
+                                  for entity in components.keys()]:
+                    turn_comp.ticks -= min_ticks
 
 
 class EntityComponentBehaviour:
@@ -79,51 +144,53 @@ class InputBehaviour(EntityComponentBehaviour):
         # based logic as central as possible and possibly enable switching
         # between realtime and turn based. (A realtime behaviour would not
         # check for a state
-        if game.status == game.G_ROUND_WAITING_INPUT:
-            dx = 0
-            dy = 0
-            if input.is_pressed(
-                input.K_LEFT) or input.is_pressed(
-                input.K_KP1) or input.is_pressed(
-                input.K_KP4) or input.is_pressed(
-                    input.K_KP7):
-                dx = -1
-            if input.is_pressed(
-                input.K_RIGHT) or input.is_pressed(
-                input.K_KP3) or input.is_pressed(
-                input.K_KP6) or input.is_pressed(
-                    input.K_KP9):
-                dx = dx + 1
-            if input.is_pressed(
-                input.K_DOWN) or input.is_pressed(
-                input.K_KP1) or input.is_pressed(
-                input.K_KP2) or input.is_pressed(
-                    input.K_KP3):
-                dy = 1
-            if input.is_pressed(
-                input.K_UP) or input.is_pressed(
-                input.K_KP7) or input.is_pressed(
-                input.K_KP8) or input.is_pressed(
-                    input.K_KP9):
-                dy = dy - 1
+        speed = None
+        dx = 0
+        dy = 0
+        if input.is_pressed(
+            input.K_LEFT) or input.is_pressed(
+            input.K_KP1) or input.is_pressed(
+            input.K_KP4) or input.is_pressed(
+                input.K_KP7):
+            dx = -1
+        if input.is_pressed(
+            input.K_RIGHT) or input.is_pressed(
+            input.K_KP3) or input.is_pressed(
+            input.K_KP6) or input.is_pressed(
+                input.K_KP9):
+            dx = dx + 1
+        if input.is_pressed(
+            input.K_DOWN) or input.is_pressed(
+            input.K_KP1) or input.is_pressed(
+            input.K_KP2) or input.is_pressed(
+                input.K_KP3):
+            dy = 1
+        if input.is_pressed(
+            input.K_UP) or input.is_pressed(
+            input.K_KP7) or input.is_pressed(
+            input.K_KP8) or input.is_pressed(
+                input.K_KP9):
+            dy = dy - 1
 
-            if dy != 0 or dx != 0:
-                self.move(dx, dy)
-            elif input.is_pressed(input.K_ENTER):
-                # TODO: Implement Targeting Inputs (combined input or
-                # sequential?)
-                # TODISCUSS: Context actions, autotargeting
-                self.use(0, 0)
+        if dy != 0 or dx != 0:
+            speed = self.move(dx, dy)
+        elif input.is_pressed(input.K_ENTER):
+            # TODO: Implement Targeting Inputs (combined input or
+            # sequential?)
+            # TODISCUSS: Context actions, autotargeting
+            speed = self.use(0, 0)
+        return speed
 
     def move(self, dx, dy):
         """Throws a MoveAction."""
-        # TODO push up the _TURN attribute to EntityComponentBehaviour or
-        # BehaviourManager
         self.event_manager.throw(
-            'MoveAction_TURN', {
+            'MoveAction', {
                 'entity': self.entity, 'dx': dx, 'dy': dy})
+        # TODO: Determine Speed from Attributes
+        return 5
 
     def use(self, dx, dy):
         """ Throws a UseEntity Event """
-        self.event_manager.throw("UseEntityAction_TURN", {
+        self.event_manager.throw("UseEntityAction", {
             'user': self.entity, 'direction': (dx, dy)})
+        return 2

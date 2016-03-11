@@ -94,6 +94,27 @@ class Animation:
         return frame
 
 
+class Turn(Component):
+    """ An entity that participates in the turn logic, meaning
+        it has an associated turn based behaviour
+
+        Args:
+            ticks: ticks since last action, the lower, the sooner it can act
+            locking: boolean, if the game should wait for this entity's
+                     behaviour to act, before others are handled
+            min_turn_time: the real time that has to pass before this entity
+                           behaviour can act again
+            delta: real time that has passed before the last action
+                   used to test for min_turn_time"""
+
+    def __init__(self, ticks=0, locking=False, min_turn_time=0):
+        self.ticks = ticks
+        self.locking = locking
+        # TODISCUSS: min_turn_time could also be in the inputBehaviour
+        self.min_turn_time = min_turn_time
+        self.delta = 0
+
+
 class Tile(Renderable):
     """Represents a part of a background image / map in a 2D tile based game."""
 

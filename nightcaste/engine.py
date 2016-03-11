@@ -1,6 +1,6 @@
 """The engine is the main module of the game. It initializes all necessary
 subsystems and runs the super loop"""
-from behaviour import BehaviourManager
+from behaviour import TurnBehaviourManager
 from events import EventManager
 from entities import EntityManager
 from nightcaste import __version__
@@ -24,7 +24,7 @@ def main():
     pygame.init()
     event_manager = EventManager()
     entity_manager = EntityManager()
-    behaviour_manager = BehaviourManager(
+    behaviour_manager = TurnBehaviourManager(
         event_manager,
         entity_manager,
         game_config['behaviours'])

@@ -339,67 +339,6 @@ class SpriteProcessor(EventProcessor):
             sprite.update(round, delta_time)
 
 
-class TurnProcessor(EventProcessor):
-    """Emulates the turns for turn based games be modifying the game status. The
-    different component behaviours can react to the game state and perform
-    actions only when they are allowed.
-
-    TODO:
-        This logic treats the player is special entity which determines the
-        round logic. A better approach would be to let the behaviours schedule
-        exactly one action in the COLLECT phase by implementing a logic in the
-        BehaviourManager which checks if the behaviour has scheduled an action.
-        If true, the the update function won't be called again until the next
-        round. This way you could also collect input in multiplayer and start
-        the round if all input is received."""
-
-    def __init__(self, event_manager, entity_manager):
-        EventProcessor.__init__(self, event_manager, entity_manager)
-        # TODO Priority Queue?
-        self.turn_events = []
-        self.min_turn_time = 0.2
-        self.current_turn_time = 0.0
-
-    def configure(self, config):
-        self.min_turn_time = config['min_turn_time']
-
-    def register(self):
-        self._register("MoveAction_TURN", self.on_turn)
-        self._register("UseEntityAction_TURN", self.on_turn)
-
-    def unregister(self):
-        self._unregister("MoveAction_TURN", self.on_turn)
-        self._unregister("UseEntityAction_TURN", self.on_turn)
-
-    def on_turn(self, event):
-        self.turn_events.append(event)
-        if game.status == game.G_ROUND_WAITING_INPUT:
-            game.status = game.G_ROUND_INPUT_RECEIVED
-
-    def update(self, round, delta_time):
-        self.current_turn_time += delta_time
-        if game.status == game.G_ROUND_INPUT_RECEIVED:
-            game.status = game.G_ROUND_COLLECT_TURNS
-        elif game.status == game.G_ROUND_COLLECT_TURNS:
-            game.status = game.G_ROUND_IN_PROGRESS
-            self.current_turn_time = 0
-            # order by speed here
-
-        # Throw a scheduled action on each update
-        if game.status == game.G_ROUND_IN_PROGRESS:
-            if len(self.turn_events) > 0:
-                self._next_turn()
-            elif (self.current_turn_time >= self.min_turn_time):
-                game.status = game.G_ROUND_WAITING_INPUT
-                game.round += 1
-
-    def _next_turn(self):
-        """Transform the turn to the actual event and throws it."""
-        next_turn = self.turn_events.pop(0)
-        next_turn.identifier = next_turn.identifier.rstrip('_TURN')
-        self.event_manager.forward(next_turn)
-
-
 class UseEntityProcessor(EventProcessor):
     """ Listens for UseEntity Events, determines Target Entity and throws its
     Use-Event """
