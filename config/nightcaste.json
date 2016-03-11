@@ -4,10 +4,6 @@
             "impl": [ "nightcaste.processors", "GameTimeSystem" ],
             "config": {"time_multi": 48}
         },
-        {
-            "impl": [ "nightcaste.processors", "TurnProcessor" ],
-            "config": {"min_turn_time": 0.2}
-        },
         {"impl": [ "nightcaste.processors", "MenuInputProcessor" ]},
         {"impl": [ "nightcaste.processors", "GameInputProcessor" ]},
         {

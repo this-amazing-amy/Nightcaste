@@ -2,6 +2,7 @@
 	"player": {
 		"components": [
 			"Position",
+                        "Turn",
 			"Sprite",
 			"Color",
                         "Colliding",
@@ -11,6 +12,8 @@
 			"Color.r": 239,
 			"Color.g": 228,
 			"Color.b": 176,
+                        "Turn.locking": true,
+                        "Turn.min_turn_time": 0.1,
                         "Colliding.active": true,
                         "Sprite.name": "player",
 			"Sprite.z_index": 9
