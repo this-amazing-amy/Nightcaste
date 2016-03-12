@@ -1,7 +1,6 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
 import game
-from calendar import ExaltedCalendar
 from mapcreation import MapManager
 import input
 import logging
@@ -190,8 +189,6 @@ class MovementProcessor(EventProcessor):
 
         if (collision is None):
             # TODO: Change Movement behaviour, when sprites are done
-            position.x_old = position.x
-            position.y_old = position.y
             position.x = target_x
             position.y = target_y
             self.logger.debug(
