@@ -186,7 +186,6 @@ class MovementProcessor(EventProcessor):
                 dir_y = 0
             else:
                 dir_y = copysign(1, target[1] - origin[1])
-            logger.debug("Direction: %d, %d", dir_x, dir_y)
 
             if dir_x == 1:
                 reached_x = ((origin[0] + pos.x_frac) >= target[0])
