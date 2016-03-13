@@ -6,6 +6,7 @@ import input
 import logging
 import utils
 from sound import SoundBank
+from math import copysign
 
 
 class SystemManager:
@@ -158,12 +159,65 @@ class MovementProcessor(EventProcessor):
         self.collision_manager = CollisionManager(entity_manager,
                                                   event_manager,
                                                   no_collision)
+        self.moving_entities = {}
 
     def register(self):
         self._register('MoveAction', self.on_move)
 
     def unregister(self):
         self._unregister('MoveAction', self.on_move)
+
+    def update(self, round, delta):
+        logger = logging.getLogger('processors.MovementProcessor')
+        to_delete = []
+        for entity, positions in self.moving_entities.iteritems():
+            sprite = self.entity_manager.get(entity, "Sprite")
+            pos = self.entity_manager.get(entity, "Position")
+            # TODO: Make an Animation Processor or think of a more elegant
+            # solution for animation handling
+            sprite.animate("walk")
+            target = positions[1]
+            origin = positions[0]
+            if target[0] == origin[0]:
+                dir_x = 0
+            else:
+                dir_x = copysign(1, target[0] - origin[0])
+            if target[1] == origin[1]:
+                dir_y = 0
+            else:
+                dir_y = copysign(1, target[1] - origin[1])
+            logger.debug("Direction: %d, %d", dir_x, dir_y)
+
+            if dir_x == 1:
+                reached_x = ((origin[0] + pos.x_frac) >= target[0])
+            elif dir_x == -1:
+                reached_x = ((origin[0] + pos.x_frac) <= target[0])
+            else:
+                reached_x = True
+            if dir_y == 1:
+                reached_y = ((origin[1] + pos.y_frac) >= target[1])
+            elif dir_y == -1:
+                reached_y = ((origin[1] + pos.y_frac) <= target[1])
+            else:
+                reached_y = True
+            # TODO: Scale movement speed value and put it into other component
+            pos.x_frac += dir_x * pos.movement_speed * delta
+            pos.y_frac += dir_y * pos.movement_speed * delta
+            sprite.dirty = 1
+            if reached_x and reached_y:
+                pos.x = target[0]
+                pos.y = target[1]
+                pos.x_frac = 0
+                pos.y_frac = 0
+                logger.debug("Moving entity %d from (%d,%d) to (%d,%d)", entity,
+                             origin[0], origin[1], target[0], target[1])
+                self.event_manager.throw('EntityMoved', {'entity': entity,
+                                                         'x': target[0],
+                                                         'y': target[1]})
+                to_delete.append(entity)
+        for entity in to_delete:
+            del(self.moving_entities[entity])
+            sprite.animate("idle")
 
     def on_move(self, event):
         """Checks for collision and moves the entity the specified amount. If a
@@ -188,16 +242,20 @@ class MovementProcessor(EventProcessor):
             target_x, target_y)
 
         if (collision is None):
-            # TODO: Change Movement behaviour, when sprites are done
-            position.x = target_x
-            position.y = target_y
+            if event.data.get("absolute", 0) == 1:
+                position.x = target_x
+                position.y = target_y
+            self._start_moving(event.data['entity'], (position.x, position.y),
+                               (target_x, target_y))
             self.logger.debug(
                 'Move Entity %s to position %s,%s.',
                 event.data['entity'],
                 target_x,
                 target_y)
-            self.event_manager.throw('EntityMoved', {'entity': event.data[
-                'entity'], 'x': target_x, 'y': target_y})
+
+    def _start_moving(self, entity, origin, target):
+        if self.moving_entities.get(entity, None) is None:
+            self.moving_entities[entity] = (origin, target)
 
 
 class WorldInitializer(EventProcessor):

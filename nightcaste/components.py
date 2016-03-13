@@ -25,14 +25,17 @@ class Position(Component):
     Args:
         x (int): Horizontal position.
         y (int): Vertical position.
+        x_old: Horizontal position, one update ago
+        y_old: Vertical position, one update ago
 
     """
 
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
-        self.x_old = x
-        self.y_old = y
+        self.x_frac = 0
+        self.y_frac = 1
+        self.movement_speed = 4
 
 
 class Renderable(Component):
@@ -53,7 +56,12 @@ class Renderable(Component):
 
 
 class Sprite(Renderable, DirtySprite):
-    """Represents sprite in a 2D game."""
+    """Represents sprite in a 2D game.
+    Args:
+        x_offset/y_offset (float): Additional offset position, where the
+            sprite should be rendered (to make animations between tiles
+            possible
+    """
 
     def __init__(self, sprite_name=None, z_index=0, visible=True):
         DirtySprite.__init__(self)

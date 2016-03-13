@@ -8,6 +8,7 @@ from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
 from os import listdir
+from math import ceil, floor
 import game
 import logging
 import pygame
@@ -64,14 +65,14 @@ class Window:
         self.active_view = self.config["default_view"]
 
         system_manager.add_system(ViewProcessor(
-                event_manager,
-                entity_manager,
-                self))
+            event_manager,
+            entity_manager,
+            self))
 
         system_manager.add_system(SpriteProcessor(
-                event_manager,
-                entity_manager,
-                self.sprite_manager))
+            event_manager,
+            entity_manager,
+            self.sprite_manager))
 
     def initialize_views(self, views):
         result = {}
@@ -119,6 +120,7 @@ class Window:
         dirty = []
         for pane_name in self.views[self.active_view]:
             pane = self.panes[pane_name]
+            pane.update()
             for area in pane.render():
                 dirty.append(self.screen.blit(
                     pane.surface,
@@ -315,15 +317,19 @@ class TiledPane(ScrollablePane):
             x * self.tileset.tile_width,
             y * self.tileset.tile_height)
 
-    def put_sprite(self, sprite):
-        sprite.rect.x = sprite.rect.x * self.tileset.tile_width
-        sprite.rect.y = sprite.rect.y * self.tileset.tile_height
+    def put_sprite(self, sprite, offset_x, offset_y):
+        sprite.rect.x = sprite.rect.x * self.tileset.tile_width + \
+            (offset_x * self.tileset.tile_width)
+        sprite.rect.y = sprite.rect.y * self.tileset.tile_height + \
+            (offset_y * self.tileset.tile_height)
         super(TiledPane, self).put_sprite(sprite)
 
-    def update_viewport(self, target_x, target_y):
+    def update_viewport(self, target_x, target_y, offset_x=0, offset_y=0):
         super(TiledPane, self).update_viewport(
-            target_x * self.tileset.tile_width,
-            target_y * self.tileset.tile_height)
+            (target_x * self.tileset.tile_width) +
+            int(offset_x * self.tileset.tile_width),
+            (target_y * self.tileset.tile_height) +
+            int(offset_y * self.tileset.tile_height))
 
     def create_bg(self, width, height):
         self.image = pygame.Surface((
@@ -372,20 +378,28 @@ class MapPane(TiledPane):
     def _render_sprite(self, entity, sprite, position):
         # restore map tile at old position
         if sprite.dirty > 0:
-            em = self.window.entity_manager
-            old_tile_entity = em.get_current_map()[position.x_old][
-                position.y_old]
-            old_tile = em.get(old_tile_entity, 'Tile')
-            self.put_tile(
-                position.x_old,
-                position.y_old,
-                old_tile.name)
-            position.x_old = position.x
-            position.y_old = position.y
+            self._restore_tiles(sprite, position)
             # render sprite at new position
             sprite.rect.x = position.x
             sprite.rect.y = position.y
-            self.put_sprite(sprite)
+            self.put_sprite(sprite, position.x_frac, position.y_frac)
+
+    def _restore_tiles(self, sprite, position):
+        """ Restores all Tiles under the Sprite """
+        # TODISCUSS: What about sprites larger than 1 tile?
+        em = self.window.entity_manager
+        # Restore Map Tiles when sprite is currently moving
+        dx = position.x + position.x_frac
+        dy = position.y + position.y_frac
+        intersect = set([(floor(dx), floor(dy)),
+                         (floor(dx), ceil(dy)),
+                         (ceil(dx), floor(dy)),
+                         (ceil(dx), ceil(dy))])
+        for tile in intersect:
+            tile = (int(tile[0]), int(tile[1]))
+            new_tile_entity = em.get_current_map()[tile[0]][tile[1]]
+            new_tile = em.get(new_tile_entity, 'Tile')
+            self.put_tile(tile[0], tile[1], new_tile.name)
 
     def _render_tiles(self, entities):
         """ Iterates through a list of entities and renders each """
@@ -418,7 +432,8 @@ class MapPane(TiledPane):
         em = self.window.entity_manager
         # map = em.get(em.current_map, 'Map')
         player_pos = em.get(em.player, 'Position')
-        self.update_viewport(player_pos.x, player_pos.y)
+        self.update_viewport(player_pos.x, player_pos.y,
+                             player_pos.x_frac, player_pos.y_frac)
 
 
 class ViewPort:

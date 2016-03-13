@@ -9,11 +9,12 @@
                         "InputComponent"
 		],
 		"attributes": {
+                        "Position.movement_speed": 4,
 			"Color.r": 239,
 			"Color.g": 228,
 			"Color.b": 176,
                         "Turn.locking": true,
-                        "Turn.min_turn_time": 0.1,
+                        "Turn.min_turn_time": 0.05,
                         "Colliding.active": true,
                         "Sprite.name": "player",
 			"Sprite.z_index": 9
