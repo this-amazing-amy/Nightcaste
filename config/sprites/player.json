@@ -15,6 +15,24 @@
                     "frame": [1,0],
                     "ticks": 60
                 }
+            ],
+            "walk": [
+                {
+                    "frame": [0,1],
+                    "ticks": 10
+                },
+                {
+                    "frame": [1,1],
+                    "ticks": 10
+                },
+                {
+                    "frame": [2,1],
+                    "ticks": 10
+                },
+                {
+                    "frame": [3,1],
+                    "ticks": 10
+                }
             ]
         }
     }
