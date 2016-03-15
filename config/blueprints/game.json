@@ -6,7 +6,8 @@
 			"Sprite",
 			"Color",
                         "Colliding",
-                        "InputComponent"
+                        "Input",
+                        "Movement"
 		],
 		"attributes": {
                         "Position.movement_speed": 4,
@@ -17,7 +18,8 @@
                         "Turn.min_turn_time": 0.05,
                         "Colliding.active": true,
                         "Sprite.name": "player",
-			"Sprite.z_index": 9
+			"Sprite.z_index": 9,
+                        "Movement.speed": 80
 		}
 	}
 }

@@ -301,47 +301,17 @@ class ScrollablePane(ContentPane):
         sprite.rect = self.viewport.apply(sprite.rect)
         super(ScrollablePane, self).put_sprite(sprite)
 
-
-class TiledPane(ScrollablePane):
-
-    def __init__(self, window, x, y, width, height, z_index=0):
-        super(TiledPane, self).__init__(window, x, y, width, height, z_index)
-        # put to pane configuration
-        tile_config = utils.load_config('config/tilesets/tiles.json')
-        self.tileset = TileSet(window.image_manager, tile_config)
-
-    def put_tile(self, x, y, tile_name):
-        tile = self.tileset.get_tile(tile_name)
-        super(TiledPane, self).put_bg_image(
-            tile,
-            x * self.tileset.tile_width,
-            y * self.tileset.tile_height)
-
-    def put_sprite(self, sprite, offset_x, offset_y):
-        sprite.rect.x = sprite.rect.x * self.tileset.tile_width + \
-            (offset_x * self.tileset.tile_width)
-        sprite.rect.y = sprite.rect.y * self.tileset.tile_height + \
-            (offset_y * self.tileset.tile_height)
-        super(TiledPane, self).put_sprite(sprite)
-
-    def update_viewport(self, target_x, target_y, offset_x=0, offset_y=0):
-        super(TiledPane, self).update_viewport(
-            (target_x * self.tileset.tile_width) +
-            int(offset_x * self.tileset.tile_width),
-            (target_y * self.tileset.tile_height) +
-            int(offset_y * self.tileset.tile_height))
-
     def create_bg(self, width, height):
-        self.image = pygame.Surface((
-            width * self.tileset.tile_width,
-            height * self.tileset.tile_height))
+        self.image = pygame.Surface((width, height))
 
 
-class MapPane(TiledPane):
+class MapPane(ScrollablePane):
     """Renders every visible component, e.g the map with all its entities"""
 
     def __init__(self, window, x, y, width, height, z_index=0):
         super(MapPane, self).__init__(window, x, y, width, height, z_index)
+        tile_config = utils.load_config('config/tilesets/tiles.json')
+        self.tileset = TileSet(window.image_manager, tile_config)
 
     def initialize(self):
         super(MapPane, self).initialize()
@@ -378,19 +348,19 @@ class MapPane(TiledPane):
     def _render_sprite(self, entity, sprite, position):
         # restore map tile at old position
         if sprite.dirty > 0:
-            self._restore_tiles(sprite, position)
+            # self._restore_tiles(sprite, position)
             # render sprite at new position
             sprite.rect.x = position.x
             sprite.rect.y = position.y
-            self.put_sprite(sprite, position.x_frac, position.y_frac)
+            self.put_sprite(sprite)
 
     def _restore_tiles(self, sprite, position):
         """ Restores all Tiles under the Sprite """
         # TODISCUSS: What about sprites larger than 1 tile?
         em = self.window.entity_manager
         # Restore Map Tiles when sprite is currently moving
-        dx = position.x + position.x_frac
-        dy = position.y + position.y_frac
+        dx = position.x
+        dy = position.y
         intersect = set([(floor(dx), floor(dy)),
                          (floor(dx), ceil(dy)),
                          (ceil(dx), floor(dy)),
@@ -423,7 +393,8 @@ class MapPane(TiledPane):
                 given entity.
 
         """
-        self.put_tile(position.x, position.y, tile.name)
+        tileImage = self.tileset.get_tile(tile.name)
+        self.put_bg_image(tileImage, position.x, position.y)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
@@ -432,8 +403,7 @@ class MapPane(TiledPane):
         em = self.window.entity_manager
         # map = em.get(em.current_map, 'Map')
         player_pos = em.get(em.player, 'Position')
-        self.update_viewport(player_pos.x, player_pos.y,
-                             player_pos.x_frac, player_pos.y_frac)
+        self.update_viewport(player_pos.x, player_pos.y)
 
 
 class ViewPort:
