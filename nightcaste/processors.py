@@ -6,7 +6,7 @@ import input
 import logging
 import utils
 from sound import SoundBank
-from math import copysign
+from components import Direction
 
 
 class SystemManager:
@@ -150,111 +150,48 @@ class MenuInputProcessor(InputProcessor):
         return None
 
 
-class MovementProcessor(EventProcessor):
+class MovementSystem(EventProcessor):
 
     logger = logging.getLogger('processors.MovementProcessor')
 
     def __init__(self, event_manager, entity_manager, no_collision=False):
         EventProcessor.__init__(self, event_manager, entity_manager)
-        self.collision_manager = CollisionManager(entity_manager,
-                                                  event_manager,
-                                                  no_collision)
+        # self.collision_manager = CollisionManager(entity_manager,
+        #                                          event_manager,
+        #                                          no_collision)
         self.moving_entities = {}
 
-    def register(self):
-        self._register('MoveAction', self.on_move)
-
-    def unregister(self):
-        self._unregister('MoveAction', self.on_move)
+    def apply(self, direction, speed, position, delta):
+        distance = speed * delta
+        if direction.isset(Direction.D_UP):
+            position.y_frac -= distance
+            position.y = int(position.y_frac)
+        if direction.isset(Direction.D_DOWN):
+            position.y_frac += distance
+            position.y = int(position.y_frac)
+        if direction.isset(Direction.D_LEFT):
+            position.x_frac -= distance
+            position.x = int(position.x_frac)
+        if direction.isset(Direction.D_RIGHT):
+            position.x_frac += distance
+            position.x = int(position.x_frac)
 
     def update(self, round, delta):
-        logger = logging.getLogger('processors.MovementProcessor')
-        to_delete = []
-        for entity, positions in self.moving_entities.iteritems():
-            sprite = self.entity_manager.get(entity, "Sprite")
-            pos = self.entity_manager.get(entity, "Position")
+        moving_entities = self.entity_manager.get_all('Input')
+        entity_positions = self.entity_manager.get_all('Position')
+        entity_movement = self.entity_manager.get_all('Movement')
+        for entity, inputcomp in moving_entities.iteritems():
             # TODO: Make an Animation Processor or think of a more elegant
             # solution for animation handling
-            sprite.animate("walk")
-            target = positions[1]
-            origin = positions[0]
-            if target[0] == origin[0]:
-                dir_x = 0
+            sprite = self.entity_manager.get(entity, "Sprite")
+            if inputcomp.direction.direction != 0:
+                position = entity_positions[entity]
+                movement = entity_movement[entity]
+                sprite.animate("walk")
+                self.apply(inputcomp.direction, movement.speed,
+                           position, delta)
             else:
-                dir_x = copysign(1, target[0] - origin[0])
-            if target[1] == origin[1]:
-                dir_y = 0
-            else:
-                dir_y = copysign(1, target[1] - origin[1])
-
-            if dir_x == 1:
-                reached_x = ((origin[0] + pos.x_frac) >= target[0])
-            elif dir_x == -1:
-                reached_x = ((origin[0] + pos.x_frac) <= target[0])
-            else:
-                reached_x = True
-            if dir_y == 1:
-                reached_y = ((origin[1] + pos.y_frac) >= target[1])
-            elif dir_y == -1:
-                reached_y = ((origin[1] + pos.y_frac) <= target[1])
-            else:
-                reached_y = True
-            # TODO: Scale movement speed value and put it into other component
-            pos.x_frac += dir_x * pos.movement_speed * delta
-            pos.y_frac += dir_y * pos.movement_speed * delta
-            sprite.dirty = 1
-            if reached_x and reached_y:
-                pos.x = target[0]
-                pos.y = target[1]
-                pos.x_frac = 0
-                pos.y_frac = 0
-                logger.debug("Moving entity %d from (%d,%d) to (%d,%d)", entity,
-                             origin[0], origin[1], target[0], target[1])
-                self.event_manager.throw('EntityMoved', {'entity': entity,
-                                                         'x': target[0],
-                                                         'y': target[1]})
-                to_delete.append(entity)
-        for entity in to_delete:
-            del(self.moving_entities[entity])
-            sprite.animate("idle")
-
-    def on_move(self, event):
-        """Checks for collision and moves the entity the specified amount. If a
-        collision is detected an appropriate event will be created.
-
-            Args:
-                event: The event to process.
-                round: The current round and the game
-
-        """
-        position = self.entity_manager.get(event.data['entity'], 'Position')
-
-        if event.data.get("absolute", 0) == 1:
-            target_x = event.data['dx']
-            target_y = event.data['dy']
-        else:
-            target_x = position.x + event.data['dx']
-            target_y = position.y + event.data['dy']
-
-        collision = self.collision_manager.check(
-            self.entity_manager.current_map,
-            target_x, target_y)
-
-        if (collision is None):
-            if event.data.get("absolute", 0) == 1:
-                position.x = target_x
-                position.y = target_y
-            self._start_moving(event.data['entity'], (position.x, position.y),
-                               (target_x, target_y))
-            self.logger.debug(
-                'Move Entity %s to position %s,%s.',
-                event.data['entity'],
-                target_x,
-                target_y)
-
-    def _start_moving(self, entity, origin, target):
-        if self.moving_entities.get(entity, None) is None:
-            self.moving_entities[entity] = (origin, target)
+                sprite.animate("idle")
 
 
 class WorldInitializer(EventProcessor):
