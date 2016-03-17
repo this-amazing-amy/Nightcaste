@@ -2,6 +2,7 @@
 import components
 import logging
 import os
+from sets import Set
 import utils
 
 logger = logging.getLogger('entites')
@@ -36,55 +37,48 @@ class EntityManager:
 
         """
         self.last_id += 1
+        # throw framework event entity created
         return self.last_id
 
-    def new_from_config(self, configuration):
-        """Constructs a new entity with the components and properties specified
-        in the configuration.
+    def new_from_name(self, blueprint_name, attributes=None):
+        """Constructs a new entity by from a blueprint.
 
             Args:
-                configuration (EntityConfiguration): The configuration from
-                    which the components are constructed.
+                blueprint (BluePrint): The name of the blueprint.
 
             Returns:
                 The new entity identifier.
 
         """
+        blueprint = self.blueprint_manager.get(blueprint_name)
+        return self.new_from_blueprint(blueprint, attributes)
+
+    def new_from_blueprint(self, blueprint, attributes=None):
         entity = self.create_entity()
-        self.component_manager.add_components(entity, configuration)
+        self.init_entity(entity, blueprint, attributes)
         return entity
 
-    def new_from_blueprint(self, blueprint):
-        """Constructs a new entity by creating a configuration from a blueprint.
+    def init_entity(self, entity, blueprint, attributes):
+        bp_attributes = blueprint.get_attributes
+        for component_type in blueprint.get_components():
+            self.add_component_type(entity, component_type, bp_attributes)
+            self.init_component(attributes)
 
-            Args:
-                blueprint (str): The name of the blueprint.
+    def add_component_type(self, entity_id, component_type, attribute_table):
+        component = component_type()
+        self.init_component(component, attribute_table)
+        self.add_component(entity_id, component)
 
-            Returns:
-                The new entity identifier.
+    def add_component(self, entity_id, component):
+        self.component_manager.add_component(entity_id, component)
+        # TODO Throw framework event component added
 
-        """
-        configuration = self.blueprint_manager.get_entity_configuration(
-            blueprint)
-        return self.new_from_config(configuration)
-
-    def new_from_blueprint_and_config(self, blueprint, entity_config):
-        """Constructs a new entity by creating a configuration from a blueprint
-        and updates it attributes with the given config.
-
-            Args:
-                blueprint (str): The name of the blueprint.
-                entity_config (EntityConfiguration): Config to update the
-                    template with
-
-            Returns:
-                The new entity identifier.
-
-        """
-        blueprint_config = self.blueprint_manager.get_entity_configuration(
-            blueprint)
-        blueprint_config.update(entity_config)
-        return self.new_from_config(blueprint_config)
+    def init_component(component, attributes):
+        if attributes is not None:
+            for key, attribute in attributes.iteritems():
+                component_type, attribute = key.rstrip('.')
+                if component_type == component.type():
+                    setattr(component, attribute, type)
 
     def destroy_entity(self, entity):
         """Removes all components which belong to the given entity.
@@ -284,54 +278,40 @@ class BlueprintManager:
                 component_attribute[0], component_attribute[1], value)
 
 
-class EntityConfiguration:
-    """Stores the necessary information the construct an entity
+class BluePrint:
+    """Stores the necessary information the construct an entity."""
 
-        TODO:
-            - Select better data structure than nested dictionaries
-              => may be a combined key 'Position.x': value
-              => Complete object structure: Component with a List of Attributes
-                 an Attribute is a key value pair
-            - Provide easy acceess to all information
-            - Mimic Json Structure so an configuration and a blueprint can be
-              trated analog
-            - Make a mor general configuration object to configure processors
-              and systems with a configuration (which can be stored on disk^^)
-
-    """
-
-    def __init__(self):
-        self.components = {}
+    def __init__(self, parent=None):
+        self.components = Set()
+        self.attributes = {}
+        self.parent = parent
 
     def __str__(self):
         return str(self.components)
 
     def add_component(self, component):
-        if component not in self.components:
-            self.components.update({component: {}})
+        self.components.add(component)
 
-    def add_attribute(self, component, name, value):
-        """Add an attribute for the specified component
+    def add_components(self, components):
+        self.components = self.components.update(components)
 
-            TODO: May select better structure than dictionaries"""
-        if component not in self.components:
-            self.components.update({component: {name: value}})
+    def get_components(self):
+        if self.parent is not None:
+            return self.parent.get_components().update(self.components)
         else:
-            component_attributes = self.components[component]
-            component_attributes.update({name: value})
+            return self.components
 
-    def get_attributes(self, component):
-        if component not in self.components:
-            return {}
+    def add_attribute(self, attribute, value):
+        """Add an attribute for the specified component."""
+        self.attributes[attribute] = value
 
-        return self.components[component]
+    def add_attributes(self, attributes):
+        self.attributes.update(attributes)
 
-    def update(self, other):
-        """Adds components and attributes from the given configuration to this
-        configuration. Existing attribute values are replaced."""
-        for other_component, attributes in other.components.iteritems():
-            if len(attributes) == 0 and other_component not in self.components:
-                self.add_component(other_component)
-            else:
-                for name, value in attributes.iteritems():
-                    self.add_attribute(other_component, name, value)
+    def get_attributes(self):
+        if self.parent is not None:
+            attributes = {}
+            attributes.update(self.parent.get_attributes())
+            attributes.update(self.attribute)
+            return attributes
+        return self.attributes
