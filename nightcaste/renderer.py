@@ -406,6 +406,44 @@ class MapPane(ScrollablePane):
         self.update_viewport(player_pos.x, player_pos.y)
 
 
+class IsoMapPane(MapPane):
+
+    def __init__(self, window, x, y, width, height, z_index=0):
+        super(IsoMapPane, self).__init__(window, x, y, width, height, z_index)
+        # Correct negative x values from iso calculation
+        self.iso_offset = 0
+
+    def isometric_to_cartesian(self, x, y):
+        _x = x - self.iso_offset
+        cart_x = (2 * y + _x) / 2
+        cart_y = (2 * y - _x) / 2
+        return (cart_x, cart_y)
+
+    def cartesian_to_isometric(self, x, y):
+        iso_x = x - y
+        iso_y = (x + y) / 2
+        return (iso_x + self.iso_offset, iso_y)
+
+    def create_bg(self, width, height):
+        self.iso_offset = height
+        iso_surface_width = width + height
+        iso_surface_height = iso_surface_width / 2
+        super(IsoMapPane, self).create_bg(iso_surface_width, iso_surface_height)
+
+    def update_viewport(self, x, y):
+        iso_x, iso_y = self.cartesian_to_isometric(x, y)
+        super(IsoMapPane, self).update_viewport(iso_x, iso_y)
+
+    def put_bg_image(self, image, x, y):
+        iso_x, iso_y = self.cartesian_to_isometric(x, y)
+        super(IsoMapPane, self).put_bg_image(image, iso_x, iso_y)
+
+    def put_sprite(self, sprite):
+        sprite.rect.x, sprite.rect.y = self.cartesian_to_isometric(
+            sprite.rect.x, sprite.rect.y)
+        super(IsoMapPane, self).put_sprite(sprite)
+
+
 class ViewPort:
 
     def __init__(self, width, height):
