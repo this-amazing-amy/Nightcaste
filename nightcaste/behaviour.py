@@ -125,7 +125,7 @@ class TurnBehaviourManager(BehaviourManager):
                     turn_comp.ticks -= min_ticks
 
 
-class EntityComponentBehaviour:
+class EntityComponentBehaviour(object):
     """Implements logic for entities with specific components."""
 
     def __init__(self, event_manager, entitiy_manager):
@@ -143,13 +143,27 @@ class InputBehaviour(EntityComponentBehaviour):
 
     logger = logging.getLogger('behaviours.InputBehaviour')
 
+    def __init__(self, event_manager, entitiy_manager):
+        super(InputBehaviour, self).__init__(event_manager, entitiy_manager)
+        # TODO make configurable
+        self.isometric = True
+
     def update(self, round, delta_time):
         """Converts input to an appropriate InputAction."""
         # TODO Implement gamestatus aware behaviour manager to keep the turn
         # based logic as central as possible and possibly enable switching
         # between realtime and turn based. (A realtime behaviour would not
         # check for a state
-        speed = None
+        speed = self.move()
+
+        if input.is_pressed(input.K_ENTER):
+            # TODO: Implement Targeting Inputs (combined input or
+            # sequential?)
+            # TODISCUSS: Context actions, autotargeting
+            speed = self.use(0, 0)
+        return speed
+
+    def set_input_direction(self):
         direction = self.component.direction
         if input.is_pressed(
             input.K_LEFT) or input.is_pressed(
@@ -183,22 +197,57 @@ class InputBehaviour(EntityComponentBehaviour):
             direction.set(Direction.D_UP)
         else:
             direction.set(Direction.D_UP, 0)
-        speed = self.move(direction)
 
-        if input.is_pressed(input.K_ENTER):
-            # TODO: Implement Targeting Inputs (combined input or
-            # sequential?)
-            # TODISCUSS: Context actions, autotargeting
-            speed = self.use(0, 0)
-        return speed
+    def set_iso_input_direction(self):
+        direction = self.component.direction
+        if input.is_pressed(
+            input.K_LEFT) or input.is_pressed(
+            input.K_UP) or input.is_pressed(
+            input.K_KP4) or input.is_pressed(
+            input.K_KP7) or input.is_pressed(
+                input.K_KP8):
+            direction.set(Direction.D_LEFT)
+        else:
+            direction.set(Direction.D_LEFT, 0)
+        if input.is_pressed(
+            input.K_RIGHT) or input.is_pressed(
+            input.K_DOWN) or input.is_pressed(
+            input.K_KP2) or input.is_pressed(
+            input.K_KP3) or input.is_pressed(
+                input.K_KP6):
+            direction.set(Direction.D_RIGHT)
+        else:
+            direction.set(Direction.D_RIGHT, 0)
+        if input.is_pressed(
+            input.K_LEFT) or input.is_pressed(
+            input.K_DOWN) or input.is_pressed(
+            input.K_KP4) or input.is_pressed(
+            input.K_KP1) or input.is_pressed(
+                input.K_KP2):
+            direction.set(Direction.D_DOWN)
+        else:
+            direction.set(Direction.D_DOWN, 0)
+        if input.is_pressed(
+            input.K_RIGHT) or input.is_pressed(
+            input.K_UP) or input.is_pressed(
+            input.K_KP6) or input.is_pressed(
+            input.K_KP8) or input.is_pressed(
+                input.K_KP9):
+            direction.set(Direction.D_UP)
+        else:
+            direction.set(Direction.D_UP, 0)
 
-    def move(self, direction):
+
+    def move(self):
         """Throws a MoveAction."""
+        if self.isometric:
+            self.set_iso_input_direction()
+        else:
+            self.set_input_direction()
         self.logger.debug("Moving entity %s in direction %s", self.entity,
-                          direction.direction)
-        self.component.direction = direction
-        # TODO: Determine Speed from Attributes
-        return 5
+                          self.component.direction)
+        speed = 1 if self.component.direction.direction > 0 else None
+        return speed
 
     def use(self, dx, dy):
         """ Throws a UseEntity Event """
