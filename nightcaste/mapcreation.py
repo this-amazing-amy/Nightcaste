@@ -67,6 +67,11 @@ class MapGenerator():
         tileComp = (self.entity_manager.get(tile, "Tile"))
         if (tileComp.variant):
             tileComp.name += "_" + str(random.sample(tileComp.variant, 1)[0])
+        colliding = self.entity_manager.get(tile, 'Colliding')
+        if colliding is not None:
+            colliding.set_position(x * self.tilesetsize, y * self.tilesetsize)
+            colliding.w = self.tilesetsize
+            colliding.h = self.tilesetsize
         return tile
 
     def create_custom_tile(self, x, y, char, colliding):
@@ -76,6 +81,10 @@ class MapGenerator():
         tile_config.add_attribute('Position', 'y', y * self.tilesetsize)
         tile_config.add_attribute('Renderable', 'character', char)
         tile_config.add_attribute('Colliding', 'active', colliding)
+        tile_config.add_attribute('Colliding', 'x', x * self.tilesetsize)
+        tile_config.add_attribute('Colliding', 'y', y * self.tilesetsize)
+        tile_config.add_attribute('Colliding', 'w', self.tilesetsize)
+        tile_config.add_attribute('Colliding', 'h', self.tilesetsize)
         return self.entity_manager.new_from_config(tile_config)
 
     def is_blocked(self, x, y):
@@ -114,12 +123,18 @@ class WorldspaceGenerator(MapGenerator):
         self.tiles = self.create_empty_map(width, height, "stone_floor")
         # TODO: Make Spawn Routine
         self.tiles[25][25] = self.create_stairs(25, 25)
+        for x in range(1, width):
+            self.tiles[x][0] = self.create_tile('stone_wall', x, 0)
+            self.tiles[x][height-1] = self.create_tile('stone_wall', x, height-1)
+        for y in range(2, height):
+            self.tiles[0][y] = self.create_tile('stone_wall', 0, y)
+            self.tiles[width-1][y] = self.create_tile('stone_wall', width-1, y)
 
         map_config = EntityConfiguration()
         map_config.add_attribute('Map', 'name', map_name)
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
-        map_config.add_attribute('Map', 'entry', (20, 20))
+        map_config.add_attribute('Map', 'entry', (20*self.tilesetsize, 20*self.tilesetsize))
         map_config.add_attribute('Map', 'tilesetsize', self.tilesetsize)
         return self.entity_manager.new_from_config(map_config)
 

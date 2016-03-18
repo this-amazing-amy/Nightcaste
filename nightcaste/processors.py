@@ -1,12 +1,14 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-import game
+from collision import QTreeCollisionManager
 from mapcreation import MapManager
+from pygame import Rect
+from sound import SoundBank
+import game
 import input
 import logging
 import utils
-from sound import SoundBank
-from components import Direction
+import math
 
 
 class SystemManager:
@@ -156,30 +158,34 @@ class MovementSystem(EventProcessor):
 
     def __init__(self, event_manager, entity_manager, no_collision=False):
         EventProcessor.__init__(self, event_manager, entity_manager)
-        # self.collision_manager = CollisionManager(entity_manager,
-        #                                          event_manager,
-        #                                          no_collision)
+        self.collision_manager = QTreeCollisionManager()
         self.moving_entities = {}
 
-    def apply(self, direction, speed, position, delta):
-        distance = speed * delta
-        if direction.isset(Direction.D_UP):
-            position.y_frac -= distance
-            position.y = int(position.y_frac)
-        if direction.isset(Direction.D_DOWN):
-            position.y_frac += distance
-            position.y = int(position.y_frac)
-        if direction.isset(Direction.D_LEFT):
-            position.x_frac -= distance
-            position.x = int(position.x_frac)
-        if direction.isset(Direction.D_RIGHT):
-            position.x_frac += distance
-            position.x = int(position.x_frac)
+    def apply(self, entity, direction, distance, position, collidable):
+        dx, dy = direction.get_dx(distance), direction.get_dy(distance)
+        collides = False
+        if collidable is not None:
+            # Convert -0.12 to -1, and 0.45 to 1
+            predicted_dx = math.copysign(math.ceil(math.fabs(dx)), dx)
+            predicted_dy = math.copysign(math.ceil(math.fabs(dy)), dy)
+            rect = collidable.move(predicted_dx, predicted_dy)
+            collisions = self.collision_manager.collide_rect(entity, rect)
+            if len(collisions) > 0:
+                # throw event for each colliding entity
+                collides = True
+                self.logger.debug('Entity %s collided', entity)
+
+        if not collides:
+            position.move(dx, dy)
+            if collidable is not None:
+                collidable.set_position(position.x, position.y)
 
     def update(self, round, delta):
         moving_entities = self.entity_manager.get_all('Input')
         entity_positions = self.entity_manager.get_all('Position')
         entity_movement = self.entity_manager.get_all('Movement')
+        entity_collidables = self.entity_manager.get_all('Colliding')
+        self.update_collision(entity_collidables)
         for entity, inputcomp in moving_entities.iteritems():
             # TODO: Make an Animation Processor or think of a more elegant
             # solution for animation handling
@@ -187,11 +193,23 @@ class MovementSystem(EventProcessor):
             if inputcomp.direction.direction != 0:
                 position = entity_positions[entity]
                 movement = entity_movement[entity]
+                collidable = entity_collidables.get(entity)
                 sprite.animate("walk")
-                self.apply(inputcomp.direction, movement.speed,
-                           position, delta)
+                self.apply(
+                    entity,
+                    inputcomp.direction,
+                    movement.speed * delta,
+                    position,
+                    collidable)
             else:
                 sprite.animate("idle")
+
+    def update_collision(self, collidables):
+        # TODO only update on move
+        map = self.entity_manager.current_map
+        if map is not None:
+            # TODO: Map should countain bounds
+            self.collision_manager.update(Rect(0, 0, 3200, 4480), collidables)
 
 
 class WorldInitializer(EventProcessor):
