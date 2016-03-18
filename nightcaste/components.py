@@ -3,6 +3,7 @@ specific property or a set of proerties in order to represent certain ability or
 property of an entity. The entity itself is only a composition of its
 components."""
 from pygame.sprite import DirtySprite
+from pygame import Rect
 
 
 class Component:
@@ -32,6 +33,12 @@ class Position(Component):
         self.y = y
         self.x_frac = x
         self.y_frac = y
+
+    def move(self, dx, dy):
+        self.x_frac += dx
+        self.y_frac += dy
+        self.x = int(self.x_frac)
+        self.y = int(self.y_frac)
 
 
 class Movement(Component):
@@ -63,6 +70,22 @@ class Direction():
 
     def isset(self, direction):
         return (direction & self.direction) == direction
+
+    def get_dx(self, distance):
+        dx = 0
+        if self.isset(self.D_LEFT):
+            dx -= distance
+        if self.isset(self.D_RIGHT):
+            dx += distance
+        return dx
+
+    def get_dy(self, distance):
+        dy = 0
+        if self.isset(self.D_UP):
+            dy -= distance
+        if self.isset(self.D_DOWN):
+            dy += distance
+        return dy
 
 
 class Renderable(Component):
@@ -158,11 +181,16 @@ class Tile(Renderable):
         self.variant = variant
 
 
-class Colliding(Component):
+class Colliding(Component, Rect):
     """ Anything that can collide with each other """
 
-    def __init__(self, active=True):
+    def __init__(self, active=True, offset=(0, 0)):
         self.active = active
+        self.offset = offset
+
+    def set_position(self, x, y):
+        self.x = x + self.offset[0]
+        self.y = y + self.offset[1]
 
 
 class Color(Component):
