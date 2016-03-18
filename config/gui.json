@@ -20,7 +20,7 @@
                     "size": [ 1024, 768 ]
                 },
                 "map_pane": {
-                    "impl": ["nightcaste.renderer", "MapPane"],
+                    "impl": ["nightcaste.renderer", "IsoMapPane"],
                     "position": [ 0, 0 ],
                     "size": [ 1024, 640 ]
                 },
