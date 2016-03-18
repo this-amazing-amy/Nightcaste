@@ -26,17 +26,44 @@ class Position(Component):
     Args:
         x (int): Horizontal position.
         y (int): Vertical position.
-        x_old: Horizontal position, one update ago
-        y_old: Vertical position, one update ago
-
     """
 
     def __init__(self, x=0, y=0):
         self.x = x
         self.y = y
-        self.x_frac = 0
-        self.y_frac = 1
-        self.movement_speed = 4
+        self.x_frac = x
+        self.y_frac = y
+
+
+class Movement(Component):
+    """ Holds the movement speed of an entity
+    Args:
+        speed (int): Movement Speed
+    """
+
+    def __init__(self, speed=8):
+        # TODO: Scale correctly to have m/s
+        self.speed = speed
+
+
+class Direction():
+
+    D_UP = 1
+    D_DOWN = 2
+    D_LEFT = 4
+    D_RIGHT = 8
+
+    def __init__(self, direction=0):
+        self.direction = direction
+
+    def set(self, direction=None, value=True):
+        if value:
+            self.direction |= direction
+        else:
+            self.direction &= ~direction
+
+    def isset(self, direction):
+        return (direction & self.direction) == direction
 
 
 class Renderable(Component):
@@ -160,10 +187,11 @@ class Color(Component):
         self.b = b
 
 
-class InputComponent(Component):
-    """Entity which are receiving input. (WIP Currently Empty will contain e.g
-    MoveDirection)"""
-    pass
+class Input(Component):
+    """Entity which are receiving input."""
+
+    def __init__(self, direction=Direction()):
+        self.direction = direction
 
 
 class Map(Component):
@@ -189,10 +217,10 @@ class Map(Component):
         self.children = children
 
     def width(self):
-        return len(self.tiles)
+        return len(self.tiles) * self.tilesetsize
 
     def height(self):
-        return len(self.tiles[0])
+        return len(self.tiles[0]) * self.tilesetsize
 
     def get_entites_in_frame(self, x, y, width, height):
         return [map_column[y:y+height] for map_column in self.tiles[x:x+width]]

@@ -43,6 +43,8 @@ class MapGenerator():
     def __init__(self, entity_manager):
         self.entity_manager = entity_manager
         self.tiles = []
+        # TODO: Get tileset size from config
+        self.tilesetsize = 32
 
     def create_empty_map(self, width, height, tile="stone_wall"):
         """ Returns a new Tile array with set size filled with walls"""
@@ -58,8 +60,8 @@ class MapGenerator():
         if tile is not None:
             self.entity_manager.destroy_entity(self.get_tile(x, y))
         tile_config = EntityConfiguration()
-        tile_config.add_attribute('Position', 'x', x)
-        tile_config.add_attribute('Position', 'y', y)
+        tile_config.add_attribute('Position', 'x', x * self.tilesetsize)
+        tile_config.add_attribute('Position', 'y', y * self.tilesetsize)
         tile = self.entity_manager.new_from_blueprint_and_config(
             "tiles." + blueprint, tile_config)
         tileComp = (self.entity_manager.get(tile, "Tile"))
@@ -70,8 +72,8 @@ class MapGenerator():
     def create_custom_tile(self, x, y, char, colliding):
         """Creates a tile with the specified properties."""
         tile_config = EntityConfiguration()
-        tile_config.add_attribute('Position', 'x', x)
-        tile_config.add_attribute('Position', 'y', y)
+        tile_config.add_attribute('Position', 'x', x * self.tilesetsize)
+        tile_config.add_attribute('Position', 'y', y * self.tilesetsize)
         tile_config.add_attribute('Renderable', 'character', char)
         tile_config.add_attribute('Colliding', 'active', colliding)
         return self.entity_manager.new_from_config(tile_config)
@@ -118,6 +120,7 @@ class WorldspaceGenerator(MapGenerator):
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
         map_config.add_attribute('Map', 'entry', (20, 20))
+        map_config.add_attribute('Map', 'tilesetsize', self.tilesetsize)
         return self.entity_manager.new_from_config(map_config)
 
 
@@ -155,6 +158,7 @@ class DungeonGenerator(MapGenerator):
         map_config.add_attribute('Map', 'name', map_name)
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
+        map_config.add_attribute('Map', 'tilesetsize', self.tilesetsize)
         entry = random.sample(self.rooms, 1)[0].random_spot()
         map_config.add_attribute('Map', 'entry', entry)
         return self.entity_manager.new_from_config(map_config)

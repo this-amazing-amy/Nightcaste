@@ -1,6 +1,7 @@
 import input
 import logging
 import utils
+from components import Direction
 
 
 class BehaviourManager:
@@ -60,6 +61,8 @@ class BehaviourManager:
 
 
 class TurnBehaviourManager(BehaviourManager):
+
+    logger = logging.getLogger('behaviour.TurnBehaviourManager')
 
     def __init__(self, event_manager, entitiy_manager, config=None):
         BehaviourManager.__init__(self, event_manager,
@@ -138,6 +141,8 @@ class EntityComponentBehaviour:
 class InputBehaviour(EntityComponentBehaviour):
     """Implements User Input. Controls all entites with an InputComponent."""
 
+    logger = logging.getLogger('behaviours.InputBehaviour')
+
     def update(self, round, delta_time):
         """Converts input to an appropriate InputAction."""
         # TODO Implement gamestatus aware behaviour manager to keep the turn
@@ -145,47 +150,53 @@ class InputBehaviour(EntityComponentBehaviour):
         # between realtime and turn based. (A realtime behaviour would not
         # check for a state
         speed = None
-        dx = 0
-        dy = 0
+        direction = self.component.direction
         if input.is_pressed(
             input.K_LEFT) or input.is_pressed(
             input.K_KP1) or input.is_pressed(
             input.K_KP4) or input.is_pressed(
                 input.K_KP7):
-            dx = -1
+            direction.set(Direction.D_LEFT)
+        else:
+            direction.set(Direction.D_LEFT, 0)
         if input.is_pressed(
             input.K_RIGHT) or input.is_pressed(
             input.K_KP3) or input.is_pressed(
             input.K_KP6) or input.is_pressed(
                 input.K_KP9):
-            dx = dx + 1
+            direction.set(Direction.D_RIGHT)
+        else:
+            direction.set(Direction.D_RIGHT, 0)
         if input.is_pressed(
             input.K_DOWN) or input.is_pressed(
             input.K_KP1) or input.is_pressed(
             input.K_KP2) or input.is_pressed(
                 input.K_KP3):
-            dy = 1
+            direction.set(Direction.D_DOWN)
+        else:
+            direction.set(Direction.D_DOWN, 0)
         if input.is_pressed(
             input.K_UP) or input.is_pressed(
             input.K_KP7) or input.is_pressed(
             input.K_KP8) or input.is_pressed(
                 input.K_KP9):
-            dy = dy - 1
+            direction.set(Direction.D_UP)
+        else:
+            direction.set(Direction.D_UP, 0)
+        speed = self.move(direction)
 
-        if dy != 0 or dx != 0:
-            speed = self.move(dx, dy)
-        elif input.is_pressed(input.K_ENTER):
+        if input.is_pressed(input.K_ENTER):
             # TODO: Implement Targeting Inputs (combined input or
             # sequential?)
             # TODISCUSS: Context actions, autotargeting
             speed = self.use(0, 0)
         return speed
 
-    def move(self, dx, dy):
+    def move(self, direction):
         """Throws a MoveAction."""
-        self.event_manager.throw(
-            'MoveAction', {
-                'entity': self.entity, 'dx': dx, 'dy': dy})
+        self.logger.debug("Moving entity %s in direction %s", self.entity,
+                          direction.direction)
+        self.component.direction = direction
         # TODO: Determine Speed from Attributes
         return 5
 
