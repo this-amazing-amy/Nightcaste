@@ -1,7 +1,7 @@
 from pygame import Rect
 
 
-class CollisionManager:
+class QTreeCollisionManager:
 
     def update(self, bounds, collidables):
         """Add all collidable objects to a quad tree. O(n * log n)"""

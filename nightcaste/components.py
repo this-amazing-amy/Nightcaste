@@ -3,6 +3,7 @@ specific property or a set of proerties in order to represent certain ability or
 property of an entity. The entity itself is only a composition of its
 components."""
 from pygame.sprite import DirtySprite
+from pygame import Rect
 
 
 class Component:
@@ -131,11 +132,16 @@ class Tile(Renderable):
         self.variant = variant
 
 
-class Colliding(Component):
+class Colliding(Component, Rect):
     """ Anything that can collide with each other """
 
-    def __init__(self, active=True):
+    def __init__(self, active=True, offset=(0, 0)):
         self.active = active
+        self.offset = offset
+
+    def update_position(self, x, y):
+        self.x = x + self.offset[0]
+        self.y = y + self.offset[1]
 
 
 class Color(Component):

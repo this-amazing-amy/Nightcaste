@@ -1,12 +1,14 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
-import game
+from collision import QTreeCollisionManager
+from math import copysign
 from mapcreation import MapManager
+from pygame import Rect
+from sound import SoundBank
+import game
 import input
 import logging
 import utils
-from sound import SoundBank
-from math import copysign
 
 
 class SystemManager:
@@ -255,6 +257,27 @@ class MovementProcessor(EventProcessor):
     def _start_moving(self, entity, origin, target):
         if self.moving_entities.get(entity, None) is None:
             self.moving_entities[entity] = (origin, target)
+
+
+class CollisionSystem(EventProcessor):
+
+    def __init__(self, event_manager, entity_manager):
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        self.collision_manager = QTreeCollisionManager()
+
+    def on_moved(self, event):
+        entity = event.data['entity']
+        collidable = self.entity_manager.get(entity, 'Colliding')
+        collidable.update_position(event.data['x'], event.data['y'])
+
+
+    def update(self, round, delta):
+        # TODO only update on move
+        map = self.entity_manager.current_map
+        if map is not None:
+            collidables = self.entity_manager.get_all("Collidable")
+            # TODO: Map should countain bounds
+            self.collision_manager.update(Rect(0, 0, 3200, 4480), collidables)
 
 
 class WorldInitializer(EventProcessor):
