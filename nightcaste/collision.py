@@ -6,16 +6,18 @@ class QTreeCollisionManager:
     def update(self, bounds, collidables):
         """Add all collidable objects to a quad tree. O(n * log n)"""
         self.qtree = QuadTree(0, bounds)
-        for entity, collidable in collidables.iteritem():
+        for entity, collidable in collidables.iteritems():
             self.qtree.insert(collidable, entity)
 
-    def collide_rect(self, rect):
+    def collide_rect(self, entity, rect):
         collisions = []
         possible_collisions = {}
         self.qtree.retrieve(possible_collisions, rect)
-        for entity, other_rect in possible_collisions.iteritems():
+        for other_entity, other_rect in possible_collisions.iteritems():
+            if entity == other_entity:
+                continue
             if rect.colliderect(other_rect):
-                collisions += entity
+                collisions.append(other_entity)
         return collisions
 
 
@@ -32,8 +34,8 @@ class QuadTree:
 
     def split(self):
         """Splits the node into 4 subnodes."""
-        sub_w = (int)(self.bounds.w / 2)
-        sub_h = (int)(self.bounds.h / 2)
+        sub_w = int(self.bounds.w / 2)
+        sub_h = int(self.bounds.h / 2)
         x = self.bounds.x
         y = self.bounds.y
 
