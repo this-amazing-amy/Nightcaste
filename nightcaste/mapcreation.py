@@ -123,7 +123,7 @@ class WorldspaceGenerator(MapGenerator):
         self.tiles = self.create_empty_map(width, height, "stone_floor")
         # TODO: Make Spawn Routine
         self.tiles[25][25] = self.create_stairs(25, 25)
-        for x in range(1, width):
+        for x in range(2, width):
             self.tiles[x][0] = self.create_tile('stone_wall', x, 0)
             self.tiles[x][height-1] = self.create_tile('stone_wall', x, height-1)
         for y in range(2, height):
