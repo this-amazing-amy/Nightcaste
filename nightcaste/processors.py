@@ -156,6 +156,12 @@ class MovementSystem(EventProcessor):
 
     logger = logging.getLogger('processors.MovementProcessor')
 
+    def register(self):
+        self._register('MapChanged', self.on_map_changed)
+
+    def unregister(self):
+        self._unregister('MapChanged', self.on_map_changed)
+
     def __init__(self, event_manager, entity_manager, no_collision=False):
         EventProcessor.__init__(self, event_manager, entity_manager)
         self.collision_manager = QTreeCollisionManager()
@@ -179,13 +185,13 @@ class MovementSystem(EventProcessor):
             position.move(dx, dy)
             if collidable is not None:
                 collidable.set_position(position.x, position.y)
+                self.collision_manager.move(entity)
 
     def update(self, round, delta):
         moving_entities = self.entity_manager.get_all('Input')
         entity_positions = self.entity_manager.get_all('Position')
         entity_movement = self.entity_manager.get_all('Movement')
         entity_collidables = self.entity_manager.get_all('Colliding')
-        self.update_collision(entity_collidables)
         for entity, inputcomp in moving_entities.iteritems():
             # TODO: Make an Animation Processor or think of a more elegant
             # solution for animation handling
@@ -204,12 +210,11 @@ class MovementSystem(EventProcessor):
             else:
                 sprite.animate("idle")
 
-    def update_collision(self, collidables):
-        # TODO only update on move
+    def on_map_changed(self, event):
         map = self.entity_manager.current_map
-        if map is not None:
-            # TODO: Map should countain bounds
-            self.collision_manager.update(Rect(0, 0, 3200, 4480), collidables)
+        # TODO: Map should countain bounds
+        collidables = self.entity_manager.get_all('Colliding')
+        self.collision_manager.fill(Rect(0, 0, 3200, 4480), collidables)
 
 
 class WorldInitializer(EventProcessor):
@@ -279,7 +284,7 @@ class MapChangeProcessor(EventProcessor):
             new_mc.parent = self.entity_manager.current_map
             cur_mc.add_child(new_map)
         self.entity_manager.current_map = new_map
-        # TODO: Throw event so the mobs can be placed
+        self.event_manager.throw('MapChanged')
 
 
 class SpriteProcessor(EventProcessor):
@@ -341,7 +346,7 @@ class UseEntityProcessor(EventProcessor):
         for entity in useables:
             pos = self.entity_manager.get(entity, "Position")
             useable_rects[entity] = Rect(pos.x-16, pos.y-16, 32, 32)
-        self.collision_manager.update(Rect(0, 0, 3200, 4480), useable_rects)
+        self.collision_manager.fill(Rect(0, 0, 3200, 4480), useable_rects)
         collisions = self.collision_manager.collide_rect(event.data['user'],
                                                          user_colliding)
 
