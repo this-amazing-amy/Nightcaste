@@ -12,7 +12,7 @@
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
-                        "Colliding.active": true
+                        "Colliding.blocking": true
 		}
 	},
 	"stone_floor": {
@@ -36,7 +36,8 @@
                 "Tile",
                 "Color",
                 "Useable",
-                "MapTransition"
+                "MapTransition",
+                "Colliding"
             ],
             "attributes": {
                 "Tile.name": "stone_stairs",
@@ -44,6 +45,7 @@
                 "Color.r": 195,
                 "Color.g": 195,
                 "Color.b": 195,
+                "Colliding.blocking": false,
                 "Useable.useEvent": "MapTransition",
                 "MapTransition.target_map": null,
                 "MapTransition.target_level": null

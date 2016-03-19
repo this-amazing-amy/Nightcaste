@@ -16,7 +16,7 @@
 			"Color.b": 176,
                         "Turn.locking": true,
                         "Turn.min_turn_time": 0.05,
-                        "Colliding.active": true,
+                        "Colliding.blocking": true,
                         "Colliding.w": 15,
                         "Colliding.h": 32,
                         "Colliding.offset": [10,0],

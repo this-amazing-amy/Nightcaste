@@ -252,5 +252,5 @@ class InputBehaviour(EntityComponentBehaviour):
     def use(self, dx, dy):
         """ Throws a UseEntity Event """
         self.event_manager.throw("UseEntityAction", {
-            'user': self.entity, 'direction': (dx, dy)})
+            'user': self.entity})
         return 2

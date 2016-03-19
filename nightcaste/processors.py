@@ -282,36 +282,6 @@ class MapChangeProcessor(EventProcessor):
         # TODO: Throw event so the mobs can be placed
 
 
-class CollisionManager():
-
-    def __init__(self, entity_manager, event_manager, dummy=False):
-        self.entity_manager = entity_manager
-        self.event_manager = event_manager
-        self.dummy = dummy
-
-    def check(self, map, x, y, component="Colliding"):
-        """ Checks for collisions on map-(x,y) and returns all entites
-        colliding on this spot.
-
-        Args:
-            map (int): Entity_id of the map to test on
-            x (int): x position to check
-            y (int): y position to check
-            component (str): Component identifier which determines collision
-            e.g. to test for other collisions (fov)
-        """
-        # TODO: Implement Sprite Collision, when Sprites are done
-        if self.dummy:
-            return None
-        map = self.entity_manager.get(map, "Map").tiles
-        target = self.entity_manager.get(map[x][y], component)
-        if target is not None and target.active:
-            # TODO: Throw better collision event
-            self.event_manager.throw("EntitiesCollided", {"entities": target})
-            return target
-        return None
-
-
 class SpriteProcessor(EventProcessor):
     """Initializes sprites of created entites with sprite components. Detects
     moved Sprites and updates their dirty flag."""
@@ -352,6 +322,10 @@ class UseEntityProcessor(EventProcessor):
     """ Listens for UseEntity Events, determines Target Entity and throws its
     Use-Event """
 
+    def __init__(self, event_manager, entity_manager):
+        EventProcessor.__init__(self, event_manager, entity_manager)
+        self.collision_manager = QTreeCollisionManager()
+
     def register(self):
         self._register("UseEntityAction", self.on_use_entity)
 
@@ -360,12 +334,21 @@ class UseEntityProcessor(EventProcessor):
 
     def on_use_entity(self, event):
         user = self.entity_manager.get(event.data['user'], 'Position')
-        target = (user.x + event.data['direction'][0],
-                  user.y + event.data['direction'][1])
-        entity = self.entity_manager.get_current_map()[target[0]][target[1]]
-        useable = self.entity_manager.get(entity, 'Useable')
-        if (useable is not None):
-            self.event_manager.throw(useable.useEvent, {'usedEntity': entity})
+        user_colliding = self.entity_manager.get(event.data['user'], 'Colliding')
+        target = (user.x, user.y)
+        useables = self.entity_manager.get_all("Useable")
+        useable_rects = {}
+        for entity in useables:
+            pos = self.entity_manager.get(entity, "Position")
+            useable_rects[entity] = Rect(pos.x-16, pos.y-16, 32, 32)
+        self.collision_manager.update(Rect(0, 0, 3200, 4480), useable_rects)
+        collisions = self.collision_manager.collide_rect(event.data['user'],
+                                                         user_colliding)
+
+        if (len(collisions) > 0):
+            self.event_manager.throw(useables[collisions[0]].useEvent,
+                                     {'usedEntity': collisions[0]})
+
 
 
 class TransitionProcessor(EventProcessor):

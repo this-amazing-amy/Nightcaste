@@ -184,8 +184,8 @@ class Tile(Renderable):
 class Colliding(Component, Rect):
     """ Anything that can collide with each other """
 
-    def __init__(self, active=True, offset=(0, 0)):
-        self.active = active
+    def __init__(self, blocking=True, offset=(0, 0)):
+        self.blocking = blocking
         self.offset = offset
 
     def set_position(self, x, y):
