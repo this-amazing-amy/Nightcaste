@@ -8,7 +8,6 @@ from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
 from os import listdir
-from math import ceil, floor
 import game
 import logging
 import pygame
@@ -176,19 +175,15 @@ class ContentPane(object):
         dirty_text = self.surface.blit(text, (x, y))
         self.dirty_rects.append(dirty_text)
 
-    def put_sprite(self, sprite):
-        if sprite.visible:
-            rects = self.surface.blit(sprite.image, sprite.rect)
-            self.dirty_rects.append(rects)
-            # TODO let handle pygame the dirty flags by using sprite groups
-            sprite.dirty = 0
-
     def put_image(self, x, y, name, fit=False):
         image = self.window.image_manager.load_image(name)
         if fit:
             image = pygame.transform.scale(image, (self.surface.get_width(),
                                                    self.surface.get_height()))
         self.surface.blit(image, (x, y))
+
+    def create_render_target(self, width, height):
+        return RenderTarget(pygame.Surface((width, height)))
 
     def render(self):
         pass
@@ -297,10 +292,6 @@ class ScrollablePane(ContentPane):
             rects = self.surface.blit(image, (x_off, y_off))
             self.dirty_rects.append(rects)
 
-    def put_sprite(self, sprite):
-        sprite.rect = self.viewport.apply(sprite.rect)
-        super(ScrollablePane, self).put_sprite(sprite)
-
     def create_bg(self, width, height):
         self.image = pygame.Surface((width, height))
 
@@ -312,10 +303,26 @@ class MapPane(ScrollablePane):
         super(MapPane, self).__init__(window, x, y, width, height, z_index)
         tile_config = utils.load_config('config/tilesets/tiles.json')
         self.tileset = TileSet(window.image_manager, tile_config)
+        # render targets
+        self.map_buffer = None
+        self.sprite_buffer = None
 
     def initialize(self):
         super(MapPane, self).initialize()
+        em = self.window.entity_manager
+        map = em.get(em.current_map, 'Map')
+        self.initialize_render_targets(map.width(), map.height())
+        # TODO Render map if dirty
         self._render_map()
+
+    def initialize_render_targets(self, width, height):
+        self.create_bg(width, height)
+        self.map_buffer = self.create_render_target(width, height)
+        self.sprite_buffer = self.create_render_target(width, height)
+        self.sprite_ckey = (255, 255, 255)
+        self.sprite_buffer.surface.set_alpha(None)
+        self.sprite_buffer.surface.set_colorkey(self.sprite_ckey)
+        self.sprite_buffer.surface.fill(self.sprite_ckey)
 
     def update(self):
         """Updates the view port"""
@@ -324,16 +331,43 @@ class MapPane(ScrollablePane):
     def render(self):
         """Renders all entities with a visible renderable component and with a
         position in the current viewport."""
+        # Render all modules
         self._render_sprites()
+
+        # Blit Custom RenderTargets to default RenderTarget
+        """
+        self.image.set_clip(self.viewport.rect)
+        self.image.blit(self.map_buffer.surface, (0, 0))
+        self.image.blit(self.sprite_buffer.surface, (0, 0))
+        self.surface.blit(self.image, (0, 0), self.viewport.rect)
+
+        # Mark screen changes
+        for dirty_rect in self.map_buffer.dirty_rects:
+            self.dirty_rects.append(self.viewport.apply(dirty_rect))
+        for dirty_rect in self.sprite_buffer.dirty_rects:
+            self.dirty_rects.append(self.viewport.apply(dirty_rect))
+        """
+        for dirty_rect in self.map_buffer.dirty_rects:
+            self.put_bg_image(
+                self.map_buffer.surface.subsurface(dirty_rect),
+                dirty_rect.x,
+                dirty_rect.y)
+        for dirty_rect in self.sprite_buffer.dirty_rects:
+            self.put_bg_image(
+                self.sprite_buffer.surface.subsurface(dirty_rect),
+                dirty_rect.x,
+                dirty_rect.y)
+
+        # Clean dirty state
+        self.map_buffer.clean()
+        self.sprite_buffer.clean()
         return self.dirty_rects
 
     def _render_map(self):
-        self.print_background()
         em = self.window.entity_manager
-        if em.current_map is not None:
-            map = em.get(em.current_map, 'Map')
-            self.create_bg(map.width(), map.height())
-            to_render = [x for y in em.get_current_map() for x in y]
+        map = em.get(em.current_map, 'Map')
+        if map is not None:
+            to_render = [x for y in map.tiles for x in y]
             self._render_tiles(to_render)
 
     def _render_sprites(self):
@@ -346,30 +380,15 @@ class MapPane(ScrollablePane):
             self._render_sprite(entity, sprite, positions[entity])
 
     def _render_sprite(self, entity, sprite, position):
-        # restore map tile at old position
         if sprite.dirty > 0:
-            # self._restore_tiles(sprite, position)
+            # use old position to restore transparency and to mark the map dirty
+            restore_rect = self.sprite_buffer.surface.fill(
+                self.sprite_ckey, sprite.rect)
+            self.map_buffer.dirty_rects.append(restore_rect)
             # render sprite at new position
             sprite.rect.x = position.x
             sprite.rect.y = position.y
-            self.put_sprite(sprite)
-
-    def _restore_tiles(self, sprite, position):
-        """ Restores all Tiles under the Sprite """
-        # TODISCUSS: What about sprites larger than 1 tile?
-        em = self.window.entity_manager
-        # Restore Map Tiles when sprite is currently moving
-        dx = position.x
-        dy = position.y
-        intersect = set([(floor(dx), floor(dy)),
-                         (floor(dx), ceil(dy)),
-                         (ceil(dx), floor(dy)),
-                         (ceil(dx), ceil(dy))])
-        for tile in intersect:
-            tile = (int(tile[0]), int(tile[1]))
-            new_tile_entity = em.get_current_map()[tile[0]][tile[1]]
-            new_tile = em.get(new_tile_entity, 'Tile')
-            self.put_tile(tile[0], tile[1], new_tile.name)
+            self.blit_sprite(sprite)
 
     def _render_tiles(self, entities):
         """ Iterates through a list of entities and renders each """
@@ -393,8 +412,8 @@ class MapPane(ScrollablePane):
                 given entity.
 
         """
-        tileImage = self.tileset.get_tile(tile.name)
-        self.put_bg_image(tileImage, position.x, position.y)
+        tile_image = self.tileset.get_tile(tile.name)
+        self.blit_tile(tile_image, position.x, position.y)
 
     def _update_view_port(self):
         """The viewport is the visble range of the map. The viewport is always
@@ -404,6 +423,13 @@ class MapPane(ScrollablePane):
         # map = em.get(em.current_map, 'Map')
         player_pos = em.get(em.player, 'Position')
         self.update_viewport(player_pos.x, player_pos.y)
+
+    def blit_tile(self, tile_image, x, y):
+        self.map_buffer.blit(tile_image, (x, y))
+
+    def blit_sprite(self, sprite):
+        if sprite.visible:
+            self.sprite_buffer.blit(sprite.image, sprite.rect)
 
 
 class IsoMapPane(MapPane):
@@ -430,18 +456,24 @@ class IsoMapPane(MapPane):
         iso_surface_height = iso_surface_width / 2
         super(IsoMapPane, self).create_bg(iso_surface_width, iso_surface_height)
 
+    def create_render_target(self, width, height):
+        iso_surface_width = width + height
+        iso_surface_height = iso_surface_width / 2
+        return super(IsoMapPane, self).create_render_target(
+            iso_surface_width, iso_surface_height)
+
     def update_viewport(self, x, y):
         iso_x, iso_y = self.cartesian_to_isometric(x, y)
         super(IsoMapPane, self).update_viewport(iso_x, iso_y)
 
-    def put_bg_image(self, image, x, y):
+    def blit_tile(self, tile_image, x, y):
         iso_x, iso_y = self.cartesian_to_isometric(x, y)
-        super(IsoMapPane, self).put_bg_image(image, iso_x, iso_y)
+        super(IsoMapPane, self).blit_tile(tile_image, iso_x, iso_y)
 
-    def put_sprite(self, sprite):
+    def blit_sprite(self, sprite):
         sprite.rect.x, sprite.rect.y = self.cartesian_to_isometric(
             sprite.rect.x, sprite.rect.y)
-        super(IsoMapPane, self).put_sprite(sprite)
+        super(IsoMapPane, self).blit_sprite(sprite)
 
 
 class ViewPort:
@@ -488,6 +520,26 @@ class ViewPort:
             self.rect.y = int((self.rect.h - map.height()) / 2)
 
         return (self.rect.x - x_old, self.rect.y - y_old)
+
+class RenderTarget:
+    """A surface which keeps track of changed areas."""
+
+    def __init__(self, surface):
+        self.surface = surface
+        self.dirty_rects = []
+
+    def blit(self, source, dest, area=None, special_flags=0):
+        rect = self.surface.blit(source, dest, area, special_flags)
+        self.dirty_rects.append(rect)
+        return rect
+
+    def fill(self, color, rect=None, special_flags=0):
+        rect = self.surface.fill(color, rect, special_flags)
+        self.dirty_rects.append(rect)
+        return rect
+
+    def clean(self):
+        self.dirty_rects = []
 
 
 class StatusPane(ContentPane):
