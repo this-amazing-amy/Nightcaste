@@ -244,10 +244,7 @@ class InputBehaviour(EntityComponentBehaviour):
             self.set_iso_input_direction()
         else:
             self.set_input_direction()
-        self.logger.debug("Moving entity %s in direction %s", self.entity,
-                          self.component.direction)
-        speed = 1 if self.component.direction.direction > 0 else None
-        return speed
+        return 1 if self.component.direction.direction > 0 else None
 
     def use(self, dx, dy):
         """ Throws a UseEntity Event """

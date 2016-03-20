@@ -1,4 +1,5 @@
 from pygame import Rect
+import logging
 
 
 class QTreeCollisionManager:
@@ -34,7 +35,7 @@ class QuadTreeObject:
 
 class QuadTree:
 
-    def __init__(self, bounds, max_entites=5, max_level=5):
+    def __init__(self, bounds, max_entites=2, max_level=8):
         self.entites = {}
         self.q_tree_root = QuadTreeNode(None, 0, bounds, max_entites, max_level)
 
@@ -75,6 +76,8 @@ class QuadTree:
 
 class QuadTreeNode:
     """Implements a static QuadTree for collision detection."""
+
+    logger = logging.getLogger('collision.QuadTreeNode')
 
     def __init__(self, parent, level, bounds, max_entites=5, max_level=5):
         self.parent = None
@@ -158,9 +161,12 @@ class QuadTreeNode:
 
         self.entites[entity] = item
         item.owner = self
-        if len(self.entites) > self.max_entities and self.level < self.max_level:
-            if self.nodes is None:
-                self.split()
+        if len(self.entites) > self.max_entities:
+            if self.level < self.max_level:
+                if self.nodes is None:
+                    self.split()
+            else:
+                self.logger.debug('Node overflow: %d', len(self.entites))
 
     def _distribute(self):
         """Checks of the entites in this node fits into a subnode and inserts
