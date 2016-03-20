@@ -73,6 +73,13 @@ class QuadTree:
             return True
         return False
 
+    def __str__(self):
+        return 'QuadTree(bounds: %s, entities: %d, max_keys: %d, max_level: %d)' % (
+            self.bounds,
+            self.count(),
+            self.q_tree_root.max_entities,
+            self.q_tree_root.max_level))
+
 
 class QuadTreeNode:
     """Implements a static QuadTree for collision detection."""
@@ -259,5 +266,5 @@ class QuadTreeNode:
         return self.count() == 0
 
     def __str__(self):
-        return 'QuadTreeNode(level: %d, bounds: %s, entities: %d)'  % (
+        return 'QuadTreeNode(level: %d, bounds: %s, entities: %d)' % (
             self.level, self.bounds, len(self.entites))
