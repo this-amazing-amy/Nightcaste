@@ -431,7 +431,7 @@ class PocSoundSystem(SoundSystem):
         self._register('MenuOpen', self.on_menu_open)
 
     def on_menu_open(self, event):
-        self.play('smb_stage_clear.wav')
+        self.play('nightcaste_main.wav')
 
 
 class GameTimeSystem(EventProcessor):

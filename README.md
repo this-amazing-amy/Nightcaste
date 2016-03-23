@@ -13,3 +13,25 @@ Then, in the root directory of the project run the following command to start th
 `//TODO: Insert start-command here`
 
 If you find any bugs or other problems, please open an issue.
+
+## Installation of Git Media
+
+First install the git-media gem with the following commands:
+`
+git clone git@github.com:alebedev/git-media.git
+cd git-media
+sudo gem install bundler
+bundle install
+gem build git-media.gemspec
+gem install git-media-*.gem
+`
+Then, add the following config to `.git/config`:
+`
+[git-media]
+    transport = scp
+    autodownload = false
+    scpuser = ncasset
+    scphost = pygmalion.servebeer.com
+    scppath = ~/nightcaste_assets
+`
+Of course, you need to have access to the server via ssh key
