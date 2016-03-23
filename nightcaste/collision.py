@@ -37,7 +37,8 @@ class QuadTree:
 
     def __init__(self, bounds, max_entites=2, max_level=8):
         self.entites = {}
-        self.q_tree_root = QuadTreeNode(None, 0, bounds, max_entites, max_level)
+        self.q_tree_root = QuadTreeNode(
+            None, 0, bounds, max_entites, max_level)
 
     def bounds(self):
         return self.q_tree_root.bounds
@@ -78,7 +79,7 @@ class QuadTree:
             self.bounds,
             self.count(),
             self.q_tree_root.max_entities,
-            self.q_tree_root.max_level))
+            self.q_tree_root.max_level)
 
 
 class QuadTreeNode:

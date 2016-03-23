@@ -375,7 +375,7 @@ class MapPane(ScrollablePane):
         """ Iterates through a list of entities and renders each """
         em = self.window.entity_manager
         tiles = {k: v for k, v in em.get_components_for_entities(
-            entities, 'Tile').iteritems() if v.visible}
+            entities, 'Tile').iteritems() if v is not None and v.visible}
         positions = em.get_components_for_entities(entities, 'Position')
         colors = em.get_components_for_entities(entities, 'Color')
         for entity, tile in sorted(

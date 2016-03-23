@@ -113,6 +113,25 @@ class MapGenerator():
 class WorldspaceGenerator(MapGenerator):
     """ Loads the worldspace or generates it from scratch """
 
+    def cleanup(self):
+        """ Destroys all walls that are not visible """
+        to_delete = []
+        for x in range(2, len(self.tiles)-2):
+            for y in range(2, len(self.tiles[x])-2):
+                blocking = 0
+                for surrounding in [(-1, -1), (-1, 0), (-1, 1), (0, -1),
+                                    (0, 1), (1, -1), (1, 0), (1, 1)]:
+                    if self.is_blocked(x + surrounding[0], y + surrounding[1]):
+                        blocking += 1
+                if blocking == 8:
+                    to_delete.append((x, y))
+        for spot in to_delete:
+            x = spot[0]
+            y = spot[1]
+            if len(self.tiles) > x and len(self.tiles[x]) > y:
+                self.entity_manager.destroy_entity(self.tiles[x][y])
+                self.tiles[x][y] = None
+
     def generate_map(self, map_name, level):
         height = 100
         width = 140
@@ -122,21 +141,28 @@ class WorldspaceGenerator(MapGenerator):
 
         self.tiles = self.create_empty_map(width, height, "stone_floor")
         # TODO: Make Spawn Routine
-        self.tiles[25][25] = self.create_stairs(25, 25)
+        self.tiles[10][10] = self.create_stairs(10, 10)
         for x in range(2, width):
             self.tiles[x][0] = self.create_tile('stone_wall', x, 0)
-            self.tiles[x][height-1] = self.create_tile('stone_wall',
-                                                       x, height-1)
+            self.tiles[x][height - 1] = self.create_tile('stone_wall',
+                                                         x, height - 1)
         for y in range(2, height):
             self.tiles[0][y] = self.create_tile('stone_wall', 0, y)
-            self.tiles[width-1][y] = self.create_tile('stone_wall', width-1, y)
+            self.tiles[
+                width - 1][y] = self.create_tile('stone_wall', width - 1, y)
+
+        for x in range(10, 14):
+            for y in range(10, 14):
+                self.tiles[x][y] = self.create_tile('stone_wall', x, y)
+
+        self.cleanup()
 
         map_config = EntityConfiguration()
         map_config.add_attribute('Map', 'name', map_name)
         map_config.add_attribute('Map', 'tiles', self.tiles)
         map_config.add_attribute('Map', 'level', level)
-        map_config.add_attribute('Map', 'entry', (20*self.tilesetsize,
-                                                  20*self.tilesetsize))
+        map_config.add_attribute('Map', 'entry', (20 * self.tilesetsize,
+                                                  20 * self.tilesetsize))
         map_config.add_attribute('Map', 'tilesetsize', self.tilesetsize)
         return self.entity_manager.new_from_config(map_config)
 
@@ -170,6 +196,8 @@ class DungeonGenerator(MapGenerator):
         self.tiles = self.create_empty_map(width, height)
         tree = self.create_bsp_tree(width, height)
         self.traverse_tree(tree, self.process_node)
+
+        self.cleanup()
 
         map_config = EntityConfiguration()
         map_config.add_attribute('Map', 'name', map_name)
