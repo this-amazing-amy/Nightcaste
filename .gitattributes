@@ -16,4 +16,5 @@
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
 
-assets/*    filter=media -crlf
+*.png    filter=media -crlf
+*.wav    filter=media -crlf
