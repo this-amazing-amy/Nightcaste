@@ -420,7 +420,7 @@ class SoundSystem(EventProcessor):
     def play(self, key):
         sound = self.sound_bank.get(key)
         if sound is not None:
-            sound.play()
+            sound.play(-1)
         else:
             self.logger.error('Sound %s does not exits in sound bank.', key)
 
