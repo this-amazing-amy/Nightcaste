@@ -97,11 +97,9 @@ class Event:
 
     def __init__(self, identifier, data=None):
         self.identifier = identifier
-        self.data = data
+        if data is not None:
+            for prop, val in data.iteritems():
+                setattr(self, prop, val)
 
     def __str__(self):
-        result = self.identifier + " ("
-        if self.data is not None:
-            for prop, val in self.data.iteritems():
-                result += str(prop) + ": " + str(val) + ", "
-        return result[:-2] + ")"
+        return 'Event(%s)' % self.identifier

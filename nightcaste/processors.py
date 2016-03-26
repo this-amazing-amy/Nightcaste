@@ -118,14 +118,14 @@ class InputProcessor(EventProcessor):
         self._unregister('ViewChanged', self.on_view_changed)
 
     def on_view_changed(self, event):
-        if self._is_responsible_for(event.data["active_view"]):
+        if self._is_responsible_for(event.active_view):
             self._register('KeyPressed', self.on_key_pressed)
         else:
             self._unregister('KeyPressed', self.on_key_pressed)
 
     def on_key_pressed(self, event):
-        action = self._map_key_to_action(event.data["keycode"])
-        self.logger.debug('Mapped key %s to %s', event.data["keycode"], action)
+        action = self._map_key_to_action(event.keycode)
+        self.logger.debug('Mapped key %s to %s', event.keycode, action)
         if action is not None:
             self.event_manager.throw(action[0], action[1])
 
@@ -259,15 +259,15 @@ class MapChangeProcessor(EventProcessor):
         self.map_manager = MapManager(entity_manager)
 
     def on_map_change(self, event):
-        if event.data["level"] is None:
-            event.data["level"] = 0
+        if event.level is None:
+            event.level = 0
         self.logger.debug(
             'Changing to Map %s - %d',
-            event.data["name"],
-            event.data["level"])
-        new_map = self.map_manager.get_map(event.data['name'],
-                                           event.data['level'],
-                                           event.data.get("type", "dungeon"))
+            event.name,
+            event.level)
+        new_map = self.map_manager.get_map(event.name,
+                                           event.level,
+                                           vars(event).get("type", "dungeon"))
         entry_point = self.entity_manager.get(new_map, 'Map').entry
         self.event_manager.throw('MoveAction',
                                  {'entity': self.entity_manager.player,
@@ -305,13 +305,13 @@ class SpriteProcessor(EventProcessor):
         self._unregister('EntityMoved', self.on_entity_moved)
 
     def on_entity_created(self, event):
-        entity = event.data['entity']
+        entity = event.entity
         sprite = self.entity_manager.get(entity, 'Sprite')
         if sprite is not None:
             self.sprite_manager.initialize_sprite(sprite)
 
     def on_entity_moved(self, event):
-        entity = event.data['entity']
+        entity = event.entity
         sprite = self.entity_manager.get(entity, 'Sprite')
         if sprite is not None:
             self.logger.debug('Set sprite dirty %s', sprite)
@@ -338,22 +338,21 @@ class UseEntityProcessor(EventProcessor):
         self._unregister("UseEntityAction", self.on_use_entity)
 
     def on_use_entity(self, event):
-        user = self.entity_manager.get(event.data['user'], 'Position')
-        user_colliding = self.entity_manager.get(event.data['user'], 'Colliding')
-        target = (user.x, user.y)
+        user = self.entity_manager.get(event.user, 'Position')
+        user_colliding = self.entity_manager.get(event.user, 'Colliding')
+        # target = (user.x, user.y)
         useables = self.entity_manager.get_all("Useable")
         useable_rects = {}
         for entity in useables:
             pos = self.entity_manager.get(entity, "Position")
             useable_rects[entity] = Rect(pos.x-16, pos.y-16, 32, 32)
         self.collision_manager.fill(Rect(0, 0, 3200, 4480), useable_rects)
-        collisions = self.collision_manager.collide_rect(event.data['user'],
-                                                         user_colliding)
+        collisions = self.collision_manager.collide_rect(
+            event.user, user_colliding)
 
         if (len(collisions) > 0):
             self.event_manager.throw(useables[collisions[0]].useEvent,
                                      {'usedEntity': collisions[0]})
-
 
 
 class TransitionProcessor(EventProcessor):
@@ -367,8 +366,7 @@ class TransitionProcessor(EventProcessor):
         self._unregister("MapTransition", self.on_map_transition)
 
     def on_map_transition(self, event):
-        target = self.entity_manager.get(
-            event.data['usedEntity'], 'MapTransition')
+        target = self.entity_manager.get(event.usedEntity, 'MapTransition')
         self.event_manager.throw("MapChange", {"name": target.target_map,
                                                "level": target.target_level})
 
@@ -406,7 +404,7 @@ class ViewProcessor(EventProcessor):
 
     def on_entity_moved(self, event):
         # Update the game view (calculates viewport) if the player has moved
-        if event.data['entity'] == self.entity_manager.player:
+        if event.entity == self.entity_manager.player:
             self.window.update_view('game_view')
 
 
