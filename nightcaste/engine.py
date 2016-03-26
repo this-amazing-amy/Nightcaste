@@ -4,6 +4,7 @@ from behaviour import TurnBehaviourManager
 from events import EventManager
 from entities import EntityManager
 from nightcaste import __version__
+from processes import ProcessManager
 from processors import SystemManager
 import game
 import input
@@ -32,6 +33,7 @@ def main():
         event_manager,
         entity_manager,
         game_config)
+    process_manager = ProcessManager(entity_manager, event_manager)
     input_controller = input.InputController(
         not realtime, event_manager, entity_manager)
     window = create_window(event_manager, entity_manager, system_manager)
@@ -51,11 +53,16 @@ def main():
         lag += time_delta
 
         while (lag >= SEC_PER_UPDATE):
+            request_close = input_controller.update(round, SEC_PER_UPDATE)
             if game.status != game.G_PAUSED:
                 behaviour_manager.update(round, SEC_PER_UPDATE)
-            request_close = input_controller.update(round, SEC_PER_UPDATE)
-            event_manager.process_events()
+                event_manager.process_events()
+
             system_manager.update(round, SEC_PER_UPDATE)
+            event_manager.process_events()
+
+            process_manager.update(SEC_PER_UPDATE)
+            event_manager.process_events()
 
             lag -= SEC_PER_UPDATE
 
