@@ -24,6 +24,7 @@ FrameworkEvent = Enum(
     'ComponentRemoved')
 GameAction = Enum(
     'MapChange',
+    'MapTransition',
     'MoveAction',
     'UseEntityAction',
     'WorldEnter')

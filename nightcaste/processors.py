@@ -373,9 +373,8 @@ class UseEntityProcessor(EventProcessor):
             event.user, user_colliding)
 
         if (len(collisions) > 0):
-            self._throw_new_event(
-                useables[collisions[0]].useEvent,
-                {'usedEntity': collisions[0]})
+            action = getattr(GameAction, useables[collisions[0]].useEvent)
+            self._throw_new_event(action, {'usedEntity': collisions[0]})
 
 
 class TransitionProcessor(EventProcessor):
@@ -383,10 +382,10 @@ class TransitionProcessor(EventProcessor):
     Component """
 
     def register(self):
-        self._register('MapTransition', self.on_map_transition)
+        self._register(GameAction.MapTransition, self.on_map_transition)
 
     def unregister(self):
-        self._unregister('MapTransition', self.on_map_transition)
+        self._unregister(GameAction.MapTransition, self.on_map_transition)
 
     def on_map_transition(self, event):
         target = self.entity_manager.get(event.usedEntity, 'MapTransition')
