@@ -1,6 +1,12 @@
 """The module contains the event processors. An event processor must register
 itself in the EventManager in order to retrieve the events to process"""
 from collision import QTreeCollisionManager
+from events import FrameworkEvent
+from events import GameAction
+from events import GameEvent
+from events import GUIAction
+from events import GUIEvent
+from events import InputEvent
 from mapcreation import MapManager
 from pygame import Rect
 from sound import SoundBank
@@ -112,16 +118,16 @@ class InputProcessor(EventProcessor):
     logger = logging.getLogger('processors.InputProcessor')
 
     def register(self):
-        self._register('ViewChanged', self.on_view_changed)
+        self._register(GUIEvent.ViewChanged, self.on_view_changed)
 
     def unregister(self):
-        self._unregister('ViewChanged', self.on_view_changed)
+        self._unregister(GUIEvent.ViewChanged, self.on_view_changed)
 
     def on_view_changed(self, event):
         if self._is_responsible_for(event.active_view):
-            self._register('KeyPressed', self.on_key_pressed)
+            self._register(InputEvent.KeyPressed, self.on_key_pressed)
         else:
-            self._unregister('KeyPressed', self.on_key_pressed)
+            self._unregister(InputEvent.KeyPressed, self.on_key_pressed)
 
     def on_key_pressed(self, event):
         action = self._map_key_to_action(event.keycode)
@@ -148,7 +154,7 @@ class MenuInputProcessor(InputProcessor):
 
     def _map_key_to_action(self, keycode):
         if keycode == input.K_ENTER:
-            return ("WorldEnter", None)
+            return (GameAction.WorldEnter, None)
         return None
 
 
@@ -157,10 +163,10 @@ class MovementSystem(EventProcessor):
     logger = logging.getLogger('processors.MovementProcessor')
 
     def register(self):
-        self._register('MapChanged', self.on_map_changed)
+        self._register(GameEvent.MapChanged, self.on_map_changed)
 
     def unregister(self):
-        self._unregister('MapChanged', self.on_map_changed)
+        self._unregister(GameEvent.MapChanged, self.on_map_changed)
 
     def __init__(self, event_manager, entity_manager, no_collision=False):
         EventProcessor.__init__(self, event_manager, entity_manager)
@@ -222,10 +228,10 @@ class WorldInitializer(EventProcessor):
     initialization."""
 
     def register(self):
-        self._register('WorldEnter', self.on_world_enter)
+        self._register(GameAction.WorldEnter, self.on_world_enter)
 
     def unregister(self):
-        self._unregister('WorldEnter', self.on_world_enter)
+        self._unregister(GameAction.WorldEnter, self.on_world_enter)
 
     def configure(self, config):
         self.start_time = config.get('start_time', 0)
@@ -236,10 +242,10 @@ class WorldInitializer(EventProcessor):
             'game.player')
         # TODO let the entity manager throw the event
         self.event_manager.throw(
-            'EntityCreated', {
+            FrameworkEvent.EntityCreated, {
                 'entity': self.entity_manager.player})
         self.event_manager.throw(
-            'MapChange', {
+            GameAction.MapChange, {
                 'name': 'world', 'level': 0, 'type': 'world'})
 
 
@@ -249,10 +255,10 @@ class MapChangeProcessor(EventProcessor):
     logger = logging.getLogger('processors.MapChangeProcessor')
 
     def register(self):
-        self._register('MapChange', self.on_map_change)
+        self._register(GameAction.MapChange, self.on_map_change)
 
     def unregister(self):
-        self._unregister('MapChange', self.on_map_change)
+        self._unregister(GameAction.MapChange, self.on_map_change)
 
     def __init__(self, event_manager, entity_manager):
         EventProcessor.__init__(self, event_manager, entity_manager)
@@ -269,7 +275,7 @@ class MapChangeProcessor(EventProcessor):
                                            event.level,
                                            vars(event).get("type", "dungeon"))
         entry_point = self.entity_manager.get(new_map, 'Map').entry
-        self.event_manager.throw('MoveAction',
+        self.event_manager.throw(GameAction.MoveAction,
                                  {'entity': self.entity_manager.player,
                                   'dx': entry_point[0], 'dy': entry_point[1],
                                   'absolute': 1})
@@ -284,7 +290,7 @@ class MapChangeProcessor(EventProcessor):
             new_mc.parent = self.entity_manager.current_map
             cur_mc.add_child(new_map)
         self.entity_manager.current_map = new_map
-        self.event_manager.throw('MapChanged')
+        self.event_manager.throw(GameEvent.MapChanged)
 
 
 class SpriteProcessor(EventProcessor):
@@ -297,12 +303,12 @@ class SpriteProcessor(EventProcessor):
         self.sprite_manager = sprite_manager
 
     def register(self):
-        self._register('EntityCreated', self.on_entity_created)
-        self._register('EntityMoved', self.on_entity_moved)
+        self._register(FrameworkEvent.EntityCreated, self.on_entity_created)
+        self._register(GameEvent.EntityMoved, self.on_entity_moved)
 
     def unregister(self):
-        self._unregister('EntityCreated', self.on_entity_created)
-        self._unregister('EntityMoved', self.on_entity_moved)
+        self._unregister(FrameworkEvent.EntityCreated, self.on_entity_created)
+        self._unregister(GameEvent.EntityMoved, self.on_entity_moved)
 
     def on_entity_created(self, event):
         entity = event.entity
@@ -332,19 +338,19 @@ class UseEntityProcessor(EventProcessor):
         self.collision_manager = QTreeCollisionManager()
 
     def register(self):
-        self._register("UseEntityAction", self.on_use_entity)
+        self._register(GameAction.UseEntityAction, self.on_use_entity)
 
     def unregister(self):
-        self._unregister("UseEntityAction", self.on_use_entity)
+        self._unregister(GameAction.UseEntityAction, self.on_use_entity)
 
     def on_use_entity(self, event):
         user = self.entity_manager.get(event.user, 'Position')
         user_colliding = self.entity_manager.get(event.user, 'Colliding')
-        # target = (user.x, user.y)
-        useables = self.entity_manager.get_all("Useable")
+        target = (user.x, user.y)
+        useables = self.entity_manager.get_all('Useable')
         useable_rects = {}
         for entity in useables:
-            pos = self.entity_manager.get(entity, "Position")
+            pos = self.entity_manager.get(entity, 'Position')
             useable_rects[entity] = Rect(pos.x-16, pos.y-16, 32, 32)
         self.collision_manager.fill(Rect(0, 0, 3200, 4480), useable_rects)
         collisions = self.collision_manager.collide_rect(
@@ -360,15 +366,16 @@ class TransitionProcessor(EventProcessor):
     Component """
 
     def register(self):
-        self._register("MapTransition", self.on_map_transition)
+        self._register('MapTransition', self.on_map_transition)
 
     def unregister(self):
-        self._unregister("MapTransition", self.on_map_transition)
+        self._unregister('MapTransition', self.on_map_transition)
 
     def on_map_transition(self, event):
         target = self.entity_manager.get(event.usedEntity, 'MapTransition')
-        self.event_manager.throw("MapChange", {"name": target.target_map,
-                                               "level": target.target_level})
+        self.event_manager.throw(
+            GameAction.MapChange,
+            {"name": target.target_map, "level": target.target_level})
 
 
 class ViewProcessor(EventProcessor):
@@ -380,14 +387,14 @@ class ViewProcessor(EventProcessor):
         self.window = window
 
     def register(self):
-        self._register('MapChange', self.on_map_change)
-        self._register('MenuOpen', self.on_menu_open)
-        self._register('EntityMoved', self.on_entity_moved)
+        self._register(GameAction.MapChange, self.on_map_change)
+        self._register(GUIAction.MenuOpen, self.on_menu_open)
+        self._register(GameEvent.EntityMoved, self.on_entity_moved)
 
     def unregister(self):
-        self._unregister('MapChange', self.on_map_change)
-        self._unregister('MenuOpen', self.on_menu_open)
-        self._unregister('EntityMoved', self.on_entity_moved)
+        self._unregister(GameAction.MapChange, self.on_map_change)
+        self._unregister(GUIAction.MenuOpen, self.on_menu_open)
+        self._unregister(GameEvent.EntityMoved, self.on_entity_moved)
 
     def on_map_change(self, event):
         # TODO: make view active on world enter and handle map updating with a
@@ -395,12 +402,12 @@ class ViewProcessor(EventProcessor):
         if self.window.show('game_view'):
             # TODO let view_controller throw the event?
             self.event_manager.throw(
-                'ViewChanged', {'active_view': 'game_view'})
+                GUIEvent.ViewChanged, {'active_view': 'game_view'})
 
     def on_menu_open(self, event):
         if self.window.show('main_menu'):
             self.event_manager.throw(
-                'ViewChanged', {'active_view': 'main_menu'})
+                GUIEvent.ViewChanged, {'active_view': 'main_menu'})
 
     def on_entity_moved(self, event):
         # Update the game view (calculates viewport) if the player has moved
@@ -426,7 +433,7 @@ class SoundSystem(EventProcessor):
 class PocSoundSystem(SoundSystem):
 
     def register(self):
-        self._register('MenuOpen', self.on_menu_open)
+        self._register(GUIAction.MenuOpen, self.on_menu_open)
 
     def on_menu_open(self, event):
         self.play('nightcaste_main.wav')

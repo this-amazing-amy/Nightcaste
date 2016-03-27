@@ -7,8 +7,30 @@
             - events with two target entitys (src and target)
 
 """
+from enum import Enum
 import logging
 import Queue
+
+
+FrameworkEvent = Enum(
+    'EntityCreated',
+    'EntityDestroyed',
+    'EntityInitialized',
+    'GameStarted',
+    'GamePaused',
+    'GameResumed',
+    'SystemAdded',
+    'ComponentAdded',
+    'ComponentRemoved')
+GameAction = Enum(
+    'MapChange',
+    'MoveAction',
+    'UseEntityAction',
+    'WorldEnter')
+GameEvent = Enum('EntityMoved', 'MapChanged')
+GUIAction = Enum('MenuOpen')
+GUIEvent = Enum('ViewChanged')
+InputEvent = Enum('KeyPressed')
 
 
 class EventManager:

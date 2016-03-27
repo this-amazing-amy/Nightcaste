@@ -1,4 +1,5 @@
 """This module handles user inputs and transforms then into key codes."""
+from events import InputEvent
 import logging
 import pygame
 
@@ -58,7 +59,8 @@ class InputController:
             elif event.type == pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
                     self.request_close = True
-                self.event_manager.throw('KeyPressed', {'keycode': event.key})
+                self.event_manager.throw(
+                    InputEvent.KeyPressed, {'keycode': event.key})
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code

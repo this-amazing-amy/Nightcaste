@@ -1,7 +1,8 @@
+from components import Direction
+from events import GameAction
 import input
 import logging
 import utils
-from components import Direction
 
 
 class BehaviourManager:
@@ -237,7 +238,6 @@ class InputBehaviour(EntityComponentBehaviour):
         else:
             direction.set(Direction.D_UP, 0)
 
-
     def move(self):
         """Throws a MoveAction."""
         if self.isometric:
@@ -248,6 +248,6 @@ class InputBehaviour(EntityComponentBehaviour):
 
     def use(self, dx, dy):
         """ Throws a UseEntity Event """
-        self.event_manager.throw("UseEntityAction", {
-            'user': self.entity})
+        self.event_manager.throw(
+            GameAction.UseEntityAction, {'user': self.entity})
         return 2
