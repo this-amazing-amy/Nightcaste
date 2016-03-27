@@ -492,10 +492,22 @@ class ViewPort:
 
 class StatusPane(ContentPane):
 
+    def __init__(self, window, x, y, width, height, z_index=0):
+        ContentPane.__init__(self, window, x, y, width, height, z_index=0)
+        self.map_name = 'None (0)'
+        self.window.event_manager.register_listener(
+            'MapChanged', self.on_map_changed)
+
     def render(self):
         self.put_text(5, 5, 'Time: %s' % ExaltedCalendar(game.time))
         self.put_text(5, 20, 'Round: %s' % (game.round))
+        self.put_text(5, 35, self.map_name)
         return self.dirty_rects
+
+    def on_map_changed(self, event):
+        map = self.window.entity_manager.current_map
+        mapc = self.window.entity_manager.get(map, 'Map')
+        self.map_name = '%s (%d)' % (mapc.name, mapc.level)
 
 
 class MenuPane(ContentPane):
