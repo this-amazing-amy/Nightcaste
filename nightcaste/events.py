@@ -75,11 +75,14 @@ class EventManager:
                     process_function,
                     event_type)
 
-    def throw(self, eventIdentifier, data=None):
-        """ Enqueues an event from an identifier String"""
-        self.events.put(Event(eventIdentifier, data))
+    def create(self, event_type, data=None):
+        return Event(event_type, data)
 
-    def forward(self, event):
+    def throw_new(self, event_type, data=None):
+        """ Enqueues an event from an identifier String"""
+        self.throw(self.create(event_type, data))
+
+    def throw(self, event):
         """Enqueues an existing event."""
         self.events.put(event)
 

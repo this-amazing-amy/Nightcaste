@@ -48,7 +48,7 @@ def main():
 
     # TODO do not throw an event here, instead configure a default view and
     # throw ViewChnaged when the engine is initialized
-    event_manager.throw(GUIAction.MenuOpen)
+    event_manager.throw_new(GUIAction.MenuOpen)
     while window.is_active() and not request_close:
         current_time = time.time()
         time_delta = current_time - prev_time

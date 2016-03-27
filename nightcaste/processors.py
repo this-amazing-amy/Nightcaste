@@ -109,6 +109,15 @@ class EventProcessor(object):
     def _unregister(self, event_type, process_function):
         self.event_manager.remove_listener(event_type, process_function)
 
+    def _create_event(self, event_type):
+        return self.event_manager.create(event_type)
+
+    def _throw_event(self, event):
+        self.event_manager.throw(event)
+
+    def _throw_new_event(self, event_type, data=None):
+        self.event_manager.throw_new(event_type, data)
+
     def __str__(self):
         return self.__class__.__name__
 
@@ -133,7 +142,7 @@ class InputProcessor(EventProcessor):
         action = self._map_key_to_action(event.keycode)
         self.logger.debug('Mapped key %s to %s', event.keycode, action)
         if action is not None:
-            self.event_manager.throw(action[0], action[1])
+            self._throw_event(action)
 
 
 class GameInputProcessor(InputProcessor):
@@ -154,7 +163,7 @@ class MenuInputProcessor(InputProcessor):
 
     def _map_key_to_action(self, keycode):
         if keycode == input.K_ENTER:
-            return (GameAction.WorldEnter, None)
+            return self._create_event(GameAction.WorldEnter)
         return None
 
 
@@ -241,12 +250,14 @@ class WorldInitializer(EventProcessor):
         self.entity_manager.player = self.entity_manager.new_from_blueprint(
             'game.player')
         # TODO let the entity manager throw the event
-        self.event_manager.throw(
-            FrameworkEvent.EntityCreated, {
-                'entity': self.entity_manager.player})
-        self.event_manager.throw(
-            GameAction.MapChange, {
-                'name': 'world', 'level': 0, 'type': 'world'})
+        entity_created = self._create_event(FrameworkEvent.EntityCreated)
+        entity_created.entity = self.entity_manager.player
+        self._throw_event(entity_created)
+        map_change = self._create_event(GameAction.MapChange)
+        map_change.name = 'world'
+        map_change.level = 0
+        map_change.type = 'world'
+        self._throw_event(map_change)
 
 
 class MapChangeProcessor(EventProcessor):
@@ -274,11 +285,16 @@ class MapChangeProcessor(EventProcessor):
         new_map = self.map_manager.get_map(event.name,
                                            event.level,
                                            vars(event).get("type", "dungeon"))
+        # TODO fix absolute positioning
+        # Since the entry point is stored in the map the position of the player
+        # could also be changed on GameEvent.MapChanged
         entry_point = self.entity_manager.get(new_map, 'Map').entry
-        self.event_manager.throw(GameAction.MoveAction,
-                                 {'entity': self.entity_manager.player,
-                                  'dx': entry_point[0], 'dy': entry_point[1],
-                                  'absolute': 1})
+        move_action = self._create_event(GameAction.MoveAction)
+        move_action.entity = self.entity_manager.player
+        move_action.dx = entry_point[0]
+        move_action.dy = entry_point[1]
+        move_action.absolute = 1
+        self._throw_event(move_action)
         self.change_map(new_map)
 
     def change_map(self, new_map):
@@ -290,7 +306,7 @@ class MapChangeProcessor(EventProcessor):
             new_mc.parent = self.entity_manager.current_map
             cur_mc.add_child(new_map)
         self.entity_manager.current_map = new_map
-        self.event_manager.throw(GameEvent.MapChanged)
+        self._throw_new_event(GameEvent.MapChanged)
 
 
 class SpriteProcessor(EventProcessor):
@@ -357,8 +373,9 @@ class UseEntityProcessor(EventProcessor):
             event.user, user_colliding)
 
         if (len(collisions) > 0):
-            self.event_manager.throw(useables[collisions[0]].useEvent,
-                                     {'usedEntity': collisions[0]})
+            self._throw_new_event(
+                useables[collisions[0]].useEvent,
+                {'usedEntity': collisions[0]})
 
 
 class TransitionProcessor(EventProcessor):
@@ -373,9 +390,10 @@ class TransitionProcessor(EventProcessor):
 
     def on_map_transition(self, event):
         target = self.entity_manager.get(event.usedEntity, 'MapTransition')
-        self.event_manager.throw(
-            GameAction.MapChange,
-            {"name": target.target_map, "level": target.target_level})
+        map_change = self._create_event(GameAction.MapChange)
+        map_change.names = target.target_map
+        map_change.level = target.target_level
+        self._throw_event(map_change)
 
 
 class ViewProcessor(EventProcessor):
@@ -401,13 +419,15 @@ class ViewProcessor(EventProcessor):
         # simple map.dirty flag
         if self.window.show('game_view'):
             # TODO let view_controller throw the event?
-            self.event_manager.throw(
-                GUIEvent.ViewChanged, {'active_view': 'game_view'})
+            view_changed = self._create_event(GUIEvent.ViewChanged)
+            view_changed.active_view = 'game_view'
+            self._throw_event(view_changed)
 
     def on_menu_open(self, event):
         if self.window.show('main_menu'):
-            self.event_manager.throw(
-                GUIEvent.ViewChanged, {'active_view': 'main_menu'})
+            view_changed = self._create_event(GUIEvent.ViewChanged)
+            view_changed.active_view = 'main_menu'
+            self._throw_event(view_changed)
 
     def on_entity_moved(self, event):
         # Update the game view (calculates viewport) if the player has moved

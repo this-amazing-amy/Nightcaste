@@ -59,8 +59,9 @@ class InputController:
             elif event.type == pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
                     self.request_close = True
-                self.event_manager.throw(
-                    InputEvent.KeyPressed, {'keycode': event.key})
+                key_pressed = self.event_manager.create(InputEvent.KeyPressed)
+                key_pressed.keycode = event.key
+                self.event_manager.throw(key_pressed)
 
     def wait_for_input(self, flush):
         """This function waits for the user to press a key. It returns the code

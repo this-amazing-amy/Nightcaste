@@ -248,6 +248,7 @@ class InputBehaviour(EntityComponentBehaviour):
 
     def use(self, dx, dy):
         """ Throws a UseEntity Event """
-        self.event_manager.throw(
-            GameAction.UseEntityAction, {'user': self.entity})
+        event = self.event_manager.create(GameAction.UseEntityAction)
+        event.user = self.entity
+        self.event_manager.throw(event)
         return 2
