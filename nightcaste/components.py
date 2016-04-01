@@ -174,11 +174,17 @@ class Turn(Component):
 
 
 class Tile(Renderable):
-    """Represents a part of a background image / map in a 2D tile based game."""
+    """Represents a part of a background image / map in a 2D tile based game.
+        offset: The vertical offset in which the Tile will be rendered.
+                Negative values mean a multiple of the tilesetSize
+                so -1 is good for walls etc.
+    """
 
-    def __init__(self, name=None, z_index=0, visible=True, variant=False):
+    def __init__(self, name=None, z_index=0, visible=True, variant=False,
+                 offset=0):
         Renderable.__init__(self, name, z_index, visible)
         self.variant = variant
+        self.offset = offset
 
 
 class Colliding(Component, Rect):

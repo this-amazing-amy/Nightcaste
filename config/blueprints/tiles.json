@@ -9,6 +9,7 @@
 		"attributes": {
 			"Tile.name": "stone_wall",
 			"Tile.z_index": 1,
+                        "Tile.offset": -1,
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195,
@@ -24,7 +25,7 @@
 		"attributes": {
 			"Tile.name": "stone_floor",
                         "Tile.variant": [0, 1],
-			"Tile.z_index": 1,
+			"Tile.z_index": 0,
 			"Color.r": 195,
 			"Color.g": 195,
 			"Color.b": 195

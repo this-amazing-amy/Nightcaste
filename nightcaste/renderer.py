@@ -443,6 +443,20 @@ class IsoMapPane(MapPane):
             sprite.rect.x, sprite.rect.y)
         super(IsoMapPane, self).put_sprite(sprite)
 
+    def _render_tile(self, tile, position, color):
+        """Check if the position of the given entity is in the viewport and
+        render the entety to the window with the recalculated position in the
+        pane.
+
+        Args:
+            entity (object): the entity which should be rendered.
+            tile (Tile): The visible renderable component of the
+                given entity.
+
+        """
+        tileImage = self.tileset.get_tile(tile.name)
+        self.put_bg_image(tileImage, position.x - tile.offset, position.y - tile.offset)
+
 
 class ViewPort:
 
