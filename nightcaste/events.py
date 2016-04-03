@@ -127,5 +127,8 @@ class Event:
             for prop, val in data.iteritems():
                 setattr(self, prop, val)
 
+    def get(self, attr, default=None):
+        return vars(self).get(attr, default)
+
     def __str__(self):
         return 'Event(%s)' % self.identifier

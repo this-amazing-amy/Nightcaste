@@ -284,7 +284,7 @@ class MapChangeProcessor(EventProcessor):
             event.level)
         new_map = self.map_manager.get_map(event.name,
                                            event.level,
-                                           vars(event).get("type", "dungeon"))
+                                           event.get('type', 'dungeon'))
         # TODO fix absolute positioning
         # Since the entry point is stored in the map the position of the player
         # could also be changed on GameEvent.MapChanged
