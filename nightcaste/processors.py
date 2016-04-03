@@ -390,7 +390,7 @@ class TransitionProcessor(EventProcessor):
     def on_map_transition(self, event):
         target = self.entity_manager.get(event.usedEntity, 'MapTransition')
         map_change = self._create_event(GameAction.MapChange)
-        map_change.names = target.target_map
+        map_change.name = target.target_map
         map_change.level = target.target_level
         self._throw_event(map_change)
 
