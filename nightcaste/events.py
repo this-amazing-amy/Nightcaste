@@ -7,8 +7,31 @@
             - events with two target entitys (src and target)
 
 """
+from enum import Enum
 import logging
 import Queue
+
+
+FrameworkEvent = Enum(
+    'EntityCreated',
+    'EntityDestroyed',
+    'EntityInitialized',
+    'GameStarted',
+    'GamePaused',
+    'GameResumed',
+    'SystemAdded',
+    'ComponentAdded',
+    'ComponentRemoved')
+GameAction = Enum(
+    'MapChange',
+    'MapTransition',
+    'MoveAction',
+    'UseEntityAction',
+    'WorldEnter')
+GameEvent = Enum('EntityMoved', 'MapChanged')
+GUIAction = Enum('MenuOpen')
+GUIEvent = Enum('ViewChanged')
+InputEvent = Enum('KeyPressed')
 
 
 class EventManager:
@@ -53,11 +76,14 @@ class EventManager:
                     process_function,
                     event_type)
 
-    def throw(self, eventIdentifier, data=None):
-        """ Enqueues an event from an identifier String"""
-        self.events.put(Event(eventIdentifier, data))
+    def create(self, event_type, data=None):
+        return Event(event_type, data)
 
-    def forward(self, event):
+    def throw_new(self, event_type, data=None):
+        """ Enqueues an event from an identifier String"""
+        self.throw(self.create(event_type, data))
+
+    def throw(self, event):
         """Enqueues an existing event."""
         self.events.put(event)
 
@@ -97,11 +123,12 @@ class Event:
 
     def __init__(self, identifier, data=None):
         self.identifier = identifier
-        self.data = data
+        if data is not None:
+            for prop, val in data.iteritems():
+                setattr(self, prop, val)
+
+    def get(self, attr, default=None):
+        return vars(self).get(attr, default)
 
     def __str__(self):
-        result = self.identifier + " ("
-        if self.data is not None:
-            for prop, val in self.data.iteritems():
-                result += str(prop) + ": " + str(val) + ", "
-        return result[:-2] + ")"
+        return 'Event(%s)' % self.identifier

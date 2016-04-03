@@ -31,7 +31,7 @@ class TestEventManager:
     def test_enque_event(self, event_manager):
         """Check if the number of events increases if an event is enqueued."""
         qsize_before = event_manager.events.qsize()
-        event_manager.throw("Event")
+        event_manager.throw_new('Event')
         qsize_after = event_manager.events.qsize()
 
         assert qsize_after == qsize_before + 1
@@ -71,9 +71,9 @@ class TestEventManager:
 
     def test_process_events(self, event_manager, entity_manager):
         """Checks if the events in the queue are processed"""
-        event_type = "TestProcess"
+        event_type = 'TestProcess'
         event_manager.register_listener(event_type, self.on_test_event)
-        event_manager.throw(event_type)
-        event_manager.throw(event_type)
+        event_manager.throw_new(event_type)
+        event_manager.throw_new(event_type)
         assert event_manager.process_events() > 0
         assert event_manager.events.empty()

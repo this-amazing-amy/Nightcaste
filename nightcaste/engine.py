@@ -2,6 +2,7 @@
 subsystems and runs the super loop"""
 from behaviour import TurnBehaviourManager
 from events import EventManager
+from events import GUIAction
 from entities import EntityManager
 from nightcaste import __version__
 from processes import ProcessManager
@@ -45,7 +46,9 @@ def main():
     SEC_PER_UPDATE = 0.01
     MIN_FRAME_TIME = 1.0 / 60
 
-    event_manager.throw("MenuOpen")
+    # TODO do not throw an event here, instead configure a default view and
+    # throw ViewChnaged when the engine is initialized
+    event_manager.throw_new(GUIAction.MenuOpen)
     while window.is_active() and not request_close:
         current_time = time.time()
         time_delta = current_time - prev_time
