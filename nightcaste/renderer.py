@@ -4,6 +4,7 @@ from nightcaste import __version__
 from nightcaste.calendar import ExaltedCalendar
 from nightcaste.components import Color
 from nightcaste.components import Animation
+from nightcaste.events import GameEvent
 from nightcaste.processors import SpriteProcessor
 from nightcaste.processors import ViewProcessor
 from os import path
@@ -510,7 +511,7 @@ class StatusPane(ContentPane):
         ContentPane.__init__(self, window, x, y, width, height, z_index=0)
         self.map_name = 'None (0)'
         self.window.event_manager.register_listener(
-            'MapChanged', self.on_map_changed)
+            GameEvent.MapChanged, self.on_map_changed)
 
     def render(self):
         self.put_text(5, 5, 'Time: %s' % ExaltedCalendar(game.time))
