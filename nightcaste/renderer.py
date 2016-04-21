@@ -655,6 +655,7 @@ class SpriteManager:
         sprite.rect = image.get_rect()
         sprite.animations = sprite_info.animations
         sprite.animate('idle')
+        sprite.anchor = sprite_info.anchor
         self.logger.debug('Sprite initialized %s', sprite)
 
     def _load_sprite_sheet(self, image_config):

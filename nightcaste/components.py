@@ -14,9 +14,9 @@ class Component:
         return self.__class__.__name__
 
     def __str__(self):
-        result = self.type()+" ("
+        result = self.type() + " ("
         for prop, val in self.__dict__.iteritems():
-            result += str(prop)+": "+str(val)+", "
+            result += str(prop) + ": " + str(val) + ", "
         return result[:-2] + ")"
 
 
@@ -113,9 +113,11 @@ class Sprite(Renderable, DirtySprite):
             possible
     """
 
-    def __init__(self, sprite_name=None, z_index=0, visible=True):
+    def __init__(self, sprite_name=None, anchor=(0, 0),
+                 z_index=0, visible=True):
         DirtySprite.__init__(self)
         Renderable.__init__(self, sprite_name, z_index, visible)
+        self.anchor = anchor
         self.animations = {}
         self.animation = None
 
@@ -251,7 +253,8 @@ class Map(Component):
         return len(self.tiles[0]) * self.tilesetsize
 
     def get_entites_in_frame(self, x, y, width, height):
-        return [map_column[y:y+height] for map_column in self.tiles[x:x+width]]
+        return [map_column[y:y + height]
+                for map_column in self.tiles[x:x + width]]
 
     def add_child(self, child):
         """Added a child to the list of know child maps.
@@ -270,6 +273,7 @@ class MapTransition(Component):
         target_map: The map the transition leads to
         target_level: The level numver the transition leads to
     """
+
     def __init__(self, target_map=None, target_level=None):
         self.target_map = target_map
         self.target_level = target_level

@@ -3,7 +3,8 @@
         "image": {
             "filename": "sprites/player.png",
             "tile_width": 32,
-            "tile_height": 32
+            "tile_height": 32,
+            "anchor": [17, 32]
         },
         "animations": {
             "idle": [
