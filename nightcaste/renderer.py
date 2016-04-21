@@ -351,8 +351,8 @@ class MapPane(ScrollablePane):
         if sprite.dirty > 0:
             # self._restore_tiles(sprite, position)
             # render sprite at new position
-            sprite.rect.x = position.x
-            sprite.rect.y = position.y
+            sprite.rect.x = position.x - sprite.anchor[0]
+            sprite.rect.y = position.y - sprite.anchor[1]
             self.put_sprite(sprite)
 
     def _restore_tiles(self, sprite, position):
@@ -620,13 +620,15 @@ class ImageManager:
 
 
 class SpriteManager:
+    """Deals with the complex image initialization of sprite components.
+    Since the blueprints currently only store primitive information complex
+    images have to be injected on entity creation."""
 
     logger = logging.getLogger('renderer.SpriteManager')
 
     def __init__(self, image_manager):
         self.sprite_path = path.join('config', 'sprites')
-        self.images = {}
-        self.animations = {}
+        self.sprite_vars = {}
         self.image_manager = image_manager
 
         for sf in listdir(self.sprite_path):
@@ -637,23 +639,21 @@ class SpriteManager:
                     self.configure_sprite(sprite_name, config)
 
     def configure_sprite(self, sprite_name, config):
-        sprite_sheet = self._load_sprite_sheet(config['image'])
-        sprite_animations = {}
-        for animation, frames in config['animations'].iteritems():
-            a = Animation()
-            for frame_config in frames:
-                image_config = frame_config['frame']
-                frame = sprite_sheet[image_config[0]][image_config[1]]
-                a.add_frame(frame, frame_config['ticks'])
-            sprite_animations[animation] = a
-        self.animations[sprite_name] = sprite_animations
-        self.images[sprite_name] = sprite_sheet[0][0]
+        sprite_info = SpriteInfo()
+        image_config = config['image']
+        sprite_sheet = self._load_sprite_sheet(image_config)
+        sprite_info.image = sprite_sheet[0][0]
+        sprite_info.animations = self._configure_animations(
+            config['animations'], sprite_sheet)
+        sprite_info.anchor = image_config['anchor']
+        self.sprite_vars[sprite_name] = sprite_info
 
     def initialize_sprite(self, sprite):
-        image = self.images.get(sprite.name)
+        sprite_info = self.sprite_vars[sprite.name]
+        image = sprite_info.image
         sprite.image = image.copy()
         sprite.rect = image.get_rect()
-        sprite.animations = self.animations[sprite.name]
+        sprite.animations = sprite_info.animations
         sprite.animate('idle')
         self.logger.debug('Sprite initialized %s', sprite)
 
@@ -667,3 +667,18 @@ class SpriteManager:
             image_config['tile_width'],
             image_config['tile_height'])
         return sprite_sheet
+
+    def _configure_animations(self, anim_config, sprite_sheet):
+        sprite_animations = {}
+        for animation, frames in anim_config.iteritems():
+            a = Animation()
+            for frame_config in frames:
+                image_pos = frame_config['frame']
+                frame = sprite_sheet[image_pos[0]][image_pos[1]]
+                a.add_frame(frame, frame_config['ticks'])
+            sprite_animations[animation] = a
+        return sprite_animations
+
+
+class SpriteInfo:
+    pass
