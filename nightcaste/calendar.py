@@ -61,7 +61,7 @@ class ExaltedCalendar(Calendar):
         CALIBRATION: 'Calibration'
     }
 
-    def __init__(self, time=0l):
+    def __init__(self, time=0):
         self.time = time
 
     def get_year(self):
