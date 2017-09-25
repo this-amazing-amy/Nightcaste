@@ -9,7 +9,7 @@
 """
 from enum import Enum
 import logging
-import Queue
+from queue import Queue
 
 
 FrameworkEvent = Enum(
@@ -40,7 +40,7 @@ class EventManager:
 
     def __init__(self):
         # Event queue, which is continuuously processed by process_events
-        self.events = Queue.Queue()
+        self.events = Queue()
         # self.queue = Queue.PriorityQueue()    If priority is needed
         # self.deque = collections.deque()      Super fast unbounded queue
         #                                       without locking
