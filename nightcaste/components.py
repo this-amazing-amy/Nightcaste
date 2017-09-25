@@ -15,7 +15,7 @@ class Component:
 
     def __str__(self):
         result = self.type() + " ("
-        for prop, val in self.__dict__.iteritems():
+        for prop, val in self.__dict__.items():
             result += str(prop) + ": " + str(val) + ", "
         return result[:-2] + ")"
 

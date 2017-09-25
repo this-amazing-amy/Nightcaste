@@ -207,7 +207,7 @@ class MovementSystem(EventProcessor):
         entity_positions = self.entity_manager.get_all('Position')
         entity_movement = self.entity_manager.get_all('Movement')
         entity_collidables = self.entity_manager.get_all('Colliding')
-        for entity, inputcomp in moving_entities.iteritems():
+        for entity, inputcomp in moving_entities.items():
             # TODO: Make an Animation Processor or think of a more elegant
             # solution for animation handling
             sprite = self.entity_manager.get(entity, "Sprite")
@@ -341,7 +341,7 @@ class SpriteProcessor(EventProcessor):
 
     def update(self, round, delta_time):
         for entity, sprite in self.entity_manager.get_all(
-                'Sprite').iteritems():
+                'Sprite').items():
             sprite.update(round, delta_time)
 
 

@@ -169,11 +169,11 @@ class ComponentManager:
 
     def add_components(self, entity_id, configuration):
         """Create and add components based on the given configuration."""
-        for component_name, attributes in configuration.components.iteritems():
+        for component_name, attributes in configuration.components.items():
             component = getattr(components, component_name)()
 
             "Add all attributes to component"
-            for attr_name, attr_value in attributes.iteritems():
+            for attr_name, attr_value in attributes.items():
                 setattr(component, attr_name, attr_value)
 
             self.add_component(entity_id, component)
@@ -264,7 +264,7 @@ class BlueprintManager:
         basename = os.path.splitext(os.path.basename(blueprint_path))[0]
         self.logger.info('Loading %s', basename)
         blueprint_config = utils.load_config(blueprint_path)
-        for name, blueprint in blueprint_config.iteritems():
+        for name, blueprint in blueprint_config.items():
             self.logger.info("Adding Blueprint: %s", name)
             blue_print_name = basename + '.' + name
             entity_config = self._create_entity_config(blueprint)
@@ -279,7 +279,7 @@ class BlueprintManager:
         return entity_config
 
     def _configure_entity_attributes(self, blueprint, entity_config):
-        for attribute, value in blueprint['attributes'].iteritems():
+        for attribute, value in blueprint['attributes'].items():
             component_attribute = attribute.split('.')
             entity_config.add_attribute(
                 component_attribute[0], component_attribute[1], value)
@@ -330,9 +330,9 @@ class EntityConfiguration:
     def update(self, other):
         """Adds components and attributes from the given configuration to this
         configuration. Existing attribute values are replaced."""
-        for other_component, attributes in other.components.iteritems():
+        for other_component, attributes in other.components.items():
             if len(attributes) == 0 and other_component not in self.components:
                 self.add_component(other_component)
             else:
-                for name, value in attributes.iteritems():
+                for name, value in attributes.items():
                     self.add_attribute(other_component, name, value)

@@ -7,7 +7,7 @@ class QTreeCollisionManager:
     def fill(self, bounds, collidables):
         """Add all collidable objects to a quad tree. O(n * log n)"""
         self.qtree = QuadTree(bounds)
-        for entity, collidable in collidables.iteritems():
+        for entity, collidable in collidables.items():
             self.qtree.insert(entity, collidable)
 
     def move(self, entity):
@@ -44,7 +44,7 @@ class QuadTree:
         return self.q_tree_root.bounds
 
     def get_all(self):
-        return self.entites.viewkeys()
+        return self.entites.keys()
 
     def contains(self, entity):
         return entity in self.entites
@@ -181,7 +181,8 @@ class QuadTreeNode:
         it."""
         # Do not copy any items since the refenrences to the orignal rects must
         # stay valid for move/relocate
-        for entity in self.entites.keys():
+        # TODO Implement more efficiently (Maybe create a new map instead of: list(keys) -> entites[key] -> entites.pop(key)
+        for entity in list(self.entites.keys()):
             index = self._get_index(self.entites[entity].rect)
             if index != -1:
                 self.nodes[index].insert(entity, self.entites.pop(entity))
@@ -193,7 +194,7 @@ class QuadTreeNode:
             index = self._get_index(rect)
             if index != -1:
                 self.nodes[index].retrieve(rect, result)
-        for entity, item in self.entites.iteritems():
+        for entity, item in self.entites.items():
             if rect.colliderect(item.rect):
                 result.append(entity)
 

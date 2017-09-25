@@ -343,7 +343,7 @@ class MapPane(ScrollablePane):
         positions = em.get_all('Position')
         sprites = em.get_all('Sprite')
         for entity, sprite in sorted(
-                sprites.iteritems(), key=lambda k_v: k_v[1].z_index):
+                sprites.items(), key=lambda k_v: k_v[1].z_index):
             self._render_sprite(entity, sprite, positions[entity])
 
     def _render_sprite(self, entity, sprite, position):
@@ -376,11 +376,11 @@ class MapPane(ScrollablePane):
         """ Iterates through a list of entities and renders each """
         em = self.window.entity_manager
         tiles = {k: v for k, v in em.get_components_for_entities(
-            entities, 'Tile').iteritems() if v is not None and v.visible}
+            entities, 'Tile').items() if v is not None and v.visible}
         positions = em.get_components_for_entities(entities, 'Position')
         colors = em.get_components_for_entities(entities, 'Color')
         for entity, tile in sorted(
-                tiles.iteritems(), key=lambda k_v1: k_v1[1].z_index):
+                tiles.items(), key=lambda k_v1: k_v1[1].z_index):
             self._render_tile(tile, positions[entity], colors[entity])
 
     def _render_tile(self, tile, position, color):
@@ -416,19 +416,19 @@ class IsoMapPane(MapPane):
 
     def isometric_to_cartesian(self, x, y):
         _x = x - self.iso_offset
-        cart_x = (2 * y + _x) / 2
-        cart_y = (2 * y - _x) / 2
+        cart_x = (2 * y + _x) // 2
+        cart_y = (2 * y - _x) // 2
         return (cart_x, cart_y)
 
     def cartesian_to_isometric(self, x, y):
         iso_x = x - y
-        iso_y = (x + y) / 2
+        iso_y = (x + y) // 2
         return (iso_x + self.iso_offset, iso_y)
 
     def create_bg(self, width, height):
         self.iso_offset = height
         iso_surface_width = width + height
-        iso_surface_height = iso_surface_width / 2
+        iso_surface_height = iso_surface_width // 2
         super(IsoMapPane, self).create_bg(iso_surface_width, iso_surface_height)
 
     def update_viewport(self, x, y):
@@ -482,8 +482,8 @@ class ViewPort:
         """Calcualtes the scroll needed to center the target."""
         l_old = self.rect.x
         t_old = self.rect.y
-        l = target_x - int(self.rect.w / 2)
-        t = target_y - int(self.rect.h / 2)
+        l = target_x - self.rect.w // 2
+        t = target_y - self.rect.h // 2
         return (l_old - l, t_old - t)
 
     def calculate_scroll_compl(self, player_pos, map):
@@ -491,16 +491,16 @@ class ViewPort:
         x_old = self.rect.x
         y_old = self.rect.y
         if map.width() > self.rect.w:
-            self.rect.x = max(player_pos.x - int(self.rect.w / 2), 0)
+            self.rect.x = max(player_pos.x - (self.rect.w // 2), 0)
             self.rect.x += min(map.width() - (self.rect.x + self.rect.w), 0)
         else:
-            self.rect.x = int((self.rect.w - map.width()) / 2)
+            self.rect.x = (self.rect.w - map.width()) // 2
 
         if map.height() > self.rect.h:
-            self.rect.y = max(player_pos.y - int(self.rect.h / 2), 0)
+            self.rect.y = max(player_pos.y - (self.rect.h // 2), 0)
             self.rect.y += min(map.height() - (self.rect.y + self.rect.h), 0)
         else:
-            self.rect.y = int((self.rect.h - map.height()) / 2)
+            self.rect.y = (self.rect.h - map.height()) // 2
 
         return (self.rect.x - x_old, self.rect.y - y_old)
 
@@ -603,10 +603,10 @@ class ImageManager:
         sheet = self.load_image(file_name, cache)
         image_width, image_height = sheet.get_size()
         tile_table = []
-        for tile_x in range(0, image_width / tile_width):
+        for tile_x in range(0, image_width // tile_width):
             line = []
             tile_table.append(line)
-            for tile_y in range(0, image_height / tile_height):
+            for tile_y in range(0, image_height // tile_height):
                 rect = (
                     tile_x * tile_width,
                     tile_y * tile_height,
@@ -635,7 +635,7 @@ class SpriteManager:
             sprite_file = path.join(self.sprite_path, sf)
             if path.isfile(sprite_file):
                 sprite_config = utils.load_config(sprite_file)
-                for sprite_name, config in sprite_config.iteritems():
+                for sprite_name, config in sprite_config.items():
                     self.configure_sprite(sprite_name, config)
 
     def configure_sprite(self, sprite_name, config):
@@ -671,7 +671,7 @@ class SpriteManager:
 
     def _configure_animations(self, anim_config, sprite_sheet):
         sprite_animations = {}
-        for animation, frames in anim_config.iteritems():
+        for animation, frames in anim_config.items():
             a = Animation()
             for frame_config in frames:
                 image_pos = frame_config['frame']

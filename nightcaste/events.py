@@ -124,7 +124,7 @@ class Event:
     def __init__(self, identifier, data=None):
         self.identifier = identifier
         if data is not None:
-            for prop, val in data.iteritems():
+            for prop, val in data.items():
                 setattr(self, prop, val)
 
     def get(self, attr, default=None):

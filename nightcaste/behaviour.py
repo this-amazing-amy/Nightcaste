@@ -53,9 +53,9 @@ class BehaviourManager:
     def update(self, round, delta_time):
         """Updates all behaviours for all entitites with a associated
         components."""
-        for component_type, behaviour in self.behaviours.iteritems():
+        for component_type, behaviour in self.behaviours.items():
             components = self.entity_manager.get_all(component_type)
-            for entity, component in components.iteritems():
+            for entity, component in components.items():
                 behaviour.entity = entity
                 behaviour.component = component
                 behaviour.update(round, delta_time)
@@ -75,10 +75,10 @@ class TurnBehaviourManager(BehaviourManager):
         component, but only if there are no locked entities."""
 
         # TODO: Make the method prettier ^^
-        for component_type, behaviour in self.behaviours.iteritems():
+        for component_type, behaviour in self.behaviours.items():
             components = self.entity_manager.get_all(component_type)
 
-            for entity, component in components.iteritems():
+            for entity, component in components.items():
                 s = self.locked_entities
                 turn = self.entity_manager.get(entity, "Turn")
                 if (turn.ticks == 0 and turn.delta >= turn.min_turn_time):
@@ -110,7 +110,7 @@ class TurnBehaviourManager(BehaviourManager):
         Tick count, to prevent tick counters from increasing indefinitely.
         This assures an only relative tick count """
         min_ticks = None
-        for component_type, behaviour in self.behaviours.iteritems():
+        for component_type, behaviour in self.behaviours.items():
             components = self.entity_manager.get_all(component_type)
             ticks = [self.entity_manager.get(entity, "Turn").ticks
                      for entity in components.keys()]
@@ -119,7 +119,7 @@ class TurnBehaviourManager(BehaviourManager):
                 if (min_ticks is None or min_ticks > minimum_of_type):
                     min_ticks = minimum_of_type
         if min_ticks is not None:
-            for component_type, behaviour in self.behaviours.iteritems():
+            for component_type, behaviour in self.behaviours.items():
                 components = self.entity_manager.get_all(component_type)
                 for turn_comp in [self.entity_manager.get(entity, "Turn")
                                   for entity in components.keys()]:
