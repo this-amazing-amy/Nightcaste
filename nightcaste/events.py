@@ -7,31 +7,41 @@
             - events with two target entitys (src and target)
 
 """
-from enum import Enum
+from enum import Enum, auto
 import logging
 from queue import Queue
 
 
-FrameworkEvent = Enum(
-    'EntityCreated',
-    'EntityDestroyed',
-    'EntityInitialized',
-    'GameStarted',
-    'GamePaused',
-    'GameResumed',
-    'SystemAdded',
-    'ComponentAdded',
-    'ComponentRemoved')
-GameAction = Enum(
-    'MapChange',
-    'MapTransition',
-    'MoveAction',
-    'UseEntityAction',
-    'WorldEnter')
-GameEvent = Enum('EntityMoved', 'MapChanged')
-GUIAction = Enum('MenuOpen')
-GUIEvent = Enum('ViewChanged')
-InputEvent = Enum('KeyPressed')
+class FrameworkEvent(Enum):
+    EntityCreated = auto()
+    EntityDestroyed = auto()
+    EntityInitialized = auto()
+    GameStarted = auto()
+    GamePaused = auto()
+    GameResumed = auto()
+    SystemAdded = auto()
+    ComponentAdded = auto()
+    ComponentRemoved = auto()
+
+class GameAction(Enum):
+    MapChange = auto()
+    MapTransition = auto()
+    MoveAction = auto()
+    UseEntityAction = auto()
+    WorldEnter = auto()
+
+class GameEvent(Enum):
+    EntityMoved = auto()
+    MapChanged = auto()
+
+class GUIAction(Enum):
+    MenuOpen = auto()
+
+class GUIEvent(Enum):
+    ViewChanged = auto()
+
+class InputEvent(Enum):
+    KeyPressed = auto()
 
 
 class EventManager:
