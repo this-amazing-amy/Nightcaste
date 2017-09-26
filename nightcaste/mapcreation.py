@@ -194,8 +194,8 @@ class DungeonGenerator(MapGenerator):
     def create_room(self, node):
         """ Creates a randomly-sized room inside the given node.
         appends the Room-object onto the rooms-list of the map """
-        width = random.randrange(node.w / 2, node.w)
-        height = random.randrange(node.h / 2, node.h)
+        width = random.randrange(node.w // 2, node.w)
+        height = random.randrange(node.h // 2, node.h)
         room = Room(node.x, node.y, width, height)
         for x in range(room.x + 1, room.x + width + 1):
             for y in range(room.y + 1, room.y + height + 1):
